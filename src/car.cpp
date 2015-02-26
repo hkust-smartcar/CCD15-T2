@@ -14,12 +14,12 @@
 using namespace libsc::k60;
 using namespace libbase::k60;
 
-int16_t Car::Output_s(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[2]){
+int16_t Car::Output_s0(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	uint8_t period;
-	int16_t output, temp, encoder_speed;
+	int16_t output, temp;
 	if (time[0]==0){
 		time[0]=System::Time();
-		m_encoder->Update();
+		m_encoder0->Update();
 		return 0;
 	}
 	if (spdcon[4]!=spdcon[5]){	//reset summation error if setspeed is changed
@@ -29,18 +29,48 @@ int16_t Car::Output_s(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[2]){
 	spdcon[1]=spdcon[0];
 	period=System::Time()-time[0];
 	time[0]=System::Time();
-	m_encoder->Update();
-	m_encoder_count = (int16_t) m_encoder->GetCount() / 2;
-	encoder_speed = m_encoder_count*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
-	spdcon[0]=spdcon[5]-encoder_speed;
+	m_encoder0->Update();
+	m_encoder_count0 = (int16_t) m_encoder0->GetCount()/2;
+//	m_encoder_count_c = (m_encoder_count0 + m_encoder_count1)/4;
+	encoder_speed0 = m_encoder_count0*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
+	spdcon[0]=spdcon[5]-encoder_speed0;
 	temp=(spdcon[0]-spdcon[1])/period; //slope
-	if (abs(spdcon[0])<400){	//prevent large error
+	if (abs(spdcon[0])<200){	//prevent large error
 		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
 	}
-	output=(spdpid[0]*spdcon[0]+spdpid[1]*spdcon[3]+spdpid[2]*(temp+spdcon[2])/2)/10;
+	output=(spdpid[0]*spdcon[0]+spdpid[1]*spdcon[3]+spdpid[2]*(temp+spdcon[2])/2)/100;
 	spdcon[2]=temp;
 	return output;
 }
+int16_t Car::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
+	uint8_t period;
+	int16_t output, temp;
+	if (time[1]==0){
+		time[1]=System::Time();
+		m_encoder1->Update();
+		return 0;
+	}
+	if (spdcon[4]!=spdcon[5]){	//reset summation error if setspeed is changed
+		spdcon[4]=spdcon[5];
+		spdcon[3]=0;
+	}
+	spdcon[1]=spdcon[0];
+	period=System::Time()-time[1];
+	time[1]=System::Time();
+	m_encoder1->Update();
+	m_encoder_count1 = (int16_t) -1*m_encoder1->GetCount()/2;
+//	m_encoder_count_c = (m_encoder_count0 + m_encoder_count1)/4;
+	encoder_speed1 = m_encoder_count1*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
+	spdcon[0]=spdcon[5]-encoder_speed1;
+	temp=(spdcon[0]-spdcon[1])/period; //slope
+	if (abs(spdcon[0])<200){	//prevent large error
+		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
+	}
+	output=(spdpid[0]*spdcon[0]+spdpid[1]*spdcon[3]+spdpid[2]*(temp+spdcon[2])/2)/100;
+	spdcon[2]=temp;
+	return output;
+}
+
 int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], float real_angle){
 	uint8_t period;
 	int16_t output, temp;
@@ -63,7 +93,14 @@ int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], floa
 	return output;
 }
 
-Car::Car(){
+Car::Car():
+		m_encoder_count0(0),
+		encoder_speed0(0),
+		m_encoder_count1(0),
+		encoder_speed1(0),
+		m_encoder_count_c(0),
+		encoder_speed_c(0)
+{
 
 }
 
@@ -102,17 +139,21 @@ void Car::Run(){
 
 
 
-	DirMotor::Config motor_config;
-	motor_config.id = 0;
-	DirMotor motor(motor_config);
+	DirMotor::Config motor_config0;
+	motor_config0.id = 0;
+	DirMotor motor0(motor_config0);
 
-	DirEncoder::Config econfig;
-	econfig.id = 0;
-	m_encoder = new DirEncoder(econfig);
+	DirMotor::Config motor_config1;
+	motor_config1.id = 1;
+	DirMotor motor1(motor_config1);
 
-	/*	DirEncoder::Config econfig1;
+	DirEncoder::Config econfig0;
+	econfig0.id = 0;
+	m_encoder0 = new DirEncoder(econfig0);
+
+	DirEncoder::Config econfig1;
 	econfig1.id = 1;
-	m_encoder1 = new DirEncoder(econfig1);*/
+	m_encoder1 = new DirEncoder(econfig1);
 
 
 
@@ -130,19 +171,30 @@ void Car::Run(){
 
 	int32_t encoder_count = 0, encoder1_count = 0;
 
-	int16_t power=0, u;
+	int16_t power0=0, power1=0, u_s0=0, u_s1;
 
-	int16_t spdcon[6]={0,0,0,0,0,400};
+	int16_t spdcon0[6]={0,0,0,0,0,400};
 	/* spdcon[0]=error(k);
 	 * spdcon[1]=error(k-1);
 	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
 	 * spdcon[3]=summation for ki;
 	 * spdcon[4]=previous setpoint for reset summation time;
 	 * spdcon[5]=setpoint (rotation per sec *100);	*/
-	uint8_t spdpid[3]={1,0,0};
+	uint8_t spdpid0[3]={3,5,30};
 	/* pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;	*/
+	int16_t spdcon1[6]={0,0,0,0,0,400};
+		/* spdcon[0]=error(k);
+		 * spdcon[1]=error(k-1);
+		 * spdcon[2]=previous slope of de/dt for low-pass filtering;
+		 * spdcon[3]=summation for ki;
+		 * spdcon[4]=previous setpoint for reset summation time;
+		 * spdcon[5]=setpoint (rotation per sec *100);	*/
+	uint8_t spdpid1[3]={3,5,30};
+		/* pid[0]=kp;
+		 * pid[1]=ki;
+		 * pid[2]=kd;	*/
 
 	float balcon[5]={0,0,0,0,0};
 	/* balcon[0]=error(k);
@@ -155,7 +207,7 @@ void Car::Run(){
 	 * pid[1]=ki;
 	 * pid[2]=kd;	*/
 
-	uint16_t time[2]={0,0};
+	uint16_t time[4]={0,0,0,0};
 	/* time[0] for spd period;
 	 * time[1] for bal period;	*/
 
@@ -183,35 +235,50 @@ void Car::Run(){
 			}
 
 
-			if(t%2==0){
-				pin0.Turn();
-				gyro.Update();
-				accel_ = gyro.GetAccel();
-				gyro_ = gyro.GetOmega();
-				gyro_[0] = -gyro_[0];
+//			if(t%2==0){
+//				pin0.Turn();
+//				gyro.Update();
+//				accel_ = gyro.GetAccel();
+//				gyro_ = gyro.GetOmega();
+//				gyro_[0] = -gyro_[0];
+//
+//				acc_angle = accel_[0] * RAD2ANGLE;
+//				gyro_angle += gyro_[0] * 0.005f;
+////				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
+//			}
 
-				acc_angle = accel_[0] * RAD2ANGLE;
-				gyro_angle += gyro_[0] * 0.005f;
-//				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
+
+			if(t%3000==0){
+				switch(spdcon0[5]){
+				case 400:	spdcon0[5]=800;
+							spdcon1[5]=800;	break;
+				case 800:	spdcon0[5]=1000;
+							spdcon1[5]=1000;	break;
+				case 1000:	spdcon0[5]=400;
+							spdcon1[5]=400;	break;
+				}
 			}
-
-
-
-//			if(t%10==0){
+			if(t%10==0){
 //				printf("%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle);
 //				printf("%.4f,%d\n",acc_angle, accelerometer.IsConnected());
 //				printf("%d,%d\n", encoder_count, encoder1_count);
-//				u_s=Output_s(spdcon, spdpid, time);
+				u_s0=Output_s0(spdcon0, spdpid0, time);
 //				u_b=Output_s(balcon, balpid, time, real_angle);
-//				power=power+u_s+u_b;
-//				power = libutil::Clamp<int16_t>(0,power, 500);
-//				printf("%d,%d,%d,%d\n", m_encoder_count, power, encoder_speed, u);
-//				motor.SetClockwise(power < 0);
-//				motor.SetPower((uint16_t)abs(power));
+				power0=power0+u_s0;
+				u_s1=Output_s1(spdcon1, spdpid1, time);
+				power1=power1+u_s1;
+				power0 = libutil::Clamp<int16_t>(0,power0, 500);
+				power1 = libutil::Clamp<int16_t>(0,power1, 500);
+				printf("%d,%d,%d,%d,%d,%d\n", m_encoder_count0, m_encoder_count1,
+						power0,power1, encoder_speed0,encoder_speed1);
+				motor0.SetClockwise(power0 < 0);
+				motor1.SetClockwise(power1 > 0);
+				motor0.SetPower((uint16_t)abs(power0));
+				motor1.SetPower((uint16_t)abs(power1));
 //				m_encoder->Update();
 //				m_encoder_count = m_encoder->GetCount();
 //				printf("%d,%d\n", m_encoder_count,power);
-//			}
+			}
 
 			pt = t;
 

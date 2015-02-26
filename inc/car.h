@@ -20,7 +20,8 @@ using namespace libbase::k60;
 class Car{
 public:
 	Car();
-	int16_t Output(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
+	int16_t Output_s(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
+	int16_t Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], float real_angle)
 	void Run();
 private:
 	DirEncoder* m_encoder;

@@ -14,31 +14,52 @@
 using namespace libsc::k60;
 using namespace libbase::k60;
 
-int16_t Car::Output(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]){
+int16_t Car::Output_s(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[2]){
 	uint8_t period;
-	int16_t output, temp;
+	int16_t output, temp, encoder_speed;
 	if (time[0]==0){
 		time[0]=System::Time();
 		m_encoder->Update();
 		return 0;
 	}
-	if (spdcon[4]!=spdcon[5]){	//reset summation time if setpoint is changed
+	if (spdcon[4]!=spdcon[5]){	//reset summation error if setspeed is changed
 		spdcon[4]=spdcon[5];
 		spdcon[3]=0;
-		time[1]=0;
 	}
 	spdcon[1]=spdcon[0];
 	period=System::Time()-time[0];
+	time[0]=System::Time();
 	m_encoder->Update();
 	m_encoder_count = (int16_t) m_encoder->GetCount() / 2;
-	spdcon[0]=spdcon[5]+m_encoder_count*11000000/period/13312;	// 512*104/44=13312/11
-	temp=(pid[0]-pid[1])/period;
-	if (spdcon[0]<4000&&spdcon[0]>-4000){	//prevent overshooting in steady state
-		spdcon[3]+=(spdcon[0]*period);
-		time[1]+=period;
+	encoder_speed = m_encoder_count*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
+	spdcon[0]=spdcon[5]-encoder_speed;
+	temp=(spdcon[0]-spdcon[1])/period; //slope
+	if (abs(spdcon[0])<400){	//prevent large error
+		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
 	}
-	output=(pid[0]*spdcon[0]+pid[1]*spdcon[3]+pid[2]*(temp+spdcon[2])/2)/1000;
+	output=(spdpid[0]*spdcon[0]+spdpid[1]*spdcon[3]+spdpid[2]*(temp+spdcon[2])/2)/10;
 	spdcon[2]=temp;
+	return output;
+}
+int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], float real_angle){
+	uint8_t period;
+	int16_t output, temp;
+	if (time[1]==0){
+		time[1]=System::Time()-10;
+		balcon[4]=real_angle;
+		return 0;
+	}
+
+	balcon[1]=balcon[0];
+	period=System::Time()-time[1];
+	time[1]=System::Time();
+	balcon[0]=balcon[4]-real_angle;	// 512*104/44=13312/11
+	temp=(balpid[0]-balpid[1])/period;
+	if (abs(balcon[0])<10){	//prevent overshooting in steady state
+		balcon[3]=balcon[3]+(balcon[0]*period/100);
+	}
+	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]/time[1]+balpid[2]*(temp+balcon[2])/2;
+	balcon[2]=temp;
 	return output;
 }
 
@@ -109,24 +130,34 @@ void Car::Run(){
 
 	int32_t encoder_count = 0, encoder1_count = 0;
 
-	int16_t power=0;
-	int16_t spdcon[6]={0,0,0,0,0,4000};
+	int16_t power=0, u;
+
+	int16_t spdcon[6]={0,0,0,0,0,400};
 	/* spdcon[0]=error(k);
 	 * spdcon[1]=error(k-1);
 	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
 	 * spdcon[3]=summation for ki;
 	 * spdcon[4]=previous setpoint for reset summation time;
-	 * spdcon[5]=setpoint (rotation per ks);
-	 */
-	uint8_t pid[3]={1,0,0};
+	 * spdcon[5]=setpoint (rotation per sec *100);	*/
+	uint8_t spdpid[3]={1,0,0};
 	/* pid[0]=kp;
 	 * pid[1]=ki;
-	 * pid[2]=kd;
-	 */
+	 * pid[2]=kd;	*/
+
+	float balcon[5]={0,0,0,0,0};
+	/* balcon[0]=error(k);
+	 * balcon[1]=error(k-1);
+	 * balcon[2]=previous slope of de/dt for low-pass filtering;
+	 * balcon[3]=summation for ki;
+	   balcon[4]=setpoint	*/
+	uint8_t balpid[3]={1,0,0};
+	/* pid[0]=kp;
+	 * pid[1]=ki;
+	 * pid[2]=kd;	*/
+
 	uint16_t time[2]={0,0};
-	/* time[0] for period;
-	 * time[1] for summation averaging;
-	 */
+	/* time[0] for spd period;
+	 * time[1] for bal period;	*/
 
 //	Mma8451q::Config accel_config;
 //	accel_config.id = 0;
@@ -166,15 +197,17 @@ void Car::Run(){
 
 
 
-//			if(t%50==0){
+//			if(t%10==0){
 //				printf("%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle);
 //				printf("%.4f,%d\n",acc_angle, accelerometer.IsConnected());
 //				printf("%d,%d\n", encoder_count, encoder1_count);
-//				power+=Output(spdcon, pid, time);
-//				power = libutil::Clamp<int16_t>(-500,power, 500);
-//				printf("%d,%d\n", m_encoder_count, power);
+//				u_s=Output_s(spdcon, spdpid, time);
+//				u_b=Output_s(balcon, balpid, time, real_angle);
+//				power=power+u_s+u_b;
+//				power = libutil::Clamp<int16_t>(0,power, 500);
+//				printf("%d,%d,%d,%d\n", m_encoder_count, power, encoder_speed, u);
+//				motor.SetClockwise(power < 0);
 //				motor.SetPower((uint16_t)abs(power));
-//				motor.SetClockwise(!(power >= 0));
 //				m_encoder->Update();
 //				m_encoder_count = m_encoder->GetCount();
 //				printf("%d,%d\n", m_encoder_count,power);

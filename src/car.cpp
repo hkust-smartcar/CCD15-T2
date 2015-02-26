@@ -88,7 +88,7 @@ int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], floa
 	if (abs(balcon[0])<10){	//prevent overshooting in steady state
 		balcon[3]=balcon[3]+(balcon[0]*period/100);
 	}
-	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]/time[1]+balpid[2]*(temp+balcon[2])/2;
+	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]/time[1]+balpid[2]*(temp+balcon[2])*10;
 	balcon[2]=temp;
 	return output;
 }
@@ -114,7 +114,7 @@ void Car::Run(){
 
 
 	std::array<float, 3> accel_, gyro_;
-	float real_angle = 0, acc_angle = 0, gyro_angle = 0;
+	float real_angle = 0, acc_angle = 0, gyro_angle = 0, avg_gyro = 0, total_gyro=0;
 
 	Led::Config ledconfig;
 	ledconfig.id = 0;
@@ -161,17 +161,17 @@ void Car::Run(){
 	KF m_acc_kf;
 
 	//	float value[2] = {0.035f, 0.705495694f};
-//	float value[2] = {0.035f, 0.205495694f};
-//	gyro.Update();
-//	accel_ = gyro.GetAccel();
-//	acc_angle = accel_[2] * RAD2ANGLE;
-//	kalman_filter_init(&m_gyro_kf[0], 0.01f, value, acc_angle, 1);
+	float value[2] = {0.035f, 0.205495694f};
+	gyro.Update();
+	accel_ = gyro.GetAccel();
+	acc_angle = accel_[2] * RAD2ANGLE;
+	kalman_filter_init(&m_gyro_kf[0], 0.01f, value, acc_angle, 1);
 
 	Timer::TimerInt t = System::Time(), pt = t;
 
 	int32_t encoder_count = 0, encoder1_count = 0;
 
-	int16_t power0=0, power1=0, u_s0=0, u_s1;
+	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0;
 
 	int16_t spdcon0[6]={0,0,0,0,0,400};
 	/* spdcon[0]=error(k);
@@ -223,6 +223,7 @@ void Car::Run(){
 	pinconfig.is_high = false;
 	Gpo pin0(pinconfig);
 
+	int16_t cou=0;
 	while(true)
 	{
 		t = System::Time();
@@ -235,42 +236,44 @@ void Car::Run(){
 			}
 
 
-//			if(t%2==0){
-//				pin0.Turn();
-//				gyro.Update();
-//				accel_ = gyro.GetAccel();
-//				gyro_ = gyro.GetOmega();
-//				gyro_[0] = -gyro_[0];
-//
-//				acc_angle = accel_[0] * RAD2ANGLE;
-//				gyro_angle += gyro_[0] * 0.005f;
-////				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
-//			}
-
-
-			if(t%3000==0){
-				switch(spdcon0[5]){
-				case 400:	spdcon0[5]=800;
-							spdcon1[5]=800;	break;
-				case 800:	spdcon0[5]=1000;
-							spdcon1[5]=1000;	break;
-				case 1000:	spdcon0[5]=400;
-							spdcon1[5]=400;	break;
-				}
+			if(t%5==0){
+				pin0.Turn();
+				gyro.Update();
+				accel_ = gyro.GetAccel();
+				gyro_ = gyro.GetOmega();
+				gyro_[0] = -gyro_[0] -0.406;
+				acc_angle = accel_[0] * RAD2ANGLE;
+				gyro_angle += gyro_[0] * 0.005f;
+				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
 			}
-			if(t%10==0){
-//				printf("%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle);
+
+
+//			if(t%3000==0){
+//				switch(spdcon0[5]){
+//				case 400:	spdcon0[5]=800;
+//							spdcon1[5]=800;	break;
+//				case 800:	spdcon0[5]=1000;
+//							spdcon1[5]=1000;	break;
+//				case 1000:	spdcon0[5]=400;
+//							spdcon1[5]=400;	break;
+//				}
+//			}
+			if(t%2==0){
+				cou+=1;
+				total_gyro=total_gyro+gyro_[0];
+				avg_gyro=total_gyro/cou;
+				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
 //				printf("%.4f,%d\n",acc_angle, accelerometer.IsConnected());
 //				printf("%d,%d\n", encoder_count, encoder1_count);
-				u_s0=Output_s0(spdcon0, spdpid0, time);
-//				u_b=Output_s(balcon, balpid, time, real_angle);
-				power0=power0+u_s0;
-				u_s1=Output_s1(spdcon1, spdpid1, time);
-				power1=power1+u_s1;
-				power0 = libutil::Clamp<int16_t>(0,power0, 500);
-				power1 = libutil::Clamp<int16_t>(0,power1, 500);
-				printf("%d,%d,%d,%d,%d,%d\n", m_encoder_count0, m_encoder_count1,
-						power0,power1, encoder_speed0,encoder_speed1);
+//				u_s0=Output_s0(spdcon0, spdpid0, time);
+				u_b=Output_b(balcon, balpid, time, real_angle);
+				power0=power0-u_b;
+//				u_s1=Output_s1(spdcon1, spdpid1, time);
+				power1=power1-u_b;
+				power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
+				power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
+//				printf("%d,%d,%d,%d,%d,%d\n", m_encoder_count0, m_encoder_count1,
+//						power0,power1, encoder_speed0,encoder_speed1);
 				motor0.SetClockwise(power0 < 0);
 				motor1.SetClockwise(power1 > 0);
 				motor0.SetPower((uint16_t)abs(power0));

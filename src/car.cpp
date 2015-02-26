@@ -10,6 +10,7 @@
 #include <libutil/misc.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/system.h>
+#include <libutil/incremental_pid_controller.h>
 
 using namespace libsc::k60;
 using namespace libbase::k60;
@@ -32,8 +33,8 @@ int16_t Car::Output_s0(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	m_encoder0->Update();
 	m_encoder_count0 = (int16_t) m_encoder0->GetCount()/2;
 //	m_encoder_count_c = (m_encoder_count0 + m_encoder_count1)/4;
-	encoder_speed0 = m_encoder_count0*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
-	spdcon[0]=spdcon[5]-encoder_speed0;
+	m_encoder_speed0 = m_encoder_count0*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
+	spdcon[0]=spdcon[5]-m_encoder_speed0;
 	temp=(spdcon[0]-spdcon[1])/period; //slope
 	if (abs(spdcon[0])<200){	//prevent large error
 		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
@@ -60,8 +61,8 @@ int16_t Car::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	m_encoder1->Update();
 	m_encoder_count1 = (int16_t) -1*m_encoder1->GetCount()/2;
 //	m_encoder_count_c = (m_encoder_count0 + m_encoder_count1)/4;
-	encoder_speed1 = m_encoder_count1*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
-	spdcon[0]=spdcon[5]-encoder_speed1;
+	m_encoder_speed1 = m_encoder_count1*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
+	spdcon[0]=spdcon[5]-m_encoder_speed1;
 	temp=(spdcon[0]-spdcon[1])/period; //slope
 	if (abs(spdcon[0])<200){	//prevent large error
 		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
@@ -95,11 +96,13 @@ int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], floa
 
 Car::Car():
 		m_encoder_count0(0),
-		encoder_speed0(0),
+		m_encoder_speed0(0),
 		m_encoder_count1(0),
-		encoder_speed1(0),
+		m_encoder_speed1(0),
 		m_encoder_count_c(0),
-		encoder_speed_c(0)
+		m_encoder_speed_c(0),
+		m_inc_pidcontroller(-21.0f, 10.0f, 0.0f, 1000.0f),
+		m_pid_output(0)
 {
 
 }
@@ -165,6 +168,7 @@ void Car::Run(){
 	gyro.Update();
 	accel_ = gyro.GetAccel();
 	acc_angle = accel_[2] * RAD2ANGLE;
+	gyro_angle = acc_angle;
 	kalman_filter_init(&m_gyro_kf[0], 0.01f, value, acc_angle, 1);
 
 	Timer::TimerInt t = System::Time(), pt = t;
@@ -236,15 +240,23 @@ void Car::Run(){
 			}
 
 
-			if(t%5==0){
+			if(t%4==0){
 				pin0.Turn();
 				gyro.Update();
 				accel_ = gyro.GetAccel();
 				gyro_ = gyro.GetOmega();
 				gyro_[0] = -gyro_[0] -0.406;
 				acc_angle = accel_[0] * RAD2ANGLE;
-				gyro_angle += gyro_[0] * 0.005f;
+				gyro_angle += gyro_[0] * 0.004f;
 				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
+
+				cou+=1;
+				total_gyro=total_gyro+gyro_[0];
+				avg_gyro=total_gyro/cou;
+//				u_b=Output_b(balcon, balpid, time, real_angle);
+				m_pid_output = m_inc_pidcontroller.Calc(real_angle);
+				power0 += m_pid_output;
+				power1 += m_pid_output;
 			}
 
 
@@ -258,18 +270,16 @@ void Car::Run(){
 //							spdcon1[5]=400;	break;
 //				}
 //			}
-			if(t%2==0){
-				cou+=1;
-				total_gyro=total_gyro+gyro_[0];
-				avg_gyro=total_gyro/cou;
-				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
-//				printf("%.4f,%d\n",acc_angle, accelerometer.IsConnected());
-//				printf("%d,%d\n", encoder_count, encoder1_count);
+			if(t%100==0){
+//				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
+				printf("%.4f,%d\n",real_angle, power0);
+			}
+			if(t%1==0){
 //				u_s0=Output_s0(spdcon0, spdpid0, time);
-				u_b=Output_b(balcon, balpid, time, real_angle);
-				power0=power0-u_b;
+//				power0=power0-u_b;
 //				u_s1=Output_s1(spdcon1, spdpid1, time);
-				power1=power1-u_b;
+//				power1=power1-u_b;
+
 				power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 				power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
 //				printf("%d,%d,%d,%d,%d,%d\n", m_encoder_count0, m_encoder_count1,
@@ -278,9 +288,7 @@ void Car::Run(){
 				motor1.SetClockwise(power1 > 0);
 				motor0.SetPower((uint16_t)abs(power0));
 				motor1.SetPower((uint16_t)abs(power1));
-//				m_encoder->Update();
-//				m_encoder_count = m_encoder->GetCount();
-//				printf("%d,%d\n", m_encoder_count,power);
+
 			}
 
 			pt = t;

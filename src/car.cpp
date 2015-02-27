@@ -72,24 +72,25 @@ int16_t Car::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	return output;
 }
 
-int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], float real_angle){
+int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[4], float real_angle){
 	uint8_t period;
-	int16_t output, temp;
-	if (time[1]==0){
-		time[1]=System::Time()-10;
+	int16_t output;
+	float temp;
+	if (time[2]==0){
+		time[2]=System::Time()-10;
 		balcon[4]=real_angle;
 		return 0;
 	}
 
 	balcon[1]=balcon[0];
-	period=System::Time()-time[1];
-	time[1]=System::Time();
+	period=System::Time()-time[2];
+	time[2]=System::Time();
 	balcon[0]=balcon[4]-real_angle;	// 512*104/44=13312/11
 	temp=(balpid[0]-balpid[1])/period;
 	if (abs(balcon[0])<10){	//prevent overshooting in steady state
 		balcon[3]=balcon[3]+(balcon[0]*period/100);
 	}
-	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]/time[1]+balpid[2]*(temp+balcon[2])*10;
+	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]/time[2]+balpid[2]*(temp+balcon[2])*10;
 	balcon[2]=temp;
 	return output;
 }
@@ -206,14 +207,16 @@ void Car::Run(){
 	 * balcon[2]=previous slope of de/dt for low-pass filtering;
 	 * balcon[3]=summation for ki;
 	   balcon[4]=setpoint	*/
-	uint8_t balpid[3]={1,0,0};
+	uint8_t balpid[3]={1,0,1};
 	/* pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;	*/
 
 	uint16_t time[4]={0,0,0,0};
 	/* time[0] for spd period;
-	 * time[1] for bal period;	*/
+	 * time[1] for spd period;
+	 * time[2] for bal period;
+	 * time[3] for bal period;	*/
 
 //	Mma8451q::Config accel_config;
 //	accel_config.id = 0;

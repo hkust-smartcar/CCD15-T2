@@ -1,7 +1,7 @@
 #include <libsc/k60/system.h>
 #include "car.h"
-/*using namespace libsc::kl26;
-using namespace libbase::kl26;*/
+//using namespace libsc::kl26;
+//using namespace libbase::kl26;
 
 
 using namespace libsc::k60;

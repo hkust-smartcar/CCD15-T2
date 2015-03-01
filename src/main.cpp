@@ -1,3 +1,4 @@
+#include <libbase/k60/mcg.h>
 #include <libsc/k60/system.h>
 #include "car.h"
 //using namespace libsc::kl26;

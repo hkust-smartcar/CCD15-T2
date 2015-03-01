@@ -23,16 +23,18 @@ public:
 	Car();
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
-	int16_t Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[2], float real_angle);
+	int16_t Output_b(float balcon[5], float balpid[3], uint16_t time[2], float real_angle, float gyro_angle);
 	void Run();
 private:
 	DirEncoder* m_encoder0;
 	DirEncoder* m_encoder1;
 	int16_t m_encoder_count_c, m_encoder_count0, m_encoder_count1,
-				m_encoder_speed_c, m_encoder_speed0, m_encoder_speed1;
+				m_encoder_speed_c, m_encoder_speed0, m_encoder_speed1,
+				m_speed_output;
 
-	libutil::IncrementalPidController<float, int16_t> m_inc_pidcontroller;
-	int16_t m_pid_output;
+//	libutil::IncrementalPidController<float, int16_t> m_inc_pidcontroller;
+	libutil::IncrementalPidController<int16_t, int16_t> m_speed_inc_pidcontroller;
+	int16_t m_balance_pid_output;
 
 };
 

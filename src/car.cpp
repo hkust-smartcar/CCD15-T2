@@ -14,6 +14,7 @@
 
 using namespace libsc::k60;
 using namespace libbase::k60;
+using namespace libutil;
 
 int16_t Car::Output_s0(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	uint8_t period;
@@ -72,26 +73,27 @@ int16_t Car::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	return output;
 }
 
-int16_t Car::Output_b(float balcon[4], uint8_t balpid[3], uint16_t time[4], float real_angle){
+int16_t Car::Output_b(float balcon[5], float balpid[3], uint16_t time[4], float real_angle, float gyro_angle){
 	uint8_t period;
 	int16_t output;
 	float temp;
-	if (time[2]==0){
+/*	if (time[2]==0){
 		time[2]=System::Time()-10;
 		balcon[4]=real_angle;
 		return 0;
-	}
+	}*/
 
-	balcon[1]=balcon[0];
-	period=System::Time()-time[2];
-	time[2]=System::Time();
+//	balcon[1]=balcon[0];
+//	period=System::Time()-time[2];
+//	time[2]=System::Time();
 	balcon[0]=balcon[4]-real_angle;	// 512*104/44=13312/11
-	temp=(balpid[0]-balpid[1])/period;
+/*	temp=(balpid[0]-balpid[1])/period;
 	if (abs(balcon[0])<10){	//prevent overshooting in steady state
 		balcon[3]=balcon[3]+(balcon[0]*period/100);
-	}
-	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]/time[2]+balpid[2]*(temp+balcon[2])*10;
-	balcon[2]=temp;
+	}*/
+//	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]*time[2]+balpid[2]*(temp+balcon[2])*10;
+	output=(int16_t)(balpid[0]*balcon[0]+balpid[2]*gyro_angle);
+//	balcon[2]=temp;
 	return output;
 }
 
@@ -102,8 +104,9 @@ Car::Car():
 		m_encoder_speed1(0),
 		m_encoder_count_c(0),
 		m_encoder_speed_c(0),
-		m_inc_pidcontroller(-16.0f, 400.0f, 0.0f, 0.0f),
-		m_pid_output(0)
+//		m_inc_pidcontroller(97.0f, 1.0f, 0.0f, 0.0f),
+		m_speed_inc_pidcontroller(0.0f, 0.0f, 20.0f, 0.0f),
+		m_balance_pid_output(0)
 {
 
 }
@@ -114,7 +117,7 @@ void Car::Run(){
 	gyro_config.gyro_range = Mpu6050::Config::Range::kSmall;
 	gyro_config.cal_drift = true;
 
-	Mpu6050 gyro(gyro_config);
+	Mpu6050 mpu6050_(gyro_config);
 
 
 	std::array<float, 3> accel_, gyro_;
@@ -165,14 +168,14 @@ void Car::Run(){
 	KF m_acc_kf;
 
 	//	float value[2] = {0.035f, 0.705495694f};
-	float value[2] = {0.035f, 0.205495694f};
-	gyro.Update();
-	accel_ = gyro.GetAccel();
-	acc_angle = accel_[2] * RAD2ANGLE;
+	float value[2] = {0.035f, 0.9985611511f};
+	mpu6050_.Update();
+	accel_ = mpu6050_.GetAccel();
+	acc_angle = accel_[0] * RAD2ANGLE;
 	gyro_angle = acc_angle;
-	kalman_filter_init(&m_gyro_kf[0], 0.01f, value, acc_angle, 1);
+	kalman_filter_init(&m_gyro_kf[0], 0.4f, value, acc_angle, 1);
 
-	Timer::TimerInt t = System::Time(), pt = t;
+	Timer::TimerInt t_ = System::Time(), pt_ = t_;
 
 	int32_t encoder_count = 0, encoder1_count = 0;
 
@@ -201,13 +204,13 @@ void Car::Run(){
 		 * pid[1]=ki;
 		 * pid[2]=kd;	*/
 
-	float balcon[5]={0,0,0,0,0};
+	float balcon[5]={0,0,0,0,1.0f};
 	/* balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
 	 * balcon[2]=previous slope of de/dt for low-pass filtering;
 	 * balcon[3]=summation for ki;
 	   balcon[4]=setpoint	*/
-	uint8_t balpid[3]={1,0,1};
+	float balpid[3]={100.0f,0.0f,0.0f};
 	/* pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;	*/
@@ -228,41 +231,43 @@ void Car::Run(){
 	Gpo::Config pinconfig;
 	pinconfig.pin = Pin::Name::kPtc0;
 	pinconfig.is_high = false;
-	Gpo pin0(pinconfig);
+	Gpo pin0_(pinconfig);
 
 	int16_t cou=0;
-	uint32_t tc = 0;
+	uint32_t tc_ = 0;
 	while(true)
 	{
-		t = System::Time();
-		if(t-pt>=1){
-/*			if(tc%500==0){
+		t_ = System::Time();
+		if(t_-pt_>=1){
+			if(tc_%500==0){
 				led.Switch();
 				led2.Switch();
 				led3.Switch();
 				led4.Switch();
-			}*/
+			}
 
 
-			if(tc%4==0){
-				pin0.Turn();
-				gyro.Update();
-				accel_ = gyro.GetAccel();
-				gyro_ = gyro.GetOmega();
-				gyro_[0] = -gyro_[0] -0.406;
+			if(tc_%5==0){
+				pin0_.Turn();
+				mpu6050_.Update();
+				accel_ = mpu6050_.GetAccel();
+				gyro_ = mpu6050_.GetOmega();
+				gyro_[0] = -gyro_[0] -0.488f;
 				acc_angle = accel_[0] * RAD2ANGLE;
-				gyro_angle += gyro_[0] * 0.004f;
+//				gyro_angle += gyro_[0] * 0.005f;
+				gyro_angle += gyro_[0] * 0.002f;
 				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
 
-				cou+=1;
-				total_gyro=total_gyro+gyro_[0];
-				avg_gyro=total_gyro/cou;
+//				cou+=1;
+//				total_gyro=total_gyro+gyro_[0];
+//				avg_gyro=total_gyro/cou;
 //				u_b=Output_b(balcon, balpid, time, real_angle);
-				m_pid_output = m_inc_pidcontroller.Calc(real_angle);
+//				m_balance_pid_output = m_inc_pidcontroller.Calc(real_angle);
 				/*spdcon0[5] += m_pid_output;
 				spdcon1[5] += m_pid_output;*/
-				power0 += m_pid_output;
-				power1 += m_pid_output;
+				m_balance_pid_output = Output_b(balcon, balpid, time, real_angle, gyro_[0]);
+				power0 = m_balance_pid_output;
+				power1 = m_balance_pid_output;
 			}
 
 
@@ -276,10 +281,12 @@ void Car::Run(){
 //							spdcon1[5]=400;	break;
 //				}
 //			}
-//			if(tc%500==0){
+			if(tc_%100==0){
 //				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
-//				printf("%.4f,%d\n",real_angle, power0);
-//			}
+//				printf("%.5f, %0.5f\n", acc_angle, real_angle);
+//				printf("%.5f,%.5f,%.5f,%.5f\n", real_angle, acc_angle, gyro_angle, gyro_[0]);
+				printf("%d,%d\n",m_encoder_count0,m_encoder_count1);
+			}
 /*			if(tc%4==0){
 				u_s0=Output_s0(spdcon0, spdpid0, time);
 				power0=power0+u_s0;
@@ -287,22 +294,36 @@ void Car::Run(){
 				power1=power1+u_s1;
 			}*/
 
-			if(tc%5==0){
-
-				power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
-				power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
-//				printf("%d,%d,%d,%d,%d,%d\n", m_encoder_count0, m_encoder_count1,
-//						power0,power1, encoder_speed0,encoder_speed1);
-
-				motor0.SetClockwise(power0 > 0); //Right Motor - true forward, false backward
-				motor1.SetClockwise(power1 < 0); //Left Motor - false forward, true backward
-				motor0.SetPower((uint16_t)abs(power0));
-				motor1.SetPower((uint16_t)abs(power1));
-
+			if(tc_%20==0){
+				m_encoder0->Update();
+				m_encoder1->Update();
+				m_encoder_count0 = -m_encoder0->GetCount();
+				m_encoder_count1 = m_encoder1->GetCount();
+				m_speed_inc_pidcontroller.OnCalc((m_encoder_count0 + m_encoder_count1)/2);
+				m_speed_output = m_speed_inc_pidcontroller.GetControlOut();
+				power0 += m_speed_output;
+				power1 += m_speed_output;
 			}
 
-			pt = t;
-			tc++;
+
+			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
+			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
+
+			if(real_angle < -5.0f || real_angle > 7.0f) {
+				power0 = power1 = 0;
+			}else{
+				power0 += 45;
+				power1 += 45;
+			}
+
+			motor0.SetClockwise(power0 < 0); //Right Motor - true forward, false backward
+			motor1.SetClockwise(power1 > 0); //Left Motor - false forward, true backward
+			motor0.SetPower((uint16_t)abs(power0));
+			motor1.SetPower((uint16_t)abs(power1));
+
+
+			pt_ = t_;
+			tc_++;
 
 		}
 	}

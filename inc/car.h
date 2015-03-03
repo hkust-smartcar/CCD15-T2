@@ -7,7 +7,7 @@
 
 #include <cstdint>
 #include <libsc/k60/dir_encoder.h>
-#include <libutil/incremental_pid_controller.h>
+#include <libutil/positional_pid_controller.h>
 
 #ifndef INC_CAR_H_
 #define INC_CAR_H_
@@ -33,7 +33,7 @@ private:
 				m_speed_output;
 
 //	libutil::IncrementalPidController<float, int16_t> m_inc_pidcontroller;
-	libutil::IncrementalPidController<int16_t, int16_t> m_speed_inc_pidcontroller;
+	libutil::PositionalPidController<int16_t, int16_t> m_speed_inc_pidcontroller;
 	int16_t m_balance_pid_output;
 
 };

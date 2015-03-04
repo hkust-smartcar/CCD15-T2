@@ -152,7 +152,7 @@ App::App():
 	 * balcon[2]=previous slope of de/dt for low-pass filtering;
 	 * balcon[3]=summation for ki;
 		   balcon[4]=setpoint	*/
-	float balpid[3]={1.6f,0.0f,0.7f};
+	float balpid[3]={1.85f,0.0f,0.5f};
 	/* pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;	*/
@@ -178,7 +178,7 @@ App::App():
 
 
 			if(tc_%5==0){
-				m_car.pin0_.Turn();
+//				m_car.pin0_.Turn();
 				m_car.m_mpu6050.Update();
 				accel_ = m_car.m_mpu6050.GetAccel();
 				gyro_ = m_car.m_mpu6050.GetOmega();
@@ -208,8 +208,8 @@ App::App():
 				//				printf("%.5f, %0.5f\n", acc_angle, real_angle);
 				//				printf("%.5f,%.5f,%.5f,%.5f\n", real_angle, acc_angle, gyro_angle, gyro_[0]);
 				//				printf("%d,%d\n",m_encoder_count0,m_encoder_count1);
-//				offset_ = m_car.m_mpu6050.GetOffset();
-//				printf("%.5f,%.5f,%.5f,%0.5f\n", real_angle, gyro_angle, acc_angle,accel_[0]);
+				offset_ = m_car.m_mpu6050.GetOffset();
+				printf("%.5f,%.5f,%.5f,%0.5f\n", real_angle, gyro_angle, acc_angle,accel_[0]);
 			}
 			/*			if(tc%4==0){
 					u_s0=Output_s0(spdcon0, spdpid0, time);
@@ -246,10 +246,10 @@ App::App():
 
 			m_car.m_motor0.SetClockwise(power0 < 0); //Right Motor - true forward, false backward
 			m_car.m_motor1.SetClockwise(power1 > 0); //Left Motor - false forward, true backward
-//			m_car.m_motor0.SetPower((uint16_t)abs(power0+60));
-//			m_car.m_motor1.SetPower((uint16_t)abs(power1+60));
-			m_car.m_motor0.SetPower((uint16_t)abs(1000));
-			m_car.m_motor1.SetPower((uint16_t)abs(1000));
+			m_car.m_motor0.SetPower((uint16_t)abs(power0+60));
+			m_car.m_motor1.SetPower((uint16_t)abs(power1+60));
+//			m_car.m_motor0.SetPower((uint16_t)abs(1000));
+//			m_car.m_motor1.SetPower((uint16_t)abs(1000));
 
 
 			pt_ = t_;

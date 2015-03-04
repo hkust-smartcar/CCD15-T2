@@ -33,7 +33,7 @@ Mpu6050::Config GetMpu6050Config(){
 	Mpu6050::Config gyro_config;
 	gyro_config.accel_range = Mpu6050::Config::Range::kSmall;
 	gyro_config.gyro_range = Mpu6050::Config::Range::kMid;
-	gyro_config.cal_drift = true;
+//	gyro_config.cal_drift = true;
 	return gyro_config;
 
 }
@@ -52,7 +52,7 @@ DirEncoder::Config GetDirEncoderConfig(int id){
 
 DirMotor::Config GetDirMotorConfig(int id){
 	DirMotor::Config config;
-	config.id = 1;
+	config.id = id;
 	return config;
 }
 
@@ -77,7 +77,10 @@ Car::Car():
 
 {
 	libutil::InitDefaultFwriteHandler(&m_com);
-
+	m_motor0.SetClockwise(true);
+	m_motor0.SetPower(800);
+	m_motor1.SetClockwise(true);
+	m_motor1.SetPower(800);
 //	Mma8451q::Config accel_config;
 //	accel_config.id = 0;
 //	accel_config.sensitivity = Mma8451q::Config::Sensitivity::kLow;

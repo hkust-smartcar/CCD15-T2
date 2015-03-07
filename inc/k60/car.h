@@ -7,14 +7,16 @@
 
 #include <cstdint>
 #include <libbase/k60/mcg.h>
-#include <libsc/k60/dir_motor.h>
-#include <libsc/k60/dir_encoder.h>
+#include <libsc/dir_motor.h>
+#include <libsc/dir_encoder.h>
 #include <libsc/k60/mpu6050.h>
 #include <libsc/k60/mma8451q.h>
 #include <libbase/k60/gpio.h>
 #include <libsc/k60/jy_mcu_bt_106.h>
 #include <libsc/k60/led.h>
 #include <libsc/k60/system.h>
+#include <libsc/k60/linear_ccd.h>
+#include <libsc/k60/st7735r.h>
 #include <libutil/positional_pid_controller.h>
 
 
@@ -24,6 +26,7 @@
 
 #define RAD2ANGLE 57.296f
 
+using namespace libsc;
 using namespace libsc::k60;
 using namespace libbase::k60;
 
@@ -36,14 +39,16 @@ public:
 			m_speed_output;
 
 	Mpu6050 m_mpu6050;
-	Led m_led, m_led2, m_led3, m_led4;
+	libsc::Led m_led, m_led2, m_led3, m_led4;
 	JyMcuBt106 m_com;
-	DirMotor m_motor0, m_motor1;
-	Gpo pin0_;
+	DirMotor m_motor0;
+	DirMotor m_motor1;
+	LinearCcd m_ccd;
+	St7735r m_lcd;
 
 
-	DirEncoder m_encoder0;
-	DirEncoder m_encoder1;
+//	DirEncoder m_encoder0;
+//	DirEncoder m_encoder1;
 
 
 private:

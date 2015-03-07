@@ -6,13 +6,14 @@
  */
 #include "app.h"
 #include <libsc/k60/system.h>
-#include <libsc/k60/sys_tick_delay.h>
+#include <libsc/sys_tick_delay.h>
 #include <cmath>
 #include "kalman.h"
 #include "k60/car.h"
 
 using namespace libsc::k60;
 using namespace libbase::k60;
+/*
 
 int16_t App::Output_s0(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	uint8_t period;
@@ -70,6 +71,7 @@ int16_t App::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 	spdcon[2]=temp;
 	return output;
 }
+*/
 
 int16_t App::Output_b(float balcon[5], float balpid[3], uint16_t time[4], float real_angle, float gyro_angle){
 	uint8_t period;
@@ -105,16 +107,11 @@ App::App():
 	float real_angle = 0, acc_angle = 0, gyro_angle = 0, avg_gyro = 0, total_gyro=0;
 
 
-	//	KF m_gyro_kf[3];
-	//	KF m_acc_kf;
-
-	//	float value[2] = {0.035f, 0.705495694f};
 	double value[2] = {0.001, 0.2600496668};
 	m_car.m_mpu6050.Update();
 	accel_ = m_car.m_mpu6050.GetAccel();
-	acc_angle = accel_[0] * RAD2ANGLE;
+	acc_angle = accel_[2] * RAD2ANGLE;
 	gyro_angle = acc_angle;
-	//	kalman_filter_init(&m_gyro_kf[0], 0.001f, value, acc_angle, 1);
 	Kalman kf_filter(0.001, value, (double)acc_angle, 1);
 
 	Timer::TimerInt t_ = System::Time(), pt_ = t_;
@@ -124,51 +121,96 @@ App::App():
 	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0;
 
 	int16_t spdcon0[6]={0,0,0,0,0,0};
-	/* spdcon[0]=error(k);
+	 /*spdcon[0]=error(k);
 	 * spdcon[1]=error(k-1);
 	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
 	 * spdcon[3]=summation for ki;
 	 * spdcon[4]=previous setpoint for reset summation time;
-	 * spdcon[5]=setpoint (rotation per sec *100);	*/
+	 * spdcon[5]=setpoint (rotation per sec *100);
+	 */
 	uint8_t spdpid0[3]={3,5,30};
-	/* pid[0]=kp;
-	 * pid[1]=ki;
-	 * pid[2]=kd;	*/
+	 /*pid[0]=kp;
+	  pid[1]=ki;
+	 * pid[2]=kd;
+	 */
 	int16_t spdcon1[6]={0,0,0,0,0,0};
-	/* spdcon[0]=error(k);
-	 * spdcon[1]=error(k-1);
+	 /*spdcon[0]=error(k);
+	 /* spdcon[1]=error(k-1);
 	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
 	 * spdcon[3]=summation for ki;
 	 * spdcon[4]=previous setpoint for reset summation time;
-	 * spdcon[5]=setpoint (rotation per sec *100);	*/
+	 * spdcon[5]=setpoint (rotation per sec *100);
+	 */
 	uint8_t spdpid1[3]={3,5,30};
-	/* pid[0]=kp;
+	 /*pid[0]=kp;
 	 * pid[1]=ki;
-	 * pid[2]=kd;	*/
+	 * pid[2]=kd;
+	 */
 
 	float balcon[5]={0,0,0,0,-25.5f};
-	/* balcon[0]=error(k);
+	 /*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
 	 * balcon[2]=previous slope of de/dt for low-pass filtering;
 	 * balcon[3]=summation for ki;
-		   balcon[4]=setpoint	*/
+	 *  balcon[4]=setpoint
+	*/
 	float balpid[3]={1.85f,0.0f,0.5f};
-	/* pid[0]=kp;
+	 /*pid[0]=kp;
 	 * pid[1]=ki;
-	 * pid[2]=kd;	*/
+	 * pid[2]=kd;
+	 */
 
 	uint16_t time[4]={0,0,0,0};
 	/* time[0] for spd period;
 	 * time[1] for spd period;
 	 * time[2] for bal period;
-	 * time[3] for bal period;	*/
-
+	 * time[3] for bal period;
+	*/
 	uint32_t tc_ = 0;
 	std::array<float, 3> offset_;
+	std::array<uint16_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
+	int y = 0;
+	double temp;
 	while(true)
 	{
 		t_ = System::Time();
 		if(t_-pt_>=1){
+			if(tc_%400==0){
+				m_car.m_ccd.StartSample();
+				while(!m_car.m_ccd.SampleProcess()){}
+				ccd_data_ = m_car.m_ccd.GetData();
+				uint16_t avg = 0;
+				uint32_t sum = 0;
+				for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
+					sum += (uint32_t)ccd_data_[i];
+				}
+				avg = (uint16_t) (sum / libsc::k60::LinearCcd::kSensorW);
+				libsc::k60::St7735r::Rect rect_;
+
+				uint16_t color = 0;
+
+				for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
+					rect_.x = i;
+					rect_.y = y;
+					rect_.w = 1;
+					rect_.h = 1;
+					m_car.m_lcd.SetRegion(rect_);
+					if(ccd_data_[i] >= avg){
+							color = ~0;
+					}else{
+						color = 0;
+					}
+					if(ccd_data_[i] < 8000){
+						color = 0;
+					}else if(ccd_data_[i] > 57000){
+						color = ~0;
+					}
+					m_car.m_lcd.FillColor(color);
+				}
+				y++;
+				y=y%160;
+			}
+
 			if(tc_%500==0){
 				m_car.m_led.Switch();
 				m_car.m_led2.Switch();
@@ -178,27 +220,21 @@ App::App():
 
 
 			if(tc_%5==0){
-//				m_car.pin0_.Turn();
 				m_car.m_mpu6050.Update();
 				accel_ = m_car.m_mpu6050.GetAccel();
 				gyro_ = m_car.m_mpu6050.GetOmega();
-				gyro_[0] = -gyro_[0];
-				//				gyro_[0] = -gyro_[0] -0.488f + 0.0201001387f;
-				acc_angle = accel_[0] * RAD2ANGLE;
-				gyro_angle += gyro_[0] * 0.007f;
-				//				gyro_angle += gyro_[0] * 0.0025f;
-				//				kalman_filtering(&m_gyro_kf[0], &real_angle, &gyro_angle, &acc_angle, 1);
-				double temp;
-				kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);
-				real_angle = temp;
+//				gyro_[1] = -gyro_[1];
+				acc_angle = accel_[2] * RAD2ANGLE;
+				gyro_angle += gyro_[1] * 0.007f;
+
+				/*kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);
+				real_angle = (float)temp;*/
 				//				cou+=1;
 				//				total_gyro=total_gyro+gyro_[0];
 				//				avg_gyro=total_gyro/cou;
 				//				u_b=Output_b(balcon, balpid, time, real_angle);
 				//				m_balance_pid_output = m_inc_pidcontroller.Calc(real_angle);
-				/*spdcon0[5] += m_pid_output;
-					spdcon1[5] += m_pid_output;*/
-				m_balance_pid_output = Output_b(balcon, balpid, time, real_angle, gyro_[0]);
+				m_balance_pid_output = Output_b(balcon, balpid, time, real_angle, gyro_[1]);
 				power0 = m_balance_pid_output;
 				power1 = m_balance_pid_output;
 			}
@@ -208,23 +244,23 @@ App::App():
 				//				printf("%.5f, %0.5f\n", acc_angle, real_angle);
 				//				printf("%.5f,%.5f,%.5f,%.5f\n", real_angle, acc_angle, gyro_angle, gyro_[0]);
 				//				printf("%d,%d\n",m_encoder_count0,m_encoder_count1);
-				offset_ = m_car.m_mpu6050.GetOffset();
-				printf("%.5f,%.5f,%.5f,%0.5f\n", real_angle, gyro_angle, acc_angle,accel_[0]);
+//				offset_ = m_car.m_mpu6050.GetOffset();
+				printf("%.2f,%.2f\n", gyro_angle, acc_angle);
 			}
-			/*			if(tc%4==0){
-					u_s0=Output_s0(spdcon0, spdpid0, time);
-					power0=power0+u_s0;
-					u_s1=Output_s1(spdcon1, spdpid1, time);
-					power1=power1+u_s1;
-				}*/
+			/*if(tc_%4==0){
+				u_s0=Output_s0(spdcon0, spdpid0, time);
+				power0=power0+u_s0;
+				u_s1=Output_s1(spdcon1, spdpid1, time);
+				power1=power1+u_s1;
+			}*/
 
 			if(tc_%100==0){
-				m_car.m_encoder0.Update();
-				m_car.m_encoder1.Update();
-				m_car.m_encoder_count0 += -m_car.m_encoder0.GetCount();
-				m_car.m_encoder_count1 += m_car.m_encoder1.GetCount();
-				m_speed_inc_pidcontroller.OnCalc((m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
-				m_car.m_speed_output = m_speed_inc_pidcontroller.GetControlOut();
+//				m_car.m_encoder0.Update();
+//				m_car.m_encoder1.Update();
+//				m_car.m_encoder_count0 += -m_car.m_encoder0.GetCount();
+//				m_car.m_encoder_count1 += m_car.m_encoder1.GetCount();
+//				m_speed_inc_pidcontroller.OnCalc((m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
+//				m_car.m_speed_output = m_speed_inc_pidcontroller.GetControlOut();
 				//				power0 += m_speed_output;
 				//				power1 += m_speed_output;
 			}
@@ -233,23 +269,14 @@ App::App():
 			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
 
-			//			if(real_angle < 15.0f || real_angle > 45.0f) {
-			//				power0 = power1 = 0;
-			//			}else{
-			if(power0<0)
-				power0 -= 40;
-			else power0 += 40;
-			if(power1<0)
-				power1 -= 40;
-			else power1 += 40;
-			//			}
+//			if(real_angle < 15.0f || real_angle > 45.0f) {
+//				power0 = power1 = 0;
+//			}
 
 			m_car.m_motor0.SetClockwise(power0 < 0); //Right Motor - true forward, false backward
 			m_car.m_motor1.SetClockwise(power1 > 0); //Left Motor - false forward, true backward
-			m_car.m_motor0.SetPower((uint16_t)abs(power0+60));
-			m_car.m_motor1.SetPower((uint16_t)abs(power1+60));
-//			m_car.m_motor0.SetPower((uint16_t)abs(1000));
-//			m_car.m_motor1.SetPower((uint16_t)abs(1000));
+			m_car.m_motor0.SetPower((uint16_t)abs(power0+40));
+			m_car.m_motor1.SetPower((uint16_t)abs(power1+40));
 
 
 			pt_ = t_;

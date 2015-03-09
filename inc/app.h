@@ -21,6 +21,7 @@ public:
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_b(float balcon[5], float balpid[3], uint16_t time[2], float real_angle, float gyro_angle);
+	Update_edge(uint8_t ccd_data_, uint8_t edge);
 private:
 	Car m_car;
 //	libutil::IncrementalPidController<float, int16_t> m_inc_pidcontroller;

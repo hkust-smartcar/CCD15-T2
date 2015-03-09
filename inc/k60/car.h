@@ -38,6 +38,8 @@ public:
 			m_encoder_speed_c, m_encoder_speed0, m_encoder_speed1,
 			m_speed_output;
 
+	uint16_t edge[2]={0,libsc::k60::LinearCcd::kSensorW};
+
 	Mpu6050 m_mpu6050;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	JyMcuBt106 m_com;

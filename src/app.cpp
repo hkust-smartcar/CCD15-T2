@@ -97,6 +97,33 @@ int16_t App::Output_b(float balcon[5], float balpid[3], uint16_t time[4], float 
 	return output;
 }
 
+Update_edge(uint8_t ccd_data_, uint8_t edge){
+	if(edge[0]==0){
+		for (uint8_t i=0; ccd_data_[i]<57000, i++){
+			edge[0]=i;
+		}
+	}
+	if(edge[1]==libsc::k60::LinearCcd::kSensorW){
+		for (uint8_t i=libsc::k60::LinearCcd::kSensorW; ccd_data_[i]<57000, i--){
+			edge[1]=i;
+		}
+	}
+	while (ccd_data_[edge[0]]<57000){
+		edge[0]+=1;
+	}
+	while (ccd_data_[edge[0]]>57000){
+		edge[0]-=1;
+	}
+	while (ccd_data_[edge[1]]<57000){
+		edge[1]-=1;
+	}
+	while (ccd_data_[edge[1]]>57000){
+		edge[1]+=1;
+	}
+	edge[0] = libutil::Clamp<int8_t>(0, edge[0], libsc::k60::LinearCcd::kSensorW);
+	edge[1] = libutil::Clamp<int8_t>(0, edge[1], libsc::k60::LinearCcd::kSensorW);
+}
+
 App::App():
 	m_car(),
 //	m_inc_pidcontroller(97.0f, 1.0f, 0.0f, 0.0f),
@@ -168,7 +195,7 @@ App::App():
 	*/
 	uint32_t tc_ = 0;
 	std::array<float, 3> offset_;
-	std::array<uint16_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
+	std::array<uint8_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
 	int y = 0;
 	double temp;
 	while(true)
@@ -263,6 +290,23 @@ App::App():
 //				m_car.m_speed_output = m_speed_inc_pidcontroller.GetControlOut();
 				//				power0 += m_speed_output;
 				//				power1 += m_speed_output;
+			}
+
+			if(tc_%50==0){
+				ccd_data_=my_car.m_ccd.GetData();
+				Update_edge(ccd_data_, edge);
+				if (edge[0]+edge[i]>libsc::k60::LinearCcd::kSensorW){
+					power0*=1.4;
+					power1*=0.75;
+				}
+				if (edge[0]+edge[i]<libsc::k60::LinearCcd::kSensorW){
+					power0*=0.75;
+					power1*=1.4;
+				}
+				if (edge[0]+edge[i]=libsc::k60::LinearCcd::kSensorW){
+					power0*=1.1;
+					power1*=1.1;
+				}
 			}
 
 

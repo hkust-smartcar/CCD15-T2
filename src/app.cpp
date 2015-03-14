@@ -97,14 +97,14 @@ int16_t App::Output_b(float balcon[5], float balpid[3], uint16_t time[4], float 
 	return output;
 }
 
-Update_edge(uint8_t ccd_data_, uint8_t edge){
+void Update_edge(uint8_t* ccd_data_, uint8_t* edge){
 	if(edge[0]==0){
-		for (uint8_t i=0; ccd_data_[i]<57000, i++){
+		for (uint8_t i=0; ccd_data_[i]<57000; i++){
 			edge[0]=i;
 		}
 	}
 	if(edge[1]==libsc::k60::LinearCcd::kSensorW){
-		for (uint8_t i=libsc::k60::LinearCcd::kSensorW; ccd_data_[i]<57000, i--){
+		for (uint8_t i=libsc::k60::LinearCcd::kSensorW; ccd_data_[i]<57000; i--){
 			edge[1]=i;
 		}
 	}
@@ -195,8 +195,9 @@ App::App():
 	*/
 	uint32_t tc_ = 0;
 	std::array<float, 3> offset_;
-	std::array<uint8_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
+	std::array<uint16_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
 	int y = 0;
+	Timer::TimerInt gyro_t = 0, gyro_pt = 0;
 	double temp;
 	while(true)
 	{
@@ -204,38 +205,40 @@ App::App():
 		if(t_-pt_>=1){
 			if(tc_%400==0){
 				m_car.m_ccd.StartSample();
-				while(!m_car.m_ccd.SampleProcess()){}
-				ccd_data_ = m_car.m_ccd.GetData();
-				uint16_t avg = 0;
-				uint32_t sum = 0;
-				for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
-					sum += (uint32_t)ccd_data_[i];
-				}
-				avg = (uint16_t) (sum / libsc::k60::LinearCcd::kSensorW);
-				libsc::k60::St7735r::Rect rect_;
+				m_car.m_ccd.SampleProcess();
+				if(m_car.m_ccd.IsImageReady()){
+					ccd_data_ = m_car.m_ccd.GetData();
+					uint16_t avg = 0;
+					uint32_t sum = 0;
+					for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
+						sum += (uint32_t)ccd_data_[i];
+					}
+					avg = (uint16_t) (sum / libsc::k60::LinearCcd::kSensorW);
 
-				uint16_t color = 0;
+					/*libsc::k60::St7735r::Rect rect_;
+					uint16_t color = 0;
 
-				for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
-					rect_.x = i;
-					rect_.y = y;
-					rect_.w = 1;
-					rect_.h = 1;
-					m_car.m_lcd.SetRegion(rect_);
-					if(ccd_data_[i] >= avg){
+					for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
+						rect_.x = i;
+						rect_.y = y;
+						rect_.w = 1;
+						rect_.h = 1;
+						m_car.m_lcd.SetRegion(rect_);
+						if(ccd_data_[i] >= avg){
+								color = ~0;
+						}else{
+							color = 0;
+						}
+						if(ccd_data_[i] < 8000){
+							color = 0;
+						}else if(ccd_data_[i] > 57000){
 							color = ~0;
-					}else{
-						color = 0;
+						}
+						m_car.m_lcd.FillColor(color);
 					}
-					if(ccd_data_[i] < 8000){
-						color = 0;
-					}else if(ccd_data_[i] > 57000){
-						color = ~0;
-					}
-					m_car.m_lcd.FillColor(color);
+					y++;
+					y=y%160;*/
 				}
-				y++;
-				y=y%160;
 			}
 
 			if(tc_%500==0){
@@ -247,13 +250,14 @@ App::App():
 
 
 			if(tc_%5==0){
+				gyro_t = System::Time();
 				m_car.m_mpu6050.Update();
 				accel_ = m_car.m_mpu6050.GetAccel();
 				gyro_ = m_car.m_mpu6050.GetOmega();
-//				gyro_[1] = -gyro_[1];
+				gyro_[1] = -gyro_[1];
 				acc_angle = accel_[2] * RAD2ANGLE;
-				gyro_angle += gyro_[1] * 0.007f;
-
+				gyro_angle += gyro_[1] * ((float)(gyro_t - gyro_pt)/1000.0f);
+				gyro_pt = gyro_t;
 				/*kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);
 				real_angle = (float)temp;*/
 				//				cou+=1;
@@ -293,20 +297,20 @@ App::App():
 			}
 
 			if(tc_%50==0){
-				ccd_data_=my_car.m_ccd.GetData();
-				Update_edge(ccd_data_, edge);
-				if (edge[0]+edge[i]>libsc::k60::LinearCcd::kSensorW){
-					power0*=1.4;
-					power1*=0.75;
-				}
-				if (edge[0]+edge[i]<libsc::k60::LinearCcd::kSensorW){
-					power0*=0.75;
-					power1*=1.4;
-				}
-				if (edge[0]+edge[i]=libsc::k60::LinearCcd::kSensorW){
-					power0*=1.1;
-					power1*=1.1;
-				}
+//				ccd_data_=my_car.m_ccd.GetData();
+//				Update_edge(ccd_data_, edge);
+//				if (edge[0]+edge[i]>libsc::k60::LinearCcd::kSensorW){
+//					power0*=1.4;
+//					power1*=0.75;
+//				}
+//				if (edge[0]+edge[i]<libsc::k60::LinearCcd::kSensorW){
+//					power0*=0.75;
+//					power1*=1.4;
+//				}
+//				if (edge[0]+edge[i]=libsc::k60::LinearCcd::kSensorW){
+//					power0*=1.1;
+//					power1*=1.1;
+//				}
 			}
 
 

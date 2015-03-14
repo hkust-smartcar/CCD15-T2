@@ -73,27 +73,45 @@ int16_t App::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
 }
 */
 
-int16_t App::Output_b(float balcon[5], float balpid[3], uint16_t time[4], float real_angle, float gyro_angle){
+int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float gyro_angle){
 	uint8_t period;
 	int16_t output;
+	static int16_t total_output = 0;
 	float temp;
 	if (time[2]==0){
 		time[2]=System::Time()-10;
-		balcon[4]=real_angle-25.0f;
+//		balcon[4]=real_angle-25.0f;
 		return 0;
 	}
 
-	balcon[1]=balcon[0];
+
 	period=System::Time()-time[2];
 	time[2]=System::Time();
-	balcon[0]=balcon[4]-real_angle;	// 512*104/44=13312/11
+	balcon[0]=(balcon[4]+balcon[5])-real_angle;	// 512*104/44=13312/11
 /*	temp=(balpid[0]-balpid[1])/period;
 	if (abs(balcon[0])<10){	//prevent overshooting in steady state
 		balcon[3]=balcon[3]+(balcon[0]*period/100);
 	}*/
 //	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]*time[2]+balpid[2]*(temp+balcon[2])*10;
-	output=(int16_t)(balpid[0]*balcon[0]-balpid[2]*(balcon[0] - balcon[1])/period/*gyro_angle*/);
-//	balcon[2]=temp;
+//	output=(int16_t)(balpid[0]*(balcon[0] - balcon[1]));
+	output=(int16_t)(balpid[0]*balcon[0] + balpid[1]*gyro_angle);
+	balcon[1]=balcon[0];
+	//	balcon[2]=temp;
+	return output;
+}
+
+float App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder){
+	float output;
+	static int16_t total_encoder = 0;
+	Timer::TimerInt t = System::Time();
+	static Timer::TimerInt pt = System::Time();
+
+
+	carspeedcon[0]=carspeedcon[4]-encoder;
+	total_encoder+=carspeedcon[0];
+
+	output=(float)(carspeedpid[0]*carspeedcon[0] + carspeedpid[1]* total_encoder * (t-pt)/1000.0f);
+	pt = t;
 	return output;
 }
 
@@ -126,8 +144,6 @@ void Update_edge(uint8_t* ccd_data_, uint8_t* edge){
 
 App::App():
 	m_car(),
-//	m_inc_pidcontroller(97.0f, 1.0f, 0.0f, 0.0f),
-	m_speed_inc_pidcontroller(0.0f, 1.0f, 0.4f, 0.0f),
 	m_balance_pid_output(0)
 {
 	std::array<float, 3> accel_, gyro_;
@@ -147,52 +163,72 @@ App::App():
 
 	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0;
 
-	int16_t spdcon0[6]={0,0,0,0,0,0};
-	 /*spdcon[0]=error(k);
+	/*spdcon[0]=error(k);
 	 * spdcon[1]=error(k-1);
 	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
 	 * spdcon[3]=summation for ki;
 	 * spdcon[4]=previous setpoint for reset summation time;
 	 * spdcon[5]=setpoint (rotation per sec *100);
 	 */
-	uint8_t spdpid0[3]={3,5,30};
-	 /*pid[0]=kp;
-	  pid[1]=ki;
+	int16_t spdcon0[6]={0,0,0,0,0,0};
+
+	/* pid[0]=kp;
+	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	int16_t spdcon1[6]={0,0,0,0,0,0};
-	 /*spdcon[0]=error(k);
-	 /* spdcon[1]=error(k-1);
+	uint8_t spdpid0[3]={3,5,30};
+
+	/*spdcon[0]=error(k);
+	 * spdcon[1]=error(k-1);
 	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
 	 * spdcon[3]=summation for ki;
 	 * spdcon[4]=previous setpoint for reset summation time;
 	 * spdcon[5]=setpoint (rotation per sec *100);
 	 */
-	uint8_t spdpid1[3]={3,5,30};
-	 /*pid[0]=kp;
+	int16_t spdcon1[6]={0,0,0,0,0,0};
+
+	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
+	uint8_t spdpid1[3]={3,5,30};
 
-	float balcon[5]={0,0,0,0,-25.5f};
-	 /*balcon[0]=error(k);
+	/*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
 	 * balcon[2]=previous slope of de/dt for low-pass filtering;
 	 * balcon[3]=summation for ki;
 	 *  balcon[4]=setpoint
+	 *  balcon[5]=setpoint offset
 	*/
-	float balpid[3]={1.85f,0.0f,0.5f};
-	 /*pid[0]=kp;
+	float balcon[6]={0,0,0,0,10.0f,0};
+
+	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
+	float balpid[3]={29.0f,0.0f,4.0f};
 
-	uint16_t time[4]={0,0,0,0};
+	/*carspeedcon[0]=error(k);
+	 * carspeedcon[1]=error(k-1);
+	 * carspeedcon[2]=previous slope of de/dt for low-pass filtering;
+	 * carspeedcon[3]=summation for ki;
+	 * carspeedcon[4]=setpoint;
+	*/
+	int16_t carspeedcon[5]={0,0,0,0,0};
+
+	/*carspeedpid[0]=kp;
+	* carspeedpid[1]=ki;
+	* carspeedpid[2]=kd;
+	*/
+	float carspeedpid[3]={0.003f,0.004f,0.0f};
+
 	/* time[0] for spd period;
 	 * time[1] for spd period;
 	 * time[2] for bal period;
 	 * time[3] for bal period;
 	*/
+	uint16_t time[4]={0,0,0,0};
+
 	uint32_t tc_ = 0;
 	std::array<float, 3> offset_;
 	std::array<uint16_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
@@ -203,7 +239,7 @@ App::App():
 	{
 		t_ = System::Time();
 		if(t_-pt_>=1){
-			if(tc_%400==0){
+			if(tc_%100==0){
 				m_car.m_ccd.StartSample();
 				m_car.m_ccd.SampleProcess();
 				if(m_car.m_ccd.IsImageReady()){
@@ -215,7 +251,7 @@ App::App():
 					}
 					avg = (uint16_t) (sum / libsc::k60::LinearCcd::kSensorW);
 
-					/*libsc::k60::St7735r::Rect rect_;
+					libsc::k60::St7735r::Rect rect_;
 					uint16_t color = 0;
 
 					for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
@@ -237,7 +273,7 @@ App::App():
 						m_car.m_lcd.FillColor(color);
 					}
 					y++;
-					y=y%160;*/
+					y=y%160;
 				}
 			}
 
@@ -258,25 +294,25 @@ App::App():
 				acc_angle = accel_[2] * RAD2ANGLE;
 				gyro_angle += gyro_[1] * ((float)(gyro_t - gyro_pt)/1000.0f);
 				gyro_pt = gyro_t;
-				/*kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);
-				real_angle = (float)temp;*/
+				kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);
+				real_angle = (float)temp;
 				//				cou+=1;
 				//				total_gyro=total_gyro+gyro_[0];
 				//				avg_gyro=total_gyro/cou;
 				//				u_b=Output_b(balcon, balpid, time, real_angle);
-				//				m_balance_pid_output = m_inc_pidcontroller.Calc(real_angle);
-				m_balance_pid_output = Output_b(balcon, balpid, time, real_angle, gyro_[1]);
+//				m_balance_pid_output = m_inc_pidcontroller.Calc(real_angle);
+				m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, gyro_[1]);
 				power0 = m_balance_pid_output;
 				power1 = m_balance_pid_output;
 			}
 
-			if(tc_%100==0){
+			if(tc_%50==0){
 				//				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
 				//				printf("%.5f, %0.5f\n", acc_angle, real_angle);
 				//				printf("%.5f,%.5f,%.5f,%.5f\n", real_angle, acc_angle, gyro_angle, gyro_[0]);
 				//				printf("%d,%d\n",m_encoder_count0,m_encoder_count1);
 //				offset_ = m_car.m_mpu6050.GetOffset();
-				printf("%.2f,%.2f\n", gyro_angle, acc_angle);
+				printf("%.4f,%d,%d,%.4f\n", real_angle, power0, m_balance_pid_output, balcon[5]);
 			}
 			/*if(tc_%4==0){
 				u_s0=Output_s0(spdcon0, spdpid0, time);
@@ -285,15 +321,13 @@ App::App():
 				power1=power1+u_s1;
 			}*/
 
-			if(tc_%100==0){
-//				m_car.m_encoder0.Update();
-//				m_car.m_encoder1.Update();
-//				m_car.m_encoder_count0 += -m_car.m_encoder0.GetCount();
-//				m_car.m_encoder_count1 += m_car.m_encoder1.GetCount();
-//				m_speed_inc_pidcontroller.OnCalc((m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
-//				m_car.m_speed_output = m_speed_inc_pidcontroller.GetControlOut();
-				//				power0 += m_speed_output;
-				//				power1 += m_speed_output;
+			if(tc_%50==0){
+				m_car.m_encoder0.Update();
+				m_car.m_encoder1.Update();
+				m_car.m_encoder_count0 = -m_car.m_encoder0.GetCount(); //right wheel
+				m_car.m_encoder_count1 = m_car.m_encoder1.GetCount(); //left wheel
+//				balcon[5] = -(float)(m_car.m_encoder_count0 + m_car.m_encoder_count1)/2.0f/500.0f;
+				balcon[5] = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
 			}
 
 			if(tc_%50==0){
@@ -317,9 +351,8 @@ App::App():
 			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
 
-//			if(real_angle < 15.0f || real_angle > 45.0f) {
-//				power0 = power1 = 0;
-//			}
+			if(abs(power0) >= 600) power0 = 0;
+			if(abs(power1) >= 600) power1 = 0;
 
 			m_car.m_motor0.SetClockwise(power0 < 0); //Right Motor - true forward, false backward
 			m_car.m_motor1.SetClockwise(power1 > 0); //Left Motor - false forward, true backward

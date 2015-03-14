@@ -10,26 +10,19 @@
 #include "kl26/car.h"
 #endif
 
-#include <libutil/positional_pid_controller.h>
-
-#ifndef INC_APP_H_
-#define INC_APP_H_
+#pragma once
 
 class App{
 public:
 	App();
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
-	int16_t Output_b(float balcon[5], float balpid[3], uint16_t time[2], float real_angle, float gyro_angle);
+	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float gyro_angle);
+	float Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
 	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 private:
 	Car m_car;
-//	libutil::IncrementalPidController<float, int16_t> m_inc_pidcontroller;
-	libutil::PositionalPidController<int16_t, int16_t> m_speed_inc_pidcontroller;
 	int16_t m_balance_pid_output;
 
 };
 
-
-
-#endif /* INC_APP_H_ */

@@ -49,8 +49,8 @@ public:
 	St7735r m_lcd;
 
 
-//	DirEncoder m_encoder0;
-//	DirEncoder m_encoder1;
+	DirEncoder m_encoder0;
+	DirEncoder m_encoder1;
 
 
 private:

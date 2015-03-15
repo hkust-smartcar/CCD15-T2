@@ -88,15 +88,15 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 	period=System::Time()-time[2];
 	time[2]=System::Time();
 	balcon[0]=(balcon[4]+balcon[5])-real_angle;	// 512*104/44=13312/11
-/*	temp=(balpid[0]-balpid[1])/period;
-	if (abs(balcon[0])<10){	//prevent overshooting in steady state
-		balcon[3]=balcon[3]+(balcon[0]*period/100);
-	}*/
+	temp=(balpid[0]-balpid[1])/period;
+//	if (abs(balcon[0])<10){	//prevent overshooting in steady state
+//		balcon[3]=balcon[3]+(balcon[0]*period/100);
+//	}
 //	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]*time[2]+balpid[2]*(temp+balcon[2])*10;
 //	output=(int16_t)(balpid[0]*(balcon[0] - balcon[1]));
-	output=(int16_t)(balpid[0]*balcon[0] + balpid[1]*gyro_angle);
+	output=(int16_t)(balpid[0]*balcon[0] + balpid[2]*(temp+balcon[2])/2);
 	balcon[1]=balcon[0];
-	//	balcon[2]=temp;
+	balcon[2]=temp;
 	return output;
 }
 
@@ -147,7 +147,7 @@ App::App():
 	m_balance_pid_output(0)
 {
 	std::array<float, 3> accel_, gyro_;
-	float real_angle = 0, acc_angle = 0, gyro_angle = 0, avg_gyro = 0, total_gyro=0;
+	float real_angle = 0, acc_angle = 0, gyro_angle = 0, prev_gyro_angle = 0, avg_gyro = 0, total_gyro=0;
 
 
 	double value[2] = {0.001, 0.2600496668};
@@ -200,13 +200,13 @@ App::App():
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[6]={0,0,0,0,14.0f,0};
+	float balcon[6]={0,0,0,0,12.5f,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	float balpid[3]={100.0f,0.0f,100.0f};
+	float balpid[3]={30.0f,0.0f,20.0f};
 
 	/*carspeedcon[0]=error(k);
 	 * carspeedcon[1]=error(k-1);
@@ -220,7 +220,7 @@ App::App():
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpid[3]={0.003f,0.004f,0.0f};
+	float carspeedpid[3]={0.0001f,0.000f,0.0f};
 
 	/* time[0] for spd period;
 	 * time[1] for spd period;
@@ -356,16 +356,19 @@ App::App():
 			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
 
-			if(abs(power0)>0) power0+=90;
-			if(abs(power1)>0) power1+=90;
+/*			if(power0>0) power0+=90;
+			if(power1>0) power1+=90;
+
+			if(power0<0) power0-=90;
+			if(power1<0) power1-=90;*/
 
 			if(abs(power0) >= 950) power0 = 0;
 			if(abs(power1) >= 950) power1 = 0;
 
 			m_car.m_motor0.SetClockwise(power0 < 0); //Right Motor - true forward, false backward
 			m_car.m_motor1.SetClockwise(power1 > 0); //Left Motor - false forward, true backward
-			m_car.m_motor0.SetPower((uint16_t)abs(power0));
-			m_car.m_motor1.SetPower((uint16_t)abs(power1));
+			m_car.m_motor0.SetPower((uint16_t)abs(power0)+80);
+			m_car.m_motor1.SetPower((uint16_t)abs(power1)+80);
 
 
 			pt_ = t_;

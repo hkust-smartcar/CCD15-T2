@@ -200,13 +200,13 @@ App::App():
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[6]={0,0,0,0,10.0f,0};
+	float balcon[6]={0,0,0,0,14.0f,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	float balpid[3]={29.0f,0.0f,4.0f};
+	float balpid[3]={100.0f,0.0f,100.0f};
 
 	/*carspeedcon[0]=error(k);
 	 * carspeedcon[1]=error(k-1);
@@ -332,7 +332,7 @@ App::App():
 				m_car.m_encoder_count0 = -m_car.m_encoder0.GetCount(); //right wheel
 				m_car.m_encoder_count1 = m_car.m_encoder1.GetCount(); //left wheel
 //				balcon[5] = -(float)(m_car.m_encoder_count0 + m_car.m_encoder_count1)/2.0f/500.0f;
-				balcon[5] = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
+//				balcon[5] = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
 			}
 
 			if(tc_%50==0){
@@ -356,13 +356,16 @@ App::App():
 			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);
 
-			if(abs(power0) >= 600) power0 = 0;
-			if(abs(power1) >= 600) power1 = 0;
+			if(abs(power0)>0) power0+=90;
+			if(abs(power1)>0) power1+=90;
+
+			if(abs(power0) >= 950) power0 = 0;
+			if(abs(power1) >= 950) power1 = 0;
 
 			m_car.m_motor0.SetClockwise(power0 < 0); //Right Motor - true forward, false backward
 			m_car.m_motor1.SetClockwise(power1 > 0); //Left Motor - false forward, true backward
-			m_car.m_motor0.SetPower((uint16_t)abs(power0+40));
-			m_car.m_motor1.SetPower((uint16_t)abs(power1+40));
+			m_car.m_motor0.SetPower((uint16_t)abs(power0));
+			m_car.m_motor1.SetPower((uint16_t)abs(power1));
 
 
 			pt_ = t_;

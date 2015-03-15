@@ -116,14 +116,14 @@ float App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encode
 }
 
 void Update_edge(uint8_t* ccd_data_, uint8_t* edge){
-	if(edge[0]==0){
-		for (uint8_t i=0; ccd_data_[i]<57000; i++){
-			edge[0]=i;
+	if(edge[1]==0){
+		for (uint8_t i=64; ccd_data_[i]<57000&&i<128; i++){
+			edge[1]=i;
 		}
 	}
-	if(edge[1]==libsc::k60::LinearCcd::kSensorW){
-		for (uint8_t i=libsc::k60::LinearCcd::kSensorW; ccd_data_[i]<57000; i--){
-			edge[1]=i;
+	if(edge[0]==libsc::k60::LinearCcd::kSensorW){
+		for (uint8_t i=64; ccd_data_[i]<57000&&i>=0; i--){
+			edge[0]=i;
 		}
 	}
 	while (ccd_data_[edge[0]]<57000){
@@ -161,7 +161,7 @@ App::App():
 
 	int32_t encoder_count = 0, encoder1_count = 0;
 
-	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0;
+	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0, turn_power0=0, turn_power1=0;
 
 	/*spdcon[0]=error(k);
 	 * spdcon[1]=error(k-1);
@@ -232,6 +232,13 @@ App::App():
 	uint32_t tc_ = 0;
 	std::array<float, 3> offset_;
 	std::array<uint16_t,libsc::k60::LinearCcd::kSensorW> ccd_data_;
+
+	enum CCD_COLOR{
+		CCD_BLACK = 0,
+		CCD_WHITE
+	};
+
+	std::array<CCD_COLOR,libsc::k60::LinearCcd::kSensorW> color;
 	int y = 0;
 	Timer::TimerInt gyro_t = 0, gyro_pt = 0;
 	double temp;
@@ -243,7 +250,7 @@ App::App():
 		t_ = System::Time();
 		if(t_-pt_>=1){
 			m_car.m_ccd.SampleProcess();
-			if(tc_%20==0) {
+			if(tc_%10==0) {
 				if(m_car.m_ccd.IsImageReady()){
 					ccd_data_ = m_car.m_ccd.GetData();
 					uint16_t avg = 0;
@@ -252,7 +259,41 @@ App::App():
 						sum += (uint32_t)ccd_data_[i];
 					}
 					avg = (uint16_t) (sum / libsc::k60::LinearCcd::kSensorW);
+					for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
+						if(ccd_data_[i] >= avg){
+								color[i] = CCD_WHITE;
+						}else{
+							color[i] = CCD_BLACK;
+						}
+//						if(ccd_data_[i] < 8000){
+//							color = 0;
+//						}else if(ccd_data_[i] > 57000){
+//							color = ~0;
+//						}
+					}
+					int left_edge = 0;
+					int right_edge = 127;
+					int cameramid = (0 + 127)/2;
+					/*for(int i=1; i<libsc::k60::LinearCcd::kSensorW-1; i++){
+						if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
+							left_edge = i;
+						}
+						if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
+							right_edge = i;
+						}
+					}*/
+					for (int i=64; i<libsc::k60::LinearCcd::kSensorW-1; i++){
+						if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge=i;
+					}
+					for (int i=64; i>=0; i--){
+						if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE) left_edge=i;
+					}
+					int mid = (left_edge + right_edge)/2 + 2;
 
+
+					int error = cameramid - mid;
+					turn_power0 = -4*error;
+					turn_power1 = 4*error;
 					/*libsc::k60::St7735r::Rect rect_;
 					uint16_t color = 0;
 
@@ -307,8 +348,6 @@ App::App():
 				//				u_b=Output_b(balcon, balpid, time, real_angle);
 //				m_balance_pid_output = m_inc_pidcontroller.Calc(real_angle);
 				m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, gyro_[1]);
-				power0 = m_balance_pid_output;
-				power1 = m_balance_pid_output;
 			}
 
 			if(tc_%50==0){
@@ -352,6 +391,8 @@ App::App():
 //				}
 			}
 
+			power0 = m_balance_pid_output + turn_power0 - 300;
+			power1 = m_balance_pid_output + turn_power1 - 300;
 
 			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);

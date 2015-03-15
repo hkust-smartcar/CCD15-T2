@@ -235,13 +235,15 @@ App::App():
 	int y = 0;
 	Timer::TimerInt gyro_t = 0, gyro_pt = 0;
 	double temp;
+
+	m_car.m_ccd.StartSample();
+
 	while(true)
 	{
 		t_ = System::Time();
 		if(t_-pt_>=1){
-			if(tc_%100==0){
-				m_car.m_ccd.StartSample();
-				m_car.m_ccd.SampleProcess();
+			m_car.m_ccd.SampleProcess();
+			if(tc_%20==0) {
 				if(m_car.m_ccd.IsImageReady()){
 					ccd_data_ = m_car.m_ccd.GetData();
 					uint16_t avg = 0;
@@ -251,7 +253,7 @@ App::App():
 					}
 					avg = (uint16_t) (sum / libsc::k60::LinearCcd::kSensorW);
 
-					libsc::k60::St7735r::Rect rect_;
+					/*libsc::k60::St7735r::Rect rect_;
 					uint16_t color = 0;
 
 					for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
@@ -265,17 +267,20 @@ App::App():
 						}else{
 							color = 0;
 						}
-						if(ccd_data_[i] < 8000){
-							color = 0;
-						}else if(ccd_data_[i] > 57000){
-							color = ~0;
-						}
+//						if(ccd_data_[i] < 8000){
+//							color = 0;
+//						}else if(ccd_data_[i] > 57000){
+//							color = ~0;
+//						}
 						m_car.m_lcd.FillColor(color);
 					}
 					y++;
-					y=y%160;
+					y=y%160;*/
+					m_car.m_ccd.StartSample();
 				}
 			}
+
+
 
 			if(tc_%500==0){
 				m_car.m_led.Switch();
@@ -314,12 +319,12 @@ App::App():
 //				offset_ = m_car.m_mpu6050.GetOffset();
 				printf("%.4f,%d,%d,%.4f\n", real_angle, power0, m_balance_pid_output, balcon[5]);
 			}
-			/*if(tc_%4==0){
-				u_s0=Output_s0(spdcon0, spdpid0, time);
-				power0=power0+u_s0;
-				u_s1=Output_s1(spdcon1, spdpid1, time);
-				power1=power1+u_s1;
-			}*/
+//			if(tc_%4==0){
+//				u_s0=Output_s0(spdcon0, spdpid0, time);
+//				power0=power0+u_s0;
+//				u_s1=Output_s1(spdcon1, spdpid1, time);
+//				power1=power1+u_s1;
+//			}
 
 			if(tc_%50==0){
 				m_car.m_encoder0.Update();

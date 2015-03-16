@@ -161,7 +161,7 @@ App::App():
 
 	int32_t encoder_count = 0, encoder1_count = 0;
 
-	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0, turn_power0=0, turn_power1=0;
+	int16_t power0=0, power1=0, u_s0=0, u_s1=0, u_b=0, turn_power0=0, turn_power1=0, speed_power0=0,speed_power1=0;
 
 	/*spdcon[0]=error(k);
 	 * spdcon[1]=error(k-1);
@@ -206,7 +206,7 @@ App::App():
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	float balpid[3]={30.0f,0.0f,20.0f};
+	float balpid[3]={15.0f,0.0f,30.0f};
 
 	/*carspeedcon[0]=error(k);
 	 * carspeedcon[1]=error(k-1);
@@ -214,13 +214,13 @@ App::App():
 	 * carspeedcon[3]=summation for ki;
 	 * carspeedcon[4]=setpoint;
 	*/
-	int16_t carspeedcon[5]={0,0,0,0,0};
+	int16_t carspeedcon[5]={0,0,0,0,40};
 
 	/*carspeedpid[0]=kp;
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpid[3]={0.0001f,0.000f,0.0f};
+	float carspeedpid[3]={0.1f,0.3f,0.0f};
 
 	/* time[0] for spd period;
 	 * time[1] for spd period;
@@ -372,6 +372,8 @@ App::App():
 				m_car.m_encoder_count1 = m_car.m_encoder1.GetCount(); //left wheel
 //				balcon[5] = -(float)(m_car.m_encoder_count0 + m_car.m_encoder_count1)/2.0f/500.0f;
 //				balcon[5] = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
+				speed_power0 = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
+				speed_power1 = speed_power0;
 			}
 
 			if(tc_%50==0){
@@ -391,8 +393,8 @@ App::App():
 //				}
 			}
 
-			power0 = m_balance_pid_output + turn_power0 - 300;
-			power1 = m_balance_pid_output + turn_power1 - 300;
+			power0 = m_balance_pid_output + turn_power0 - speed_power0;
+			power1 = m_balance_pid_output + turn_power1 - speed_power1;
 
 			power0 = libutil::Clamp<int16_t>(-1000,power0, 1000);
 			power1 = libutil::Clamp<int16_t>(-1000,power1, 1000);

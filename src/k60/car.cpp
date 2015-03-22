@@ -1,4 +1,5 @@
-#include "k60/car.h"
+#include <k60/car.h>
+
 #include <libsc/led.h>
 #include <libutil/misc.h>
 
@@ -22,13 +23,6 @@ Mcg::Config Mcg::GetMcgConfig()
 }
 
 }
-}
-
-JyMcuBt106::Config GetJyMcuBt106Config(){
-	JyMcuBt106::Config uartconfig;
-	uartconfig.baud_rate = Uart::Config::BaudRate::k115200;
-	uartconfig.id = 0;
-	return uartconfig;
 }
 
 Mpu6050::Config GetMpu6050Config(){
@@ -65,9 +59,9 @@ St7735r::Config GetSt7735RConfig(){
 }
 
 Car::Car():
-				m_encoder_count0(0),
+				m_encoder_countr(0),
 				m_encoder_speed0(0),
-				m_encoder_count1(0),
+				m_encoder_countl(0),
 				m_encoder_speed1(0),
 				m_encoder_count_c(0),
 				m_encoder_speed_c(0),
@@ -78,14 +72,20 @@ Car::Car():
 				m_mpu6050(GetMpu6050Config()),
 				m_encoder0(GetDirEncoderConfig(0)),
 				m_encoder1(GetDirEncoderConfig(1)),
-				m_com(GetJyMcuBt106Config()),
 				m_motor0(GetDirMotorConfig(0)),
 				m_motor1(GetDirMotorConfig(1)),
 				m_ccd(0),
 				m_lcd(GetSt7735RConfig())
 
 {
-	libutil::InitDefaultFwriteHandler(&m_com);
+	m_varmanager = new RemoteVarManager(6);
+	JyMcuBt106::Config uartconfig;
+	uartconfig.baud_rate = Uart::Config::BaudRate::k115200;
+	uartconfig.id = 0;
+	uartconfig.rx_isr = std::bind(&RemoteVarManager::OnUartReceiveChar, m_varmanager, std::placeholders::_1);
+	m_com = new JyMcuBt106(uartconfig);
+
+	libutil::InitDefaultFwriteHandler(m_com);
 
 
 

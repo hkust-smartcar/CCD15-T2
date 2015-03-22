@@ -1,18 +1,19 @@
 #include "app.h"
-#include <libsc/k60/linear_ccd.h>
-#include <libsc/k60/st7735r.h>
-//using namespace libsc::kl26;
-//using namespace libbase::kl26;
+#include <libsc/system.h>
+#include <libbase/k60/mcg.h>
+#include <libutil/misc.h>
+#include <functional>
 
-
+using namespace libsc;
+using namespace libsc::k60;
+using namespace libbase::k60;
+using namespace libutil;
 
 
 int main(){
 	System::Init();
 
 	App m_app;
-
-	while(true){}
 
 	return 0;
 }

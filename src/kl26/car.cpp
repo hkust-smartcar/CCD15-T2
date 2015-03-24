@@ -1,24 +1,24 @@
-#include <k60/car.h>
+#include <kl26/car.h>
 
 #include <libsc/led.h>
 #include <libutil/misc.h>
 
 using namespace libbase;
 using namespace libsc;
-using namespace libbase::k60;
-using namespace libsc::k60;
+using namespace libbase::kl26;
+using namespace libsc::kl26;
 using namespace libutil;
 
 namespace libbase
 {
-namespace k60
+namespace kl26
 {
 
 Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
-	config.external_oscillator_khz = 50000;
-	config.core_clock_khz = 150000;
+	config.external_oscillator_khz = 8000;
+	config.core_clock_khz = 48000;
 	return config;
 }
 
@@ -52,13 +52,14 @@ DirMotor::Config GetDirMotorConfig(int id){
 	return config;
 }
 
-St7735r::Config GetSt7735RConfig(){
-	St7735r::Config config;
-	config.is_revert = true;
-	return config;
-}
+//St7735r::Config GetSt7735RConfig(){
+//	St7735r::Config config;
+//	config.is_revert = true;
+//	return config;
+//}
 
 Car::Car():
+				m_varmanager(new RemoteVarManager(7)),
 				m_encoder_countr(0),
 				m_encoder_speed0(0),
 				m_encoder_countl(0),
@@ -74,15 +75,15 @@ Car::Car():
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor0(GetDirMotorConfig(0)),
 				m_motor1(GetDirMotorConfig(1)),
-				m_ccd(0),
-				m_lcd(GetSt7735RConfig())
+				m_ccd(0)
+//				m_lcd(GetSt7735RConfig())
 
 {
-	m_varmanager = new RemoteVarManager(6);
+//	m_varmanager = new RemoteVarManager(7);
 	JyMcuBt106::Config uartconfig;
-	uartconfig.baud_rate = Uart::Config::BaudRate::k115200;
+	uartconfig.baud_rate = libbase::kl26::Uart::Config::BaudRate::k115200;
 	uartconfig.id = 0;
-	uartconfig.rx_isr = std::bind(&RemoteVarManager::OnUartReceiveChar, m_varmanager, std::placeholders::_1);
+	uartconfig.rx_isr = std::bind(&RemoteVarManager::OnUartReceiveSingleChar, m_varmanager, std::placeholders::_1);
 	m_com = new JyMcuBt106(uartconfig);
 
 	libutil::InitDefaultFwriteHandler(m_com);

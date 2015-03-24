@@ -4,7 +4,7 @@ BUILD_PATH=build
 LIBSCCC_INC_PATH?=lib/sccc/inc
 LIBSCCC_BIN_PATH?=lib/sccc/lib
 LIBSCCC_BIN?=sccc
-OUT_EXE=inno14
+OUT_EXE=vcan
 OUT_EXE_SUFFIX=.elf
 OUT_EXE_PATH=bin
 OUT_OBJ_PATH=obj
@@ -121,7 +121,7 @@ CCFLAGS+=-mthumb -mcpu=cortex-m0plus
 #CCFLAGS+=-msoft-float -mfloat-abi=soft
 LDFLAGS+=-mthumb -mcpu=cortex-m0plus
 #LDFLAGS+=-msoft-float -mfloat-abi=soft
-LDFLAGS+=-T $(BUILD_PATH)/z4.ld
+LDFLAGS+=-T $(BUILD_PATH)/z4_dc.ld
 $(info MCU sub-family = MKL26Z4)
 
 else
@@ -146,8 +146,8 @@ CXXFLAGS+=-fno-exceptions -fno-rtti
 ARFLAGS+=-r
 
 #LDFLAGS+=-nostartfiles 
-#LDFLAGS+=-specs=nano.specs -u _printf_float
-LDFLAGS+=-specs=nosys.specs -u _printf_float
+LDFLAGS+=-specs=nano.specs -u _printf_float
+#LDFLAGS+=-specs=nosys.specs -u _printf_float
 LDFLAGS+=-Wl,--gc-sections
 LDFLAGS+=-Wl,-Map=$(OUT_EXE_PATH)/$(OUT_EXE)$(BIN_SUFFIX).map
 

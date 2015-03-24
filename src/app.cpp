@@ -9,81 +9,23 @@
 #include <libsc/sys_tick_delay.h>
 #include <cmath>
 #include "kalman.h"
-#include "k60/car.h"
+#include "kl26/car.h"
 #include "Quaternion.h"
 #include <libutil/misc.h>
+#include <libbase/kl26/gpio.h>
 
 
-using namespace libsc::k60;
-using namespace libbase::k60;
+using namespace libsc::kl26;
+using namespace libbase::kl26;
 
 uint16_t App::RpmToPwm1(uint16_t count){
-	return (uint16_t)(0.1484715791f*count + 59.6501510982f);
+	return (count == 0) ? 0 : (uint16_t)(0.1484715791f*count + 59.6501510982f);
 }
 
 uint16_t App::RpmToPwm0(uint16_t count){
-	return (uint16_t)(0.1462728045f*count + 34.5814814763f);
+	return (count == 0) ? 0 : (uint16_t)(0.1462728045f*count + 34.5814814763f);
 }
 
-/*
-
-int16_t App::Output_s0(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
-	uint8_t period;
-	int16_t output, temp;
-	if (time[0]==0){
-		time[0]=System::Time();
-		m_car.m_encoder0.Update();
-		return 0;
-	}
-	if (spdcon[4]!=spdcon[5]){	//reset summation error if setspeed is changed
-		spdcon[4]=spdcon[5];
-		spdcon[3]=0;
-	}
-	spdcon[1]=spdcon[0];
-	period=System::Time()-time[0];
-	time[0]=System::Time();
-	m_car.m_encoder0.Update();
-	m_car.m_encoder_count0 = (int16_t) m_car.m_encoder0.GetCount()/2;
-//	m_encoder_count_c = (m_encoder_count0 + m_encoder_count1)/4;
-	m_car.m_encoder_speed0 = m_car.m_encoder_count0*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
-	spdcon[0]=spdcon[5]-m_car.m_encoder_speed0;
-	temp=(spdcon[0]-spdcon[1])/period; //slope
-	if (abs(spdcon[0])<200){	//prevent large error
-		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
-	}
-	output=(spdpid[0]*spdcon[0]+spdpid[1]*spdcon[3]+spdpid[2]*(temp+spdcon[2])/2)/100;
-	spdcon[2]=temp;
-	return output;
-}
-int16_t App::Output_s1(int16_t spdcon[5], uint8_t spdpid[3], uint16_t time[4]){
-	uint8_t period;
-	int16_t output, temp;
-	if (time[1]==0){
-		time[1]=System::Time();
-		m_car.m_encoder1.Update();
-		return 0;
-	}
-	if (spdcon[4]!=spdcon[5]){	//reset summation error if setspeed is changed
-		spdcon[4]=spdcon[5];
-		spdcon[3]=0;
-	}
-	spdcon[1]=spdcon[0];
-	period=System::Time()-time[1];
-	time[1]=System::Time();
-	m_car.m_encoder1.Update();
-	m_car.m_encoder_count1 = (int16_t) -1*m_car.m_encoder1.GetCount()/2;
-//	m_encoder_count_c = (m_encoder_count0 + m_encoder_count1)/4;
-	m_car.m_encoder_speed1 = m_car.m_encoder_count1*1100000/13312/period;	// 512*104/44=13312/11, rotation per sec *100
-	spdcon[0]=spdcon[5]-m_car.m_encoder_speed1;
-	temp=(spdcon[0]-spdcon[1])/period; //slope
-	if (abs(spdcon[0])<200){	//prevent large error
-		spdcon[3]=spdcon[3]+(spdcon[0]*period/1000);
-	}
-	output=(spdpid[0]*spdcon[0]+spdpid[1]*spdcon[3]+spdpid[2]*(temp+spdcon[2])/2)/100;
-	spdcon[2]=temp;
-	return output;
-}
-*/
 
 int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float gyro_angle){
 	uint8_t period;
@@ -106,7 +48,8 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 //	}
 //	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]*time[2]+balpid[2]*(temp+balcon[2])*10;
 //	output=(int16_t)(balpid[0]*(balcon[0] - balcon[1]));
-	output=(int16_t)(balpid[0]*balcon[0] + balpid[2]*(temp+balcon[2])/2);
+	total_output += balcon[0] * period;
+	output=(int16_t)(balpid[0]*balcon[0] + balpid[2]*(temp+balcon[2])/2) + balpid[1] * total_output;
 	balcon[1]=balcon[0];
 	balcon[2]=temp;
 	return output;
@@ -165,7 +108,8 @@ App::App():
 	printf("ski,real,2,0.0\n");
 	printf("bkp,real,3,0.0\n");
 	printf("bkd,real,4,0.0\n");
-	printf("boff,real,5,0.0\n");
+	printf("bki,real,5,0.0\n");
+	printf("boff,real,6,0.0\n");
 
 	std::array<float, 3> accel_, gyro_;
 	float real_angle = 0, acc_angle = 0, gyro_angle = 0, prev_gyro_angle = 0, avg_gyro = 0, total_gyro=0;
@@ -182,39 +126,8 @@ App::App():
 
 	Timer::TimerInt t_ = System::Time(), pt_ = t_;
 
-	int32_t encoder_count = 0, encoder1_count = 0;
 
-	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_power0=0, turn_power1=0, speed_power0=0,speed_power1=0;
-
-	/*spdcon[0]=error(k);
-	 * spdcon[1]=error(k-1);
-	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
-	 * spdcon[3]=summation for ki;
-	 * spdcon[4]=previous setpoint for reset summation time;
-	 * spdcon[5]=setpoint (rotation per sec *100);
-	 */
-	int16_t spdcon0[6]={0,0,0,0,0,0};
-
-	/* pid[0]=kp;
-	 * pid[1]=ki;
-	 * pid[2]=kd;
-	 */
-	uint8_t spdpid0[3]={3,5,30};
-
-	/*spdcon[0]=error(k);
-	 * spdcon[1]=error(k-1);
-	 * spdcon[2]=previous slope of de/dt for low-pass filtering;
-	 * spdcon[3]=summation for ki;
-	 * spdcon[4]=previous setpoint for reset summation time;
-	 * spdcon[5]=setpoint (rotation per sec *100);
-	 */
-	int16_t spdcon1[6]={0,0,0,0,0,0};
-
-	/*pid[0]=kp;
-	 * pid[1]=ki;
-	 * pid[2]=kd;
-	 */
-	uint8_t spdpid1[3]={3,5,30};
+	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_power0=0, turn_power1=0;
 
 	/*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
@@ -270,9 +183,6 @@ App::App():
 
 	int16_t speedsp = 0;
 
-	Gpo::Config pinconfig;
-	pinconfig.pin = Pin::Name::kPtb22;
-	Gpo pin(pinconfig);
 
 	while(true)
 	{
@@ -303,7 +213,7 @@ App::App():
 					int left_edge = 0;
 					int right_edge = 127;
 					int cameramid = (0 + 127)/2;
-					/*for(int i=1; i<libsc::k60::LinearCcd::kSensorW-1; i++){
+					/*for(int i=1; i<libsc::kl26::LinearCcd::kSensorW-1; i++){
 						if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
 							left_edge = i;
 						}
@@ -323,10 +233,10 @@ App::App():
 					int error = cameramid - mid;
 					turn_power0 = -4*error;
 					turn_power1 = 4*error;
-					/*libsc::k60::St7735r::Rect rect_;
+					/*libsc::kl26::St7735r::Rect rect_;
 					uint16_t color = 0;
 
-					for(int i=0; i<libsc::k60::LinearCcd::kSensorW; i++){
+					for(int i=0; i<libsc::kl26::LinearCcd::kSensorW; i++){
 						rect_.x = i;
 						rect_.y = y;
 						rect_.w = 1;
@@ -361,7 +271,6 @@ App::App():
 
 
 			if(tc_%2==0){
-				pin.Set(true);
 
 				gyro_t = System::Time();
 				m_car.m_mpu6050.Update();
@@ -381,12 +290,18 @@ App::App():
 				//				u_b=Output_b(balcon, balpid, time, real_angle);
 //				m_balance_pid_output = m_inc_pidcontroller.Calc(real_angle);
 				balpid[0] = m_bkp->GetReal();
+				balpid[1] = m_bki->GetReal();
 				balpid[2] = m_bkd->GetReal();
+
 				balcon[5] = m_boff->GetReal();
+
 				m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, gyro_[1]);
-				m_speed_control0.SetSetpoint(m_balance_pid_output);
-				m_speed_control1.SetSetpoint(m_balance_pid_output);
-				pin.Set(false);
+				if(abs(real_angle) < 0.25f){
+					power_l = power_r = 0;
+				}else{
+					m_speed_control0.SetSetpoint(m_balance_pid_output);
+					m_speed_control1.SetSetpoint(m_balance_pid_output);
+				}
 			}
 
 			if(tc_%50==0){
@@ -443,15 +358,15 @@ App::App():
 			if(tc_%50==0){
 //				ccd_data_=my_car.m_ccd.GetData();
 //				Update_edge(ccd_data_, edge);
-//				if (edge[0]+edge[i]>libsc::k60::LinearCcd::kSensorW){
+//				if (edge[0]+edge[i]>libsc::kl26::LinearCcd::kSensorW){
 //					power0*=1.4;
 //					power1*=0.75;
 //				}
-//				if (edge[0]+edge[i]<libsc::k60::LinearCcd::kSensorW){
+//				if (edge[0]+edge[i]<libsc::kl26::LinearCcd::kSensorW){
 //					power0*=0.75;
 //					power1*=1.4;
 //				}
-//				if (edge[0]+edge[i]=libsc::k60::LinearCcd::kSensorW){
+//				if (edge[0]+edge[i]=libsc::kl26::LinearCcd::kSensorW){
 //					power0*=1.1;
 //					power1*=1.1;
 //				}

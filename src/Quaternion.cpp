@@ -28,7 +28,7 @@ Quaternion::Quaternion(double interval, Mpu6050* mpu) : Interval(interval){
 	_mQuaternion = this;
 
 
-	double R[2] = {0.00001, 0.001/*0.0000123543*/};
+	double R[2] = {0.001, 0.001/*0.0000123543*/};
 
 	m_mpu = mpu;
 	m_mpu->Update();

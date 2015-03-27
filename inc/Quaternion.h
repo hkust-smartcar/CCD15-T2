@@ -41,7 +41,7 @@ namespace Math{
 
 			Mpu6050* m_mpu;
 	};
-};
+}
 
 using namespace Math;
 

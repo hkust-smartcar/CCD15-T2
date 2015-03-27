@@ -22,11 +22,11 @@ public:
 	int sign(int x){
 		return (x>0) -  (x<0);
 	}
-	uint16_t RpmToPwm0(uint16_t count);
-	uint16_t RpmToPwm1(uint16_t count);
+	uint16_t RpmToPwm_R(uint16_t count);
+	uint16_t RpmToPwm_L(uint16_t count);
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
-	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float gyro_angle);
+	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle);
 	float Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
 	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 private:

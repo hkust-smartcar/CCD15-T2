@@ -18,16 +18,27 @@
 using namespace libsc::kl26;
 using namespace libbase::kl26;
 
-uint16_t App::RpmToPwm1(uint16_t count){
+/*
+ * For K60_2014_CAMERA ONLY
+ * uint16_t App::RpmToPwm1(uint16_t count){
 	return (count == 0) ? 0 : (uint16_t)(0.1484715791f*count + 59.6501510982f);
 }
 
 uint16_t App::RpmToPwm0(uint16_t count){
 	return (count == 0) ? 0 : (uint16_t)(0.1462728045f*count + 34.5814814763f);
+}*/
+
+/*For KL26_2015_CCD ONLY*/
+uint16_t App::RpmToPwm_R(uint16_t count){
+	return (count == 0) ? 0 : (uint16_t)(0.1212638965f*count + 34.3794503792f);
+}
+
+uint16_t App::RpmToPwm_L(uint16_t count){
+	return (count == 0) ? 0 : (uint16_t)(0.1338244972*count + 35.5623399462f);
 }
 
 
-int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float gyro_angle){
+int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle){
 	uint8_t period;
 	int16_t output;
 	static int16_t total_output = 0;
@@ -70,51 +81,45 @@ float App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encode
 	return output;
 }
 
-void Update_edge(uint8_t* ccd_data_, uint8_t* edge){
-	if(edge[1]==0){
-		for (uint8_t i=64; ccd_data_[i]<57000&&i<128; i++){
-			edge[1]=i;
-		}
-	}
-	if(edge[0]==libsc::Tsl1401cl::kSensorW){
-		for (uint8_t i=64; ccd_data_[i]<57000&&i>=0; i--){
-			edge[0]=i;
-		}
-	}
-	while (ccd_data_[edge[0]]<57000){
-		edge[0]+=1;
-	}
-	while (ccd_data_[edge[0]]>57000){
-		edge[0]-=1;
-	}
-	while (ccd_data_[edge[1]]<57000){
-		edge[1]-=1;
-	}
-	while (ccd_data_[edge[1]]>57000){
-		edge[1]+=1;
-	}
-	edge[0] = libutil::Clamp<int8_t>(0, edge[0], libsc::Tsl1401cl::kSensorW);
-	edge[1] = libutil::Clamp<int8_t>(0, edge[1], libsc::Tsl1401cl::kSensorW);
-}
+//void Update_edge(uint8_t* ccd_data_, uint8_t* edge){
+//	if(edge[1]==0){
+//		for (uint8_t i=64; ccd_data_[i]<57000&&i<128; i++){
+//			edge[1]=i;
+//		}
+//	}
+//	if(edge[0]==libsc::Tsl1401cl::kSensorW){
+//		for (uint8_t i=64; ccd_data_[i]<57000&&i>=0; i--){
+//			edge[0]=i;
+//		}
+//	}
+//	while (ccd_data_[edge[0]]<57000){
+//		edge[0]+=1;
+//	}
+//	while (ccd_data_[edge[0]]>57000){
+//		edge[0]-=1;
+//	}
+//	while (ccd_data_[edge[1]]<57000){
+//		edge[1]-=1;
+//	}
+//	while (ccd_data_[edge[1]]>57000){
+//		edge[1]+=1;
+//	}
+//	edge[0] = libutil::Clamp<int8_t>(0, edge[0], libsc::Tsl1401cl::kSensorW);
+//	edge[1] = libutil::Clamp<int8_t>(0, edge[1], libsc::Tsl1401cl::kSensorW);
+//}
 
 App::App():
 	m_car(),
 	m_balance_pid_output(0),
-	m_speed_control0(1000,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal()),
-	m_speed_control1(1000,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal())
+	m_speed_control0(0,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal()),
+	m_speed_control1(0,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal())
 {
-	printf("skp,real,0,0.0\n");
-	printf("skd,real,1,0.0\n");
-	printf("ski,real,2,0.0\n");
-	printf("bkp,real,3,0.0\n");
-	printf("bkd,real,4,0.0\n");
-	printf("bki,real,5,0.0\n");
-	printf("boff,real,6,0.0\n");
+	m_car.m_varmanager->Broadcast(m_car.m_com);
 
 	std::array<float, 3> accel_, gyro_;
 	float real_angle = 0, acc_angle = 0, gyro_angle = 0, prev_gyro_angle = 0, avg_gyro = 0, total_gyro=0;
 
-	Quaternion quaternion(0.002, &(m_car.m_mpu6050));
+//	Quaternion quaternion(0.002, &(m_car.m_mpu6050));
 
 
 	double value[2] = {0.001, 0.2600496668};
@@ -136,7 +141,7 @@ App::App():
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[6]={0,0,0,0,0.0f,0};
+	float balcon[6]={0,0,0,0,20.5f,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -275,15 +280,16 @@ App::App():
 				gyro_t = System::Time();
 				m_car.m_mpu6050.Update();
 
-				quaternion.Update();
-//				accel_ = m_car.m_mpu6050.GetAccel();
+//				quaternion.Update();
+				accel_ = m_car.m_mpu6050.GetAccel();
 				gyro_ = m_car.m_mpu6050.GetOmega();
 				gyro_[1] = -gyro_[1];
-				/*				acc_angle = accel_[2] * RAD2ANGLE;
+				acc_angle = accel_[2] * RAD2ANGLE;
 				gyro_angle += gyro_[1] * ((float)(gyro_t - gyro_pt)/1000.0f);
 				gyro_pt = gyro_t;
-				kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);*/
-				real_angle = (float)quaternion.getEuler(0)*57.2957795131;
+				kf_filter.Filtering(&temp, (double)gyro_angle, (double)acc_angle);
+				real_angle = (float)temp;
+//				real_angle = (float)quaternion.getEuler(0)*57.2957795131;
 				//				cou+=1;
 				//				total_gyro=total_gyro+gyro_[0];
 				//				avg_gyro=total_gyro/cou;
@@ -295,25 +301,27 @@ App::App():
 
 				balcon[5] = m_boff->GetReal();
 
-				m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, gyro_[1]);
+				/*m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, gyro_[1]);
 				if(abs(real_angle) < 0.25f){
 					power_l = power_r = 0;
 				}else{
 					m_speed_control0.SetSetpoint(m_balance_pid_output);
 					m_speed_control1.SetSetpoint(m_balance_pid_output);
-				}
+				}*/
+
 			}
 
-			if(tc_%50==0){
+			if(tc_%100==0){
 				//				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
 				//				printf("%.5f, %0.5f\n", acc_angle, real_angle);
 				//				printf("%.5f,%.5f,%.5f,%.5f\n", real_angle, acc_angle, gyro_angle, gyro_[0]);
-				//				printf("%d,%d\n",m_encoder_count0,m_encoder_count1);
+//				printf("%d,%d\n",m_car.m_encoder_countr,m_car.m_encoder_countl);
 //				offset_ = m_car.m_mpu6050.GetOffset();
-//				printf("%.4f,%d,%d,%.4f\n", real_angle, power0, m_balance_pid_output, balcon[5]);
-				printf("%.4f,%.4f,%.4f\n",quaternion.getEuler(0)*57.2957795131, quaternion.getEuler(1)*57.2957795131, quaternion.getEuler(2)*57.2957795131);
-//				printf("%f,%f,%f,%d\n", m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal(), power_r, m_car.m_encoder_countr);
-//				printf("%f\n",real_angle);
+//				printf("%.4f,%d,%d,%.4f\n", real_angle, power_l, m_balance_pid_output, balcon[5]);
+//				printf("%.4f,%.4f,%.4f\n",quaternion.getEuler(0)*57.2957795131, quaternion.getEuler(1)*57.2957795131, quaternion.getEuler(2)*57.2957795131);
+				printf("%f,%f,%f,%d,%d\n", m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal(), power_r, m_car.m_encoder_countr);
+//				printf("%f,%f,%f,%f,%f,%f\n",accel_[0],accel_[1],accel_[2],gyro_[0],gyro_[1]),gyro_[2];
+//				printf("%f,%f,%f\n",real_angle,acc_angle,gyro_angle);
 			}
 //			if(tc_%4==0){
 //				u_s0=Output_s0(spdcon0, spdpid0, time);
@@ -322,9 +330,11 @@ App::App():
 //				power1=power1+u_s1;
 //			}
 
-			if(tc_%3000==0){
-//				speedsp += 200;
-//				speedsp %= 600;
+			if(tc_%500==0){
+				speedsp += 10;
+				speedsp %= 600;
+				power_r = speedsp;
+				power_l = speedsp;
 //				m_speed_control0.SetSetpoint(speedsp);
 //				m_speed_control1.SetSetpoint(speedsp);
 			}
@@ -339,18 +349,19 @@ App::App():
 //				speed_power0 = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
 //				speed_power1 = speed_power0;
 
+				m_speed_control0.SetSetpoint(0);
+				m_speed_control1.SetSetpoint(0);
 
-
-				m_speed_control0.SetKp(75.0f);
+				m_speed_control0.SetKp(m_skp->GetReal());
 				m_speed_control0.SetKd(m_skd->GetReal());
 				m_speed_control0.SetKi(m_ski->GetReal());
-				m_speed_control1.SetKp(75.0f);
+				m_speed_control1.SetKp(m_skp->GetReal());
 				m_speed_control1.SetKd(m_skd->GetReal());
 				m_speed_control1.SetKi(m_ski->GetReal());
-				int16_t r_val = speedsp + m_speed_control0.Calc(m_car.m_encoder_countr);
-				int16_t l_val = speedsp + m_speed_control1.Calc(m_car.m_encoder_countl);
-				power_r = sign(r_val) * RpmToPwm0(abs(r_val));
-				power_l = sign(l_val) * RpmToPwm1(abs(l_val));
+				int16_t r_val = /*speedsp + */m_speed_control0.Calc(m_car.m_encoder_countr);
+				int16_t l_val = /*speedsp + */m_speed_control1.Calc(m_car.m_encoder_countl);
+				power_r = sign(r_val) * RpmToPwm_R(abs(r_val));
+				power_l = sign(l_val) * RpmToPwm_L(abs(l_val));
 //				printf("%d,%d,%d\n", speedsp, m_car.m_encoder_countr, m_car.m_encoder_countl);
 
 			}
@@ -387,10 +398,10 @@ App::App():
 //			if(abs(power_l) >= 950) power_l = 0;
 //			if(abs(power_r) >= 950) power_r = 0;
 
-			m_car.m_motor0.SetClockwise(power_l < 0); //Right Motor - true forward, false backward
-			m_car.m_motor1.SetClockwise(power_r > 0); //Left Motor - false forward, true backward
-			m_car.m_motor0.SetPower((uint16_t)abs(power_l));
-			m_car.m_motor1.SetPower((uint16_t)abs(power_r));
+			m_car.m_motor_r.SetClockwise(power_r > 0); //Right Motor - true forward, false backward
+			m_car.m_motor_l.SetClockwise(power_l < 0); //Left Motor - false forward, true backward
+			m_car.m_motor_r.SetPower((uint16_t)abs(power_r));
+			m_car.m_motor_l.SetPower((uint16_t)abs(power_l));
 
 
 			pt_ = t_;

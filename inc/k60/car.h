@@ -45,8 +45,8 @@ public:
 	Mpu6050 m_mpu6050;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	JyMcuBt106* m_com;
-	DirMotor m_motor0;
-	DirMotor m_motor1;
+	DirMotor m_motor_r;
+	DirMotor m_motor_l;
 	Tsl1401cl m_ccd;
 	St7735r m_lcd;
 

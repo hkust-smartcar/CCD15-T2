@@ -189,8 +189,6 @@ endif
 .PHONY: all clean dry
 
 all: $(OUT_EXE_PATH)/$(OUT_EXE)$(BIN_SUFFIX)$(OUT_EXE_SUFFIX)
-$(info Invoking: Cross ARM GNU Print Size)
-arm-none-eabi-size --format=berkeley $(OUT_EXE_PATH)/$(OUT_EXE)$(BIN_SUFFIX)$(OUT_EXE_SUFFIX)
 
 dry: $(OBJ_FILES)
 
@@ -198,7 +196,7 @@ dry: $(OBJ_FILES)
 
 $(OUT_EXE_PATH)/$(OUT_EXE)$(BIN_SUFFIX)$(OUT_EXE_SUFFIX): $(OBJ_FILES) $(LIBSCCC_BIN_PATH)/lib$(LIBSCCC_BIN)$(BIN_SUFFIX).a
 	$(info Linking objects)
-	@$(CXX) $(LDFLAGS) -v -o $@ $(OBJ_FILES) $(LDLIBS)
+	@$(CXX) $(LDFLAGS) -o $@ $(OBJ_FILES) $(LDLIBS)
 
 $(OUT_OBJ_PATH)/%.o: $$(subst $(BIN_SUFFIX),,$(SRC_PATH)/%.c)
 	$(info Compiling $(<))

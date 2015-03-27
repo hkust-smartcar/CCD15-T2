@@ -20,7 +20,7 @@ namespace Math{
 			static void CrossProduct(double*, double*, double*);
 		private:
 	};
-};
+}
 
 using namespace Math;
 

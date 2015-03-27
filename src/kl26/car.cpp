@@ -63,8 +63,6 @@ Car::Car():
 				m_varmanager(new RemoteVarManager(7)),
 				m_encoder_countr(0),
 				m_encoder_countl(0),
-				m_encoder_speed0(0),
-				m_encoder_speed1(0),
 				m_encoder_count_c(0),
 				m_encoder_speed_c(0),
 				m_speed_output(0),

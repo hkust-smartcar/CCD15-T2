@@ -30,11 +30,11 @@ uint16_t App::RpmToPwm0(uint16_t count){
 
 /*For KL26_2015_CCD ONLY*/
 uint16_t App::RpmToPwm_R(uint16_t count){
-	return (count == 0) ? 0 : (uint16_t)(0.1212638965f*count + 34.3794503792f);
+	return (count == 0) ? 0 : (uint16_t)(6.7907977567f*count + 25.6312759712f);
 }
 
 uint16_t App::RpmToPwm_L(uint16_t count){
-	return (count == 0) ? 0 : (uint16_t)(0.1338244972*count + 35.5623399462f);
+	return (count == 0) ? 0 : (uint16_t)(6.2217477568*count + 37.6182692204f);
 }
 
 
@@ -141,7 +141,7 @@ App::App():
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[6]={0,0,0,0,20.5f,0};
+	float balcon[6]={0,0,0,0,49.0f,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -301,43 +301,44 @@ App::App():
 
 				balcon[5] = m_boff->GetReal();
 
-				/*m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, gyro_[1]);
-				if(abs(real_angle) < 0.25f){
-					power_l = power_r = 0;
-				}else{
+				m_balance_pid_output = Output_b(balcon, balpid, time, real_angle);
+//				if(abs(real_angle) < 0.25f){
+//					power_l = power_r = 0;
+//				}else{
 					m_speed_control0.SetSetpoint(m_balance_pid_output);
 					m_speed_control1.SetSetpoint(m_balance_pid_output);
-				}*/
+//				}
 
 			}
 
-			if(tc_%100==0){
+			if(tc_%20==0){
 				//				printf("%.4f,%.4f,%.4f,%.4f,%.4f\n",acc_angle, gyro_angle, real_angle, gyro_[0],avg_gyro);
 				//				printf("%.5f, %0.5f\n", acc_angle, real_angle);
 				//				printf("%.5f,%.5f,%.5f,%.5f\n", real_angle, acc_angle, gyro_angle, gyro_[0]);
 //				printf("%d,%d\n",m_car.m_encoder_countr,m_car.m_encoder_countl);
 //				offset_ = m_car.m_mpu6050.GetOffset();
-//				printf("%.4f,%d,%d,%.4f\n", real_angle, power_l, m_balance_pid_output, balcon[5]);
+				printf("%.4f,%d,%.4f\n", real_angle, m_balance_pid_output, balcon[5]);
 //				printf("%.4f,%.4f,%.4f\n",quaternion.getEuler(0)*57.2957795131, quaternion.getEuler(1)*57.2957795131, quaternion.getEuler(2)*57.2957795131);
-				printf("%f,%f,%f,%d,%d\n", m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal(), power_r, m_car.m_encoder_countr);
+//				printf("%f,%f,%f,%d,%d\n", m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal(), power_r, m_car.m_encoder_countr);
 //				printf("%f,%f,%f,%f,%f,%f\n",accel_[0],accel_[1],accel_[2],gyro_[0],gyro_[1]),gyro_[2];
 //				printf("%f,%f,%f\n",real_angle,acc_angle,gyro_angle);
+//				printf("%d,%d,%d\n", speedsp, m_car.m_encoder_countr, m_car.m_encoder_countl);
 			}
-//			if(tc_%4==0){
-//				u_s0=Output_s0(spdcon0, spdpid0, time);
-//				power0=power0+u_s0;
-//				u_s1=Output_s1(spdcon1, spdpid1, time);
-//				power1=power1+u_s1;
-//			}
+	//			if(tc_%4==0){
+	//				u_s0=Output_s0(spdcon0, spdpid0, time);
+	//				power0=power0+u_s0;
+	//				u_s1=Output_s1(spdcon1, spdpid1, time);
+	//				power1=power1+u_s1;
+	//			}
 
-			if(tc_%500==0){
-				speedsp += 10;
-				speedsp %= 600;
-				power_r = speedsp;
-				power_l = speedsp;
+//			if(tc_%500==0){
+//				speedsp += 30;
+//				speedsp %= 120;
+////				power_r = speedsp;
+////				power_l = speedsp;
 //				m_speed_control0.SetSetpoint(speedsp);
 //				m_speed_control1.SetSetpoint(speedsp);
-			}
+//			}
 			if(tc_%2==0){
 				m_car.m_encoder0.Update();
 				m_car.m_encoder1.Update();
@@ -349,20 +350,18 @@ App::App():
 //				speed_power0 = Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_count0 + m_car.m_encoder_count1)/2);
 //				speed_power1 = speed_power0;
 
-				m_speed_control0.SetSetpoint(0);
-				m_speed_control1.SetSetpoint(0);
 
-				m_speed_control0.SetKp(m_skp->GetReal());
-				m_speed_control0.SetKd(m_skd->GetReal());
-				m_speed_control0.SetKi(m_ski->GetReal());
-				m_speed_control1.SetKp(m_skp->GetReal());
-				m_speed_control1.SetKd(m_skd->GetReal());
-				m_speed_control1.SetKi(m_ski->GetReal());
-				int16_t r_val = /*speedsp + */m_speed_control0.Calc(m_car.m_encoder_countr);
-				int16_t l_val = /*speedsp + */m_speed_control1.Calc(m_car.m_encoder_countl);
+				m_speed_control0.SetKp(10.0f);
+//				m_speed_control0.SetKd(m_skd->GetReal());
+//				m_speed_control0.SetKi(m_ski->GetReal());
+				m_speed_control1.SetKp(10.0f);
+//				m_speed_control1.SetKd(m_skd->GetReal());
+//				m_speed_control1.SetKi(m_ski->GetReal());
+				int16_t r_val = speedsp + m_speed_control0.Calc(m_car.m_encoder_countr);
+				int16_t l_val = speedsp + m_speed_control1.Calc(m_car.m_encoder_countl);
 				power_r = sign(r_val) * RpmToPwm_R(abs(r_val));
 				power_l = sign(l_val) * RpmToPwm_L(abs(l_val));
-//				printf("%d,%d,%d\n", speedsp, m_car.m_encoder_countr, m_car.m_encoder_countl);
+
 
 			}
 
@@ -397,6 +396,7 @@ App::App():
 
 //			if(abs(power_l) >= 950) power_l = 0;
 //			if(abs(power_r) >= 950) power_r = 0;
+
 
 			m_car.m_motor_r.SetClockwise(power_r > 0); //Right Motor - true forward, false backward
 			m_car.m_motor_l.SetClockwise(power_l < 0); //Left Motor - false forward, true backward

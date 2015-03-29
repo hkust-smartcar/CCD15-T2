@@ -18,8 +18,8 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
-	config.core_clock_khz = 48000;
-	config.bus_clock_khz = 24000;
+	config.core_clock_khz = 90000;
+	config.bus_clock_khz = 90000;
 	return config;
 }
 
@@ -60,7 +60,7 @@ St7735r::Config GetSt7735RConfig(){
 }
 
 Car::Car():
-				m_varmanager(new RemoteVarManager(7)),
+				m_varmanager(new RemoteVarManager(13)),
 				m_encoder_countr(0),
 				m_encoder_countl(0),
 				m_encoder_count_c(0),
@@ -75,8 +75,8 @@ Car::Car():
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),
 				m_motor_l(GetDirMotorConfig(1)),
-				m_ccd(0)
-//				m_lcd(GetSt7735RConfig())
+				m_ccd(0),
+				m_lcd(GetSt7735RConfig())
 
 {
 	m_led.SetEnable(true);
@@ -91,6 +91,6 @@ Car::Car():
 
 	libutil::InitDefaultFwriteHandler(m_com);
 
-//	m_lcd.Clear(0xFF00);
+	m_lcd.Clear(0x0FF0);
 
 }

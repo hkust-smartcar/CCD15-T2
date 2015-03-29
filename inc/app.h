@@ -43,6 +43,15 @@ private:
 
 	RemoteVarManager::Var* m_boff = m_car.m_varmanager->Register("boff",RemoteVarManager::Var::Type::kReal);
 
+	RemoteVarManager::Var* m_carkp = m_car.m_varmanager->Register("carkp",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_carkd = m_car.m_varmanager->Register("carkd",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_carki = m_car.m_varmanager->Register("carki",RemoteVarManager::Var::Type::kReal);
+
+	RemoteVarManager::Var* m_carspeed = m_car.m_varmanager->Register("carspeed",RemoteVarManager::Var::Type::kReal);
+
+	RemoteVarManager::Var* m_r1 = m_car.m_varmanager->Register("r1",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_r2 = m_car.m_varmanager->Register("r2",RemoteVarManager::Var::Type::kReal);
+
 	PositionalPidController<int16_t,int16_t> m_speed_control0;
 	PositionalPidController<int16_t,int16_t> m_speed_control1;
 };

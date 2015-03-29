@@ -2,6 +2,7 @@
 #include <libsc/system.h>
 #include <libutil/misc.h>
 #include <libsc/led.h>
+#include <libsc/joystick.h>
 #include <functional>
 
 using namespace libsc;
@@ -18,7 +19,7 @@ Led::Config GetLedConfig2(int id){
 
 int main(){
 	System::Init();
-
+//	Joystick joy();
 	App m_app;
 
 	return 0;

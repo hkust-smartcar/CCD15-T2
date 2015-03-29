@@ -53,7 +53,7 @@ public:
 	JyMcuBt106* m_com;
 
 
-//	St7735r m_lcd;
+	St7735r m_lcd;
 
 private:
 

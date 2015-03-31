@@ -4,14 +4,9 @@
  *  Created on: Mar 3, 2015
  *      Author: harrison
  */
-#if defined(MK60DZ10)
-//#include "k60/car.h"
-#elif defined(MKL26Z4)
-#include "kl26/car.h"
-#endif
 
 #pragma once
-
+#include "car.h"
 #include <libutil/positional_pid_controller.h>
 
 using namespace libutil;

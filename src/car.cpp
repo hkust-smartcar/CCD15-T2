@@ -1,5 +1,4 @@
-#include <kl26/car.h>
-
+#include <car.h>
 #include <libsc/led.h>
 #include <libutil/misc.h>
 
@@ -35,8 +34,15 @@ Mpu6050::Config GetMpu6050Config(){
 
 }
 
-libsc::Led::Config GetLedConfig(int id){
-	libsc::Led::Config ledconfig;
+//Mma8451q::Config GetMma8451qConfig(){
+//	Mma8451q::Config accel_config;
+//	accel_config.id = 0;
+//	accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
+//	return accel_config;
+//}
+
+Led::Config GetLedConfig(int id){
+	Led::Config ledconfig;
 	ledconfig.id = id;
 	return ledconfig;
 }
@@ -71,6 +77,7 @@ Car::Car():
 				m_led3(GetLedConfig(2)),
 				m_led4(GetLedConfig(3)),
 				m_mpu6050(GetMpu6050Config()),
+//				m_mma8451q(GetMma8451qConfig()),
 				m_encoder0(GetDirEncoderConfig(0)),
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),
@@ -80,9 +87,10 @@ Car::Car():
 
 {
 	m_led.SetEnable(true);
-	m_led.SetEnable(false);
-	m_led.SetEnable(true);
-	m_led.SetEnable(false);
+	m_led2.SetEnable(false);
+	m_led3.SetEnable(true);
+	m_led4.SetEnable(false);
+
 	JyMcuBt106::Config uartconfig;
 	uartconfig.baud_rate = libbase::kl26::Uart::Config::BaudRate::k115200;
 	uartconfig.id = 0;
@@ -91,6 +99,6 @@ Car::Car():
 
 	libutil::InitDefaultFwriteHandler(m_com);
 
-	m_lcd.Clear(0x0FF0);
+	m_lcd.Clear(0x0);
 
 }

@@ -1,4 +1,5 @@
 #include "app.h"
+#include "DebugApp.h"
 #include <libsc/system.h>
 #include <libutil/misc.h>
 #include <libsc/led.h>

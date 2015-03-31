@@ -4,15 +4,15 @@
  *  Created on: Mar 3, 2015
  *      Author: harrison
  */
-#include "app.h"
+#include <car.h>
+#include <cmath>
 #include <libsc/system.h>
 #include <libsc/sys_tick_delay.h>
-#include <cmath>
-#include "kalman.h"
-#include "kl26/car.h"
-#include "Quaternion.h"
 #include <libutil/misc.h>
 #include <libbase/kl26/gpio.h>
+#include "app.h"
+#include "kalman.h"
+#include "Quaternion.h"
 #include "upstand.h"
 
 
@@ -144,7 +144,7 @@ App::App():
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[7]={0,0,0,0,49.0f,0,0};
+	float balcon[7]={0,0,0,0,20.0f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -263,7 +263,7 @@ App::App():
 //						}else if(ccd_data_[i] > 57000){
 //							color = ~0;
 //						}
-						m_car.m_lcd.FillColor(color);
+//						m_car.m_lcd.FillColor(color);
 					}
 					y++;
 					y=y%160;
@@ -334,9 +334,9 @@ App::App():
 //				printf("%f,%f,%f,%d,%d\n", m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal(), power_r, m_car.m_encoder_countr);
 //				printf("%f,%f,%f,%f,%f,%f\n",accel_[0],accel_[1],accel_[2],gyro_[0],gyro_[1]),gyro_[2];
 //				printf("$,%f,%f,%f\n",real_angle*RAD2ANGLE,acc_angle*RAD2ANGLE,gyro_angle*RAD2ANGLE);
-				printf("%d\n", upstand.GetAngle());
+//				printf("%d\n", upstand.GetAngle());
 //				printf("%f\n",balcon[5]);
-//				printf("%d,%d,%d\n", speedsp, m_car.m_encoder_countr, m_car.m_encoder_countl);
+				printf("%d,%f,%d,%d\n", upstand.GetAngle(), balcon[5], m_car.m_encoder_countr, m_car.m_encoder_countl);
 			}
 
 //			if(tc_%500==0){
@@ -381,7 +381,7 @@ App::App():
 				balcon[5] = -Output_speed(carspeedcon, carspeedpid, (m_car.m_encoder_countr + m_car.m_encoder_countl)/2);
 			}
 
-			if(tc_%50==0){
+//			if(tc_%50==0){
 //				ccd_data_=my_car.m_ccd.GetData();
 //				Update_edge(ccd_data_, edge);
 //				if (edge[0]+edge[i]>libsc::kl26::LinearCcd::kSensorW){
@@ -396,7 +396,7 @@ App::App():
 //					power0*=1.1;
 //					power1*=1.1;
 //				}
-			}
+//			}
 
 //			power0 = m_balance_pid_output;
 //			power1 = m_balance_pid_output;

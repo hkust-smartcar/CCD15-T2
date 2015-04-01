@@ -7,6 +7,8 @@
 
 #pragma once
 #include "car.h"
+#include <libsc/lcd_typewriter.h>
+#include <libutil/string.h>
 #include <libutil/positional_pid_controller.h>
 
 using namespace libutil;
@@ -21,11 +23,12 @@ public:
 	uint16_t RpmToPwm_L(uint16_t count);
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
-	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle);
+	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float  omega);
 	float Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
 	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 private:
 	Car m_car;
+	LcdTypewriter m_lcd_typewriter;
 	int16_t m_balance_pid_output;
 
 	RemoteVarManager::Var* m_skp = m_car.m_varmanager->Register("skp",RemoteVarManager::Var::Type::kReal);
@@ -49,5 +52,12 @@ private:
 
 	PositionalPidController<int16_t,int16_t> m_speed_control0;
 	PositionalPidController<int16_t,int16_t> m_speed_control1;
+
+	LcdTypewriter::Config GetLcdTypewriterConfig(){
+		LcdTypewriter::Config config;
+		config.is_text_wrap = false;
+		config.lcd = &(m_car.m_lcd);
+		return config;
+	}
 };
 

@@ -59,6 +59,12 @@ DirMotor::Config GetDirMotorConfig(int id){
 	return config;
 }
 
+BatteryMeter::Config GetBatteryConfig(){
+	BatteryMeter::Config config;
+	config.voltage_ratio = 1.0f/3.0f;
+	return config;
+}
+
 St7735r::Config GetSt7735RConfig(){
 	St7735r::Config config;
 	config.is_revert = true;
@@ -83,6 +89,7 @@ Car::Car():
 				m_motor_r(GetDirMotorConfig(0)),
 				m_motor_l(GetDirMotorConfig(1)),
 				m_ccd(0),
+				m_bat(GetBatteryConfig()),
 				m_lcd(GetSt7735RConfig())
 
 {
@@ -99,6 +106,6 @@ Car::Car():
 
 	libutil::InitDefaultFwriteHandler(m_com);
 
-	m_lcd.Clear(0x0);
+//	m_lcd.Clear(0x0);
 
 }

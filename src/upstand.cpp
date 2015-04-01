@@ -18,7 +18,7 @@
  */
 #include <car.h>
 #include <array>
-#include <math.h>
+#include <cmath>
 #include "upstand.h"
 
 /**
@@ -74,7 +74,7 @@ void Upstand::KalmanFilter(void)
       AngleAcc  = RAD2ANGLE * Accelerometer;
 
       /* 陀螺仪角度转化 */
-      AngleGyro = -omega_[1] / 400.0f;
+      AngleGyro = -omega_[1] / 2.0f;
 
       /* 卡尔曼先验估计：时间更新 */
       /* Priori Estimation : X(k|k-1) = A(k,k-1)*X(k-1|k-1) + B(k)*u(k) */
@@ -101,7 +101,7 @@ void Upstand::KalmanFilter(void)
 //      gl_speed_angle      = (int32_t)( Posterior_Estimation * 10 - Posterior_Estimation_Real * 10 );
 
       /* 控制角度输出 */
-      m_angle            = (int32_t)( Posterior_Estimation * 10 );
+      m_angle            = (int32_t)( Posterior_Estimation );
       m_angle_gyro       = (int32_t)( Gyroscope );
 
 //      printvars[0] = gyro_angle * 10;

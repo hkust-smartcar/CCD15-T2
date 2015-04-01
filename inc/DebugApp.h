@@ -22,7 +22,7 @@ private:
 	LcdTypewriter::Config getLcdTypewriterConfig(){
 		LcdTypewriter::Config config;
 		config.is_text_wrap = false;
-		config.lcd = &(m_car.m_lcd);
+//		config.lcd = &(m_car.m_lcd);
 		return config;
 	}
 };

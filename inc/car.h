@@ -20,6 +20,7 @@
 #include <libbase/kl26/uart.h>
 #include <libsc/kl26/uart_device.h>
 #include <libsc/st7735r.h>
+#include <libsc/battery_meter.h>
 //#include <libutil/positional_pid_controller.h>
 #include <libutil/remote_var_manager.h>
 
@@ -53,6 +54,7 @@ public:
 
 	JyMcuBt106* m_com;
 
+	BatteryMeter m_bat;
 
 	St7735r m_lcd;
 

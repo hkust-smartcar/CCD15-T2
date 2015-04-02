@@ -320,12 +320,13 @@ App::App():
 				value[0] = m_r1->GetReal();
 				value[1] = m_r2->GetReal();
 				gyro_t = System::Time();
-				m_car.m_mpu6050.Update();
+//				m_car.m_mpu6050.Update();
+				m_car.m_mma8451q.Update();
 
 				quaternion.Update();
 //				upstand.KalmanFilter();
 //				real_angle = (float) upstand.GetAngle();
-				accel_ = m_car.m_mpu6050.GetAccel();
+				accel_ = m_car.m_mma8451q.GetAccel();
 				gyro_ = m_car.m_mpu6050.GetOmega();
 				/*static float angles[3] = {0};
 				gyro_[0] = gyro_[0] / RAD2ANGLE;
@@ -393,17 +394,16 @@ App::App():
 
 
 
-//			if(tc_%500==0){
-//				speedsp += 10;
-//				speedsp %= 800;
-////				speedsp = 250;
-//				power_r = speedsp;
-//				power_l = speedsp;
-//				/*speedsp += 30;
-//				speedsp %= 120;
-//				m_speed_control0.SetSetpoint(speedsp);
-//				m_speed_control1.SetSetpoint(speedsp);*/
-//			}
+			if(tc_%500==0){
+				/*speedsp += 10;
+				speedsp %= 800;
+				power_r = speedsp;
+				power_l = speedsp;*/
+				speedsp += 30;
+				speedsp %= 120;
+				m_speed_control0.SetSetpoint(speedsp);
+				m_speed_control1.SetSetpoint(speedsp);
+			}
 			if(tc_%2==0){
 				m_car.m_encoder0.Update();
 				m_car.m_encoder1.Update();
@@ -445,7 +445,8 @@ App::App():
 //				printf("%d\n", upstand.GetAngle());
 //				printf("%f\n",balcon[5]);
 //				printf("%f,%f,%d,%d\n", real_angle*RAD2ANGLE, balcon[5], m_car.m_encoder_countr, m_car.m_encoder_countl);
-				printf("%d,%d,%d,%d,%d\n", speedsp, m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_spdcountr, m_car.m_encoder_spdcountl);
+				printf("%f,%f,%f\n",accel_[0],accel_[1],accel_[2]);
+//				printf("%d,%d,%d,%d,%d\n", speedsp, m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_spdcountr, m_car.m_encoder_spdcountl);
 			}
 
 			if(tc_%20==0){

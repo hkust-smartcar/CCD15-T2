@@ -11,7 +11,7 @@
 #include <libsc/dir_motor.h>
 #include <libsc/dir_encoder.h>
 #include <libsc/mpu6050.h>
-//#include <libsc/mma8451q.h>
+#include <libsc/mma8451q.h>
 #include <libbase/kl26/gpio.h>
 #include <libsc/kl26/jy_mcu_bt_106.h>
 #include <libsc/led.h>
@@ -45,7 +45,7 @@ public:
 	int16_t m_encoder_spdcountr = 0, m_encoder_spdcountl = 0;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Mpu6050 m_mpu6050;
-//	Mma8451q m_mma8451q;
+	Mma8451q m_mma8451q;
 	DirEncoder m_encoder0;
 	DirEncoder m_encoder1;
 	DirMotor m_motor_r;

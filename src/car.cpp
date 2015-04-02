@@ -17,8 +17,8 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
-	config.core_clock_khz = 90000;
-	config.bus_clock_khz = 90000;
+	config.core_clock_khz = 48000;
+	config.bus_clock_khz = 48000;
 	return config;
 }
 
@@ -34,12 +34,12 @@ Mpu6050::Config GetMpu6050Config(){
 
 }
 
-//Mma8451q::Config GetMma8451qConfig(){
-//	Mma8451q::Config accel_config;
-//	accel_config.id = 0;
-//	accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
-//	return accel_config;
-//}
+Mma8451q::Config GetMma8451qConfig(){
+	Mma8451q::Config accel_config;
+	accel_config.id = 0;
+	accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
+	return accel_config;
+}
 
 Led::Config GetLedConfig(int id){
 	Led::Config ledconfig;
@@ -83,7 +83,7 @@ Car::Car():
 				m_led3(GetLedConfig(2)),
 				m_led4(GetLedConfig(3)),
 				m_mpu6050(GetMpu6050Config()),
-//				m_mma8451q(GetMma8451qConfig()),
+				m_mma8451q(GetMma8451qConfig()),
 				m_encoder0(GetDirEncoderConfig(0)),
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),

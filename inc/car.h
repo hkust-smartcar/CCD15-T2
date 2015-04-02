@@ -42,6 +42,7 @@ public:
 
 	RemoteVarManager* m_varmanager;
 	int16_t m_encoder_countr, m_encoder_countl, m_encoder_count_c, m_encoder_speed_c, m_speed_output;
+	int16_t m_encoder_spdcountr = 0, m_encoder_spdcountl = 0;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Mpu6050 m_mpu6050;
 //	Mma8451q m_mma8451q;

@@ -18,7 +18,7 @@ Mcg::Config Mcg::GetMcgConfig()
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
 	config.core_clock_khz = 48000;
-	config.bus_clock_khz = 48000;
+	config.bus_clock_khz = 24000;
 	return config;
 }
 
@@ -72,7 +72,7 @@ St7735r::Config GetSt7735RConfig(){
 }
 
 Car::Car():
-				m_varmanager(new RemoteVarManager(13)),
+				m_varmanager(new RemoteVarManager(15)),
 				m_encoder_countr(0),
 				m_encoder_countl(0),
 				m_encoder_count_c(0),

@@ -55,12 +55,12 @@ void Upstand::KalmanFilter(void)
 	  static   float Posterior_Estimation_Real  = 0;
 
 	  /* 基本参数赋值 */
-	  Timer::TimerInt t = System::Time();
-	  static Timer::TimerInt pt = 0;
-      float dt = (t - pt)/1000.0f;
-      pt = t;
+//	  Timer::TimerInt t = System::Time();
+//	  static Timer::TimerInt pt = 0;
+      float dt = 4/1000.0f;
+//      pt = t;
 	  Q  = GYRO_CONVARIANCE;
-	  R  = ACCY_CONVARIANCE;
+	  R  = (float)5000.0f/*ACCY_CONVARIANCE*/;
 
 	  /* 传感器取值 */
 	  std::array<float, 3> omega_ = m_mpu->GetOmega();
@@ -71,10 +71,15 @@ void Upstand::KalmanFilter(void)
 	  /* 设定零点 */
 	  Accelerometer = accel_[2]/*(float)(ANGLE_ZERO) - (float)m_acc_ad*/;
 //     Gyroscope     = ((float)gl_gyro_zero - (float)gl_gyro_ad + ((float)gl_speed_fb_fix - (float)gl_speed_lr_fix)/ 10.0);      /* 加速度计角度转化 */
-      AngleAcc  = RAD2ANGLE * Accelerometer;
+	  if(Accelerometer > 1.0f){
+		  Accelerometer = 1.0f;
+	  }else if(Accelerometer < -1.0f){
+		  Accelerometer = -1.0f;
+	  }
+	  AngleAcc  = RAD2ANGLE * asin(Accelerometer);
 
       /* 陀螺仪角度转化 */
-      AngleGyro = -omega_[1] / 2.0f;
+      AngleGyro = -omega_[1] / 2.1;
 
       /* 卡尔曼先验估计：时间更新 */
       /* Priori Estimation : X(k|k-1) = A(k,k-1)*X(k-1|k-1) + B(k)*u(k) */
@@ -94,14 +99,14 @@ void Upstand::KalmanFilter(void)
        Posterior_Convariance = sqrt( ( 1 -KalmanGain ) * Priori_Convariance * Priori_Convariance );
 
       /* 实际角度输出:加速度计/陀螺仪/融合后角度 */
-      m_angle_acc        = (int32_t)( AngleAcc * 100 );
+      m_angle_acc        = AngleAcc;
 
       /* 速度附加角度：陀螺仪/附加角 */
 //      gl_speed_gyro       = (int32_t)( Gyroscope - GyroscopeReal );
 //      gl_speed_angle      = (int32_t)( Posterior_Estimation * 10 - Posterior_Estimation_Real * 10 );
 
       /* 控制角度输出 */
-      m_angle            = (int32_t)( Posterior_Estimation );
+      m_angle            = ( Posterior_Estimation );
       m_angle_gyro       = (int32_t)( Gyroscope );
 
 //      printvars[0] = gyro_angle * 10;

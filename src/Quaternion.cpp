@@ -47,9 +47,9 @@ Quaternion::Quaternion(double interval, Mpu6050* mpu) : Interval(interval){
 	R[1] = 0.0005;
 	_EulerKalman[2] = new Kalman(0.0001, R, 0, 1.0);
 
-	DriftCorrectionPid[0] = new Pid(5,5.5,0,0,1000,interval);
-	DriftCorrectionPid[1] = new Pid(6,5.5,0,0,1000,interval);
-	DriftCorrectionPid[2] = new Pid(7,5.5,0,0,1000,interval);
+	DriftCorrectionPid[0] = new Pid(5,10.5,0,0,1000,interval);
+	DriftCorrectionPid[1] = new Pid(6,10.5,0,0,1000,interval);
+	DriftCorrectionPid[2] = new Pid(7,10.5,0,0,1000,interval);
 
 }
 

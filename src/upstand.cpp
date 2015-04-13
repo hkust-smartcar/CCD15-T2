@@ -63,23 +63,27 @@ void Upstand::KalmanFilter(void)
 	  R  = (float)5000.0f/*ACCY_CONVARIANCE*/;
 
 	  /* 传感器取值 */
-	  std::array<float, 3> omega_ = m_mpu->GetOmega();
-	  std::array<float, 3> accel_ = m_mpu->GetAccel();
-	  m_gyro_ad = (int32_t)-omega_[1];
-	  m_acc_ad = (int32_t)accel_[2];
+//	  std::array<float, 3> omega_ = m_mpu->GetOmega();
+//	  std::array<float, 3> accel_ = m_mpu->GetAccel();
+//	  m_gyro_ad = (int32_t)-omega_[1];
+//	  m_acc_ad = (int32_t)accel_[2];
 
 	  /* 设定零点 */
-	  Accelerometer = accel_[2]/*(float)(ANGLE_ZERO) - (float)m_acc_ad*/;
+//	  Accelerometer = accel_[2]/*(float)(ANGLE_ZERO) - (float)m_acc_ad*/;
+	  Accelerometer = m_acc_adc->GetResultF();
 //     Gyroscope     = ((float)gl_gyro_zero - (float)gl_gyro_ad + ((float)gl_speed_fb_fix - (float)gl_speed_lr_fix)/ 10.0);      /* 加速度计角度转化 */
-	  if(Accelerometer > 1.0f){
-		  Accelerometer = 1.0f;
-	  }else if(Accelerometer < -1.0f){
-		  Accelerometer = -1.0f;
-	  }
-	  AngleAcc  = RAD2ANGLE * asin(Accelerometer);
+//	  if(Accelerometer > 1.0f){
+//		  Accelerometer = 1.0f;
+//	  }else if(Accelerometer < -1.0f){
+//		  Accelerometer = -1.0f;
+//	  }
+	  AngleAcc  = /*RAD2ANGLE * asin(*/Accelerometer/*)*/;
 
       /* 陀螺仪角度转化 */
-      AngleGyro = -omega_[1] / 2.1;
+//      AngleGyro = -omega_[1] / 2.1;
+	  AngleGyro = m_gyro_adc->GetResultF();
+	  m_angle_gyro = AngleGyro;
+
 
       /* 卡尔曼先验估计：时间更新 */
       /* Priori Estimation : X(k|k-1) = A(k,k-1)*X(k-1|k-1) + B(k)*u(k) */
@@ -107,7 +111,7 @@ void Upstand::KalmanFilter(void)
 
       /* 控制角度输出 */
       m_angle            = ( Posterior_Estimation );
-      m_angle_gyro       = (int32_t)( Gyroscope );
+//      m_angle_gyro       = (int32_t)( Gyroscope );
 
 //      printvars[0] = gyro_angle * 10;
 //      printvars[1] = AngleAcc * 10;

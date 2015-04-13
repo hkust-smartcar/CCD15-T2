@@ -140,9 +140,11 @@ void App::PitBalance(Pit* pit){
 //		pin->Clear();
 	}
 	if(m_pit_count%2==1){
-
+		pin->Set();
+		m_car.m_ccd.StartSample();
+		while(!m_car.m_ccd.SampleProcess()){}
+		pin->Clear();
 		if(m_car.m_ccd.IsImageReady()){
-			pin->Set();
 			ccd_data_ = m_car.m_ccd.GetData();
 			uint16_t avg = 0;
 			uint32_t sum = 0;
@@ -186,17 +188,17 @@ void App::PitBalance(Pit* pit){
 			turn_power0 = -4*error;
 			turn_power1 = 4*error;
 
-			m_car.m_ccd.StartSample();
 
-			St7735r::Rect rect_;
+
+//			St7735r::Rect rect_;
 			uint16_t color = 0;
 
 			for(int i=0; i<Tsl1401cl::kSensorW; i++){
-				rect_.x = i;
-				rect_.y = y;
-				rect_.w = 1;
-				rect_.h = 1;
-				m_car.m_lcd.SetRegion(rect_);
+//				rect_.x = i;
+//				rect_.y = y;
+//				rect_.w = 1;
+//				rect_.h = 1;
+//				m_car.m_lcd.SetRegion(rect_);
 				if(ccd_data_[i] >= avg){
 						color = ~0;
 				}else{
@@ -207,24 +209,22 @@ void App::PitBalance(Pit* pit){
 				}else if(ccd_data_[i] > 57000){
 					color = ~0;
 				}
-							m_car.m_lcd.FillColor(color);
+//							m_car.m_lcd.FillColor(color);
 			}
 			y++;
 			y=y%160;
-			pin->Clear();
 		}
 
 	}
 	if(m_pit_count%4==0){
-		printf("%f,%f,%f,%f,%f,%f,%d,%d\n", real_angle, gyro_[1], upstand->GetAccAngle(), m_bkp->GetReal(), m_bki->GetReal(), m_bkd->GetReal(), power_l, power_r);
+		printf("%f,%f,%f\n\r",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
+//		printf("%f,%f,%f,%f,%f,%f,%d,%d\n", real_angle, gyro_[1], upstand->GetAccAngle(), m_bkp->GetReal(), m_bki->GetReal(), m_bkd->GetReal(), power_l, power_r);
 	}
 
 	m_pit_count++;
 }
 
 void App::PitMoveMotor(Pit* pit){
-	m_car.m_ccd.SampleProcess();
-
 	power_l = libutil::Clamp<int16_t>(-1000,power_l, 1000);
 	power_r = libutil::Clamp<int16_t>(-1000,power_r, 1000);
 
@@ -274,11 +274,14 @@ App::App():
 //	pinadcfg.pin = Pin::Name::kPte16;
 //	Gpo pinad(pinadcfg);
 
-	m_car.m_mpu6050.Update();
+//	m_car.m_mpu6050.Update();
 //	acc_angle = accel_[2]/* * RAD2ANGLE*/;
 //	gyro_angle = 0;//acc_angle;
 //	real_angle = acc_angle;
-	upstand = new Upstand(&(m_car.m_mpu6050));
+//	upstand = new Upstand(&(m_car.m_mpu6050));
+
+
+	upstand = new Upstand(&(m_car.m_acc_adc),&(m_car.m_gyro_adc));
 
 
 

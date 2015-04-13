@@ -23,6 +23,7 @@
 #include <libsc/battery_meter.h>
 //#include <libutil/positional_pid_controller.h>
 #include <libutil/remote_var_manager.h>
+#include <libbase/kl26/adc.h>
 
 
 #ifndef INC_CAR_H_
@@ -31,6 +32,7 @@
 
 #define RAD2ANGLE 57.296f
 
+using namespace LIBBASE_NS;
 using namespace libsc;
 using namespace LIBSC_NS;
 using namespace LIBSC_NS;
@@ -46,6 +48,8 @@ public:
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Mpu6050 m_mpu6050;
 	Mma8451q m_mma8451q;
+	Adc m_acc_adc;
+	Adc m_gyro_adc;
 	DirEncoder m_encoder0;
 	DirEncoder m_encoder1;
 	DirMotor m_motor_r;

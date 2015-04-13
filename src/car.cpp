@@ -1,6 +1,7 @@
 #include <car.h>
 #include <libsc/led.h>
 #include <libutil/misc.h>
+#include <libbase/kl26/adc.h>
 
 using namespace libbase;
 using namespace libsc;
@@ -17,8 +18,8 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
-	config.core_clock_khz = 48000;
-	config.bus_clock_khz = 24000;
+	config.core_clock_khz = 80000;
+	config.bus_clock_khz = 80000;
 	return config;
 }
 
@@ -39,6 +40,20 @@ Mma8451q::Config GetMma8451qConfig(){
 	accel_config.id = 0;
 	accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
 	return accel_config;
+}
+
+libbase::kl26::Adc::Config GetAccConfig(){
+	libbase::kl26::Adc::Config config;
+	config.adc = libbase::kl26::Adc::Name::kAdc0DAd0;
+	config.resolution = libbase::kl26::Adc::Config::Resolution::k16Bit;
+	return config;
+}
+
+libbase::kl26::Adc::Config GetGyroConfig(){
+	libbase::kl26::Adc::Config config;
+	config.adc = libbase::kl26::Adc::Name::kAdc0Ad6A;
+	config.resolution = libbase::kl26::Adc::Config::Resolution::k16Bit;
+	return config;
 }
 
 Led::Config GetLedConfig(int id){
@@ -84,6 +99,8 @@ Car::Car():
 				m_led4(GetLedConfig(3)),
 				m_mpu6050(GetMpu6050Config()),
 				m_mma8451q(GetMma8451qConfig()),
+				m_acc_adc(GetAccConfig()),
+				m_gyro_adc(GetGyroConfig()),
 				m_encoder0(GetDirEncoderConfig(0)),
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),

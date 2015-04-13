@@ -20,6 +20,7 @@
 #pragma once
 
 #include <libsc/mpu6050.h>
+#include <libbase/kl26/adc.h>
 using namespace libsc;
 
 /**
@@ -33,11 +34,24 @@ using namespace libsc;
 //#define ACCY_AD2DEG_RATIO   0.46f   /**< 加速度计角度转换比例 */
 #define ANGLE_ZERO          156           /**< 加速度计静态零点设置值（粗调） */
 
+using namespace libbase::kl26;
 
 class Upstand{
 public:
+	Upstand(libbase::kl26::Adc* acc_adc_, libbase::kl26::Adc* gyro_adc_):
+		m_mpu(NULL),
+		m_acc_adc(acc_adc_),
+		m_gyro_adc(gyro_adc_),
+		m_angle(0)
+	{
+//		m_acc_adc = acc_adc_;
+//		m_gyro_adc = gyro_adc_;
+	}
+
 	Upstand(Mpu6050* mpu_):
 		m_mpu(mpu_),
+		m_acc_adc(NULL),
+		m_gyro_adc(NULL),
 		m_angle(0)
 	{}
 
@@ -69,12 +83,18 @@ public:
 		return m_angle_acc;
 	}
 
+	float GetGyroAngle(){
+		return m_angle_gyro;
+	}
+
 	void SetR(uint32_t r){
 		m_r = r;
 	}
 
 private:
 	Mpu6050* m_mpu;
+	libbase::kl26::Adc* m_acc_adc;
+	libbase::kl26::Adc* m_gyro_adc;
 	/**
 	 *  全局变量定义
 	 */
@@ -83,8 +103,8 @@ private:
 	int32_t  m_acc_ad          = 0;
 	int32_t  m_acc             = 0;    /* 用于显示在液晶上的加速度计的实时值 */
 	int32_t  m_gyr             = 0;
-	float  m_angle_acc 	   = 0;
-	int32_t  m_angle_gyro      = 0;
+	float  m_angle_acc 	  	   = 0;
+	float  m_angle_gyro        = 0;
 	int32_t  m_gyro_zero       = 327;
 	int32_t  m_angle_real      = 0;
 	int32_t  m_angle_gyro_real = 0;

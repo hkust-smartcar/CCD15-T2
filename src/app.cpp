@@ -120,31 +120,32 @@ void App::PitBalance(Pit* pit){
 	if(m_pit_count%2==0){
 //		pin->Set();
 		m_car.m_mpu6050.Update();
-		accel_ = m_car.m_mpu6050.GetAccel();
-		gyro_ = m_car.m_mpu6050.GetOmega();
+//		pin->Clear();
+//		accel_ = m_car.m_mpu6050.GetAccel();
+//		gyro_ = m_car.m_mpu6050.GetOmega();
 	//	m_car.m_mma8451q.Update();
 
 		upstand->KalmanFilter();
 		real_angle = (float) upstand->GetAngle();
 
-		balpid[0] = 230.0f/*m_bkp->GetReal()*/;
+		balpid[0] = 170.0f/*m_bkp->GetReal()*/;
 		balpid[1] = m_bki->GetReal();
-		balpid[2] = 1.8f/*m_bkd->GetReal()*/;
+		balpid[2] = 1.9f/*m_bkd->GetReal()*/;
 
 		balcon[6] = 1.0f;
 
 		m_balance_pid_output = Output_b(balcon, balpid, time, real_angle, gyro_[1]);
 
-		power_r = power_l = m_balance_pid_output;
+//		power_r = power_l = m_balance_pid_output;
 
-//		pin->Clear();
+
 	}
 	if(m_pit_count%2==1){
 		pin->Set();
 		m_car.m_ccd.StartSample();
 		while(!m_car.m_ccd.SampleProcess()){}
 		pin->Clear();
-		if(m_car.m_ccd.IsImageReady()){
+//		if(m_car.m_ccd.IsImageReady()){
 			ccd_data_ = m_car.m_ccd.GetData();
 			uint16_t avg = 0;
 			uint32_t sum = 0;
@@ -185,10 +186,8 @@ void App::PitBalance(Pit* pit){
 
 
 			int error = cameramid - mid;
-			turn_power0 = -4*error;
-			turn_power1 = 4*error;
-
-
+			turn_powerl = -4*error;
+			turn_powerr = 4*error;
 
 //			St7735r::Rect rect_;
 			uint16_t color = 0;
@@ -213,11 +212,12 @@ void App::PitBalance(Pit* pit){
 			}
 			y++;
 			y=y%160;
-		}
+//		}
 
 	}
 	if(m_pit_count%4==0){
-		printf("%f,%f,%f\n\r",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
+//		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
+		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
 //		printf("%f,%f,%f,%f,%f,%f,%d,%d\n", real_angle, gyro_[1], upstand->GetAccAngle(), m_bkp->GetReal(), m_bki->GetReal(), m_bkd->GetReal(), power_l, power_r);
 	}
 
@@ -225,6 +225,16 @@ void App::PitBalance(Pit* pit){
 }
 
 void App::PitMoveMotor(Pit* pit){
+	m_car.m_encoder0.Update();
+	m_car.m_encoder1.Update();
+	m_car.m_encoder_countr = -m_car.m_encoder0.GetCount(); //right wheel
+	m_car.m_encoder_countl = m_car.m_encoder1.GetCount(); //left wheel
+	m_car.m_encoder_spdcountr += m_car.m_encoder_countr;
+	m_car.m_encoder_spdcountl += m_car.m_encoder_countl;
+
+	power_l = m_balance_pid_output + turn_powerl;
+	power_r = m_balance_pid_output + turn_powerr;
+
 	power_l = libutil::Clamp<int16_t>(-1000,power_l, 1000);
 	power_r = libutil::Clamp<int16_t>(-1000,power_r, 1000);
 
@@ -233,8 +243,8 @@ void App::PitMoveMotor(Pit* pit){
 	 * Protection for motors
 	 * */
 
-//	if(abs(power_l) >= 950) power_l = 0;
-//	if(abs(power_r) >= 950) power_r = 0;
+//	if(abs(power_l) >= 1000) power_l = 0;
+//	if(abs(power_r) >= 1000) power_r = 0;
 
 
 	m_car.m_motor_r.SetClockwise(power_r < 0); //Right Motor - false forward, true backward
@@ -278,10 +288,10 @@ App::App():
 //	acc_angle = accel_[2]/* * RAD2ANGLE*/;
 //	gyro_angle = 0;//acc_angle;
 //	real_angle = acc_angle;
-//	upstand = new Upstand(&(m_car.m_mpu6050));
+	upstand = new Upstand(&(m_car.m_mpu6050));
 
 
-	upstand = new Upstand(&(m_car.m_acc_adc),&(m_car.m_gyro_adc));
+//	upstand = new Upstand(&(m_car.m_acc_adc),&(m_car.m_gyro_adc));
 
 
 

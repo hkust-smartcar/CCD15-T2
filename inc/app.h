@@ -69,7 +69,7 @@ private:
 
 	Upstand* upstand;
 
-	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_power0=0, turn_power1=0;
+	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_powerl=0, turn_powerr=0;
 
 	int m_pit_count = 0;
 
@@ -80,7 +80,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[7]={0,0,0,0,47.0f,0,0};
+	float balcon[7]={0,0,0,0,46.0f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;

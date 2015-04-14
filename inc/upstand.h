@@ -48,8 +48,9 @@ public:
 //		m_gyro_adc = gyro_adc_;
 	}
 
-	Upstand(Mpu6050* mpu_):
+	Upstand(Mpu6050* mpu_, Mma8451q* mma_):
 		m_mpu(mpu_),
+		m_mma(mma_),
 		m_acc_adc(NULL),
 		m_gyro_adc(NULL),
 		m_angle(0)
@@ -93,6 +94,7 @@ public:
 
 private:
 	Mpu6050* m_mpu;
+	Mma8451q* m_mma;
 	libbase::kl26::Adc* m_acc_adc;
 	libbase::kl26::Adc* m_gyro_adc;
 	/**

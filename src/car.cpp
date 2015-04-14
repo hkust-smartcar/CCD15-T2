@@ -35,12 +35,7 @@ Mpu6050::Config GetMpu6050Config(){
 
 }
 
-Mma8451q::Config GetMma8451qConfig(){
-	Mma8451q::Config accel_config;
-	accel_config.id = 0;
-	accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
-	return accel_config;
-}
+
 
 libbase::kl26::Adc::Config GetAccConfig(){
 	libbase::kl26::Adc::Config config;
@@ -99,8 +94,8 @@ Car::Car():
 				m_led4(GetLedConfig(3)),
 				m_mpu6050(GetMpu6050Config()),
 				m_mma8451q(GetMma8451qConfig()),
-				m_acc_adc(GetAccConfig()),
-				m_gyro_adc(GetGyroConfig()),
+//				m_acc_adc(GetAccConfig()),
+//				m_gyro_adc(GetGyroConfig()),
 				m_encoder0(GetDirEncoderConfig(0)),
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),

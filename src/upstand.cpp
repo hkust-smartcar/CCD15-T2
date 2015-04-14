@@ -64,12 +64,12 @@ void Upstand::KalmanFilter(void)
 
 	  /* 传感器取值 */
 	  std::array<float, 3> omega_ = m_mpu->GetOmega();
-	  std::array<float, 3> accel_ = m_mpu->GetAccel();
+	  std::array<float, 3> accel_ = m_mma->GetAccel();
 //	  m_gyro_ad = (int32_t)-omega_[1];
 //	  m_acc_ad = (int32_t)accel_[2];
 
 	  /* 设定零点 */
-	  Accelerometer = accel_[2]/*(float)(ANGLE_ZERO) - (float)m_acc_ad*/;
+	  Accelerometer = accel_[1]/*(float)(ANGLE_ZERO) - (float)m_acc_ad*/;
 //	  Accelerometer = m_acc_adc->GetResultF();
 //     Gyroscope     = ((float)gl_gyro_zero - (float)gl_gyro_ad + ((float)gl_speed_fb_fix - (float)gl_speed_lr_fix)/ 10.0);      /* 加速度计角度转化 */
 	  if(Accelerometer > 1.0f){
@@ -80,7 +80,7 @@ void Upstand::KalmanFilter(void)
 	  AngleAcc  = RAD2ANGLE * asin(Accelerometer);
 
       /* 陀螺仪角度转化 */
-      AngleGyro = -omega_[1];
+      AngleGyro = omega_[1];
 //	  AngleGyro = m_gyro_adc->GetResultF();
 	  m_angle_gyro = AngleGyro;
 

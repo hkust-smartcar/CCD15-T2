@@ -118,12 +118,14 @@ Pit::Config GetPitConfig2(const uint8_t pit_channel,
 
 void App::PitBalance(Pit* pit){
 	if(m_pit_count%2==0){
-//		pin->Set();
+		pin->Set();
 		m_car.m_mpu6050.Update();
-//		pin->Clear();
+		m_car.m_mma8451q.Update();
+		pin->Clear();
+//		accel_ = m_car.m_mma8451q.GetAccel();
 //		accel_ = m_car.m_mpu6050.GetAccel();
 //		gyro_ = m_car.m_mpu6050.GetOmega();
-	//	m_car.m_mma8451q.Update();
+
 
 		upstand->KalmanFilter();
 		real_angle = (float) upstand->GetAngle();
@@ -141,10 +143,10 @@ void App::PitBalance(Pit* pit){
 
 	}
 	if(m_pit_count%2==1){
-		pin->Set();
+//		pin->Set();
 		m_car.m_ccd.StartSample();
 		while(!m_car.m_ccd.SampleProcess()){}
-		pin->Clear();
+//		pin->Clear();
 //		if(m_car.m_ccd.IsImageReady()){
 			ccd_data_ = m_car.m_ccd.GetData();
 			uint16_t avg = 0;
@@ -217,8 +219,10 @@ void App::PitBalance(Pit* pit){
 	}
 	if(m_pit_count%4==0){
 //		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
-		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
+//		printf("%f,%f,%f\n",accel_[0],accel_[1],accel_[2]);
+//		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
 //		printf("%f,%f,%f,%f,%f,%f,%d,%d\n", real_angle, gyro_[1], upstand->GetAccAngle(), m_bkp->GetReal(), m_bki->GetReal(), m_bkd->GetReal(), power_l, power_r);
+		printf("%f,%f,%f\n",real_angle, upstand->GetGyroAngle(), upstand->GetAccAngle());
 	}
 
 	m_pit_count++;
@@ -245,6 +249,20 @@ void App::PitMoveMotor(Pit* pit){
 
 //	if(abs(power_l) >= 1000) power_l = 0;
 //	if(abs(power_r) >= 1000) power_r = 0;
+
+	m_speed_control0.SetSetpoint(m_balance_pid_output);
+	m_speed_control1.SetSetpoint(m_balance_pid_output);
+
+	m_speed_control0.SetKp(0.18f);
+//	m_speed_control0.SetKd(m_skd->GetReal());
+//	m_speed_control0.SetKi(m_ski->GetReal());
+	m_speed_control1.SetKp(0.2f);
+//	m_speed_control1.SetKd(m_skd->GetReal());
+//	m_speed_control1.SetKi(m_ski->GetReal());
+	int16_t r_val = speedsp + m_speed_control0.Calc(m_car.m_encoder_countr);
+	int16_t l_val = speedsp + m_speed_control1.Calc(m_car.m_encoder_countl);
+	power_r = sign(r_val) * RpmToPwm_R(abs(r_val));
+	power_l = sign(l_val) * RpmToPwm_L(abs(l_val));
 
 
 	m_car.m_motor_r.SetClockwise(power_r < 0); //Right Motor - false forward, true backward
@@ -288,7 +306,7 @@ App::App():
 //	acc_angle = accel_[2]/* * RAD2ANGLE*/;
 //	gyro_angle = 0;//acc_angle;
 //	real_angle = acc_angle;
-	upstand = new Upstand(&(m_car.m_mpu6050));
+	upstand = new Upstand(&(m_car.m_mpu6050), &(m_car.m_mma8451q));
 
 
 //	upstand = new Upstand(&(m_car.m_acc_adc),&(m_car.m_gyro_adc));
@@ -303,7 +321,6 @@ App::App():
 
 	m_car.m_ccd.StartSample();
 
-	int16_t speedsp = 0;
 	double temp = 0.0;
 
 

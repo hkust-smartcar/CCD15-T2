@@ -48,8 +48,8 @@ public:
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Mpu6050 m_mpu6050;
 	Mma8451q m_mma8451q;
-	Adc m_acc_adc;
-	Adc m_gyro_adc;
+//	Adc m_acc_adc;
+//	Adc m_gyro_adc;
 	DirEncoder m_encoder0;
 	DirEncoder m_encoder1;
 	DirMotor m_motor_r;
@@ -64,7 +64,13 @@ public:
 	St7735r m_lcd;
 
 private:
-
+	Mma8451q::Config GetMma8451qConfig(){
+		Mma8451q::Config accel_config;
+		accel_config.id = 0;
+		accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
+		accel_config.i2c_master_ptr = m_mpu6050.GetI2cMaster();
+		return accel_config;
+	}
 
 };
 

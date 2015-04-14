@@ -70,6 +70,7 @@ private:
 	Upstand* upstand;
 
 	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_powerl=0, turn_powerr=0;
+	int16_t speedsp = 0;
 
 	int m_pit_count = 0;
 

@@ -124,21 +124,21 @@ void App::PitBalance(Pit* pit){
 		pin->Clear();
 //		accel_ = m_car.m_mma8451q.GetAccel();
 //		accel_ = m_car.m_mpu6050.GetAccel();
-//		gyro_ = m_car.m_mpu6050.GetOmega();
+		gyro_ = m_car.m_mpu6050.GetOmega();
 
 
 		upstand->KalmanFilter();
 		real_angle = (float) upstand->GetAngle();
 
-		balpid[0] = 170.0f/*m_bkp->GetReal()*/;
+		balpid[0] = 200.0f/*m_bkp->GetReal()*/;
 		balpid[1] = m_bki->GetReal();
-		balpid[2] = 1.9f/*m_bkd->GetReal()*/;
+		balpid[2] = 0.1f/*m_bkd->GetReal()*/;
 
-		balcon[6] = 1.0f;
+		balcon[6] = 0.0f;
 
-		m_balance_pid_output = Output_b(balcon, balpid, time, real_angle, gyro_[1]);
+		m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, -gyro_[1]);
 
-//		power_r = power_l = m_balance_pid_output;
+		power_r = power_l = m_balance_pid_output;
 
 
 	}
@@ -221,8 +221,8 @@ void App::PitBalance(Pit* pit){
 //		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
 //		printf("%f,%f,%f\n",accel_[0],accel_[1],accel_[2]);
 //		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
-//		printf("%f,%f,%f,%f,%f,%f,%d,%d\n", real_angle, gyro_[1], upstand->GetAccAngle(), m_bkp->GetReal(), m_bki->GetReal(), m_bkd->GetReal(), power_l, power_r);
-		printf("%f,%f,%f\n",real_angle, upstand->GetGyroAngle(), upstand->GetAccAngle());
+		printf("%f,%f,%d\n", real_angle, upstand->GetAccAngle(), power_l);
+//		printf("%f,%f,%f\n",real_angle, upstand->GetGyroAngle(), upstand->GetAccAngle());
 	}
 
 	m_pit_count++;
@@ -236,8 +236,8 @@ void App::PitMoveMotor(Pit* pit){
 	m_car.m_encoder_spdcountr += m_car.m_encoder_countr;
 	m_car.m_encoder_spdcountl += m_car.m_encoder_countl;
 
-	power_l = m_balance_pid_output + turn_powerl;
-	power_r = m_balance_pid_output + turn_powerr;
+	power_l = m_balance_pid_output/* + turn_powerl*/;
+	power_r = m_balance_pid_output/* + turn_powerr*/;
 
 	power_l = libutil::Clamp<int16_t>(-1000,power_l, 1000);
 	power_r = libutil::Clamp<int16_t>(-1000,power_r, 1000);
@@ -250,19 +250,19 @@ void App::PitMoveMotor(Pit* pit){
 //	if(abs(power_l) >= 1000) power_l = 0;
 //	if(abs(power_r) >= 1000) power_r = 0;
 
-	m_speed_control0.SetSetpoint(m_balance_pid_output);
-	m_speed_control1.SetSetpoint(m_balance_pid_output);
-
-	m_speed_control0.SetKp(0.18f);
-//	m_speed_control0.SetKd(m_skd->GetReal());
-//	m_speed_control0.SetKi(m_ski->GetReal());
-	m_speed_control1.SetKp(0.2f);
-//	m_speed_control1.SetKd(m_skd->GetReal());
-//	m_speed_control1.SetKi(m_ski->GetReal());
-	int16_t r_val = speedsp + m_speed_control0.Calc(m_car.m_encoder_countr);
-	int16_t l_val = speedsp + m_speed_control1.Calc(m_car.m_encoder_countl);
-	power_r = sign(r_val) * RpmToPwm_R(abs(r_val));
-	power_l = sign(l_val) * RpmToPwm_L(abs(l_val));
+//	m_speed_control0.SetSetpoint(m_balance_pid_output);
+//	m_speed_control1.SetSetpoint(m_balance_pid_output);
+//
+//	m_speed_control0.SetKp(0.18f);
+////	m_speed_control0.SetKd(m_skd->GetReal());
+////	m_speed_control0.SetKi(m_ski->GetReal());
+//	m_speed_control1.SetKp(0.2f);
+////	m_speed_control1.SetKd(m_skd->GetReal());
+////	m_speed_control1.SetKi(m_ski->GetReal());
+//	int16_t r_val = speedsp + m_speed_control0.Calc(m_car.m_encoder_countr);
+//	int16_t l_val = speedsp + m_speed_control1.Calc(m_car.m_encoder_countl);
+//	power_r = sign(r_val) * RpmToPwm_R(abs(r_val));
+//	power_l = sign(l_val) * RpmToPwm_L(abs(l_val));
 
 
 	m_car.m_motor_r.SetClockwise(power_r < 0); //Right Motor - false forward, true backward

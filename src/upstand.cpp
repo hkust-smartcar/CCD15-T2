@@ -60,7 +60,7 @@ void Upstand::KalmanFilter(void)
       float dt = 5/1000.0f;
 //      pt = t;
 	  Q  = GYRO_CONVARIANCE;
-	  R  = (float)5000.0f/*ACCY_CONVARIANCE*/;
+	  R  = ACCY_CONVARIANCE;
 
 	  /* 传感器取值 */
 	  std::array<float, 3> omega_ = m_mpu->GetOmega();

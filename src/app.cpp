@@ -37,14 +37,14 @@ uint16_t App::RpmToPwm0(uint16_t count){
 // Clamp 140/140
 uint16_t App::RpmToPwm_R(uint16_t count){
 	if(count==0) return 0;
-	uint16_t val = (uint16_t)(13.9698f*count + 129.3232f);
+	uint16_t val = (uint16_t)(13.29f*count + 70.0f);
 	val = val < 140 ? 140 : val;
 	return val;
 }
 
 uint16_t App::RpmToPwm_L(uint16_t count){
 	if(count==0) return 0;
-	uint16_t val = (uint16_t)(14.3431f*count + 127.1783f);
+	uint16_t val = (uint16_t)(12.17f*count + 70.0f);
 	val = val < 140 ? 140 : val;
 	return val;
 }
@@ -90,7 +90,7 @@ float App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encode
 	carspeedcon[0]=carspeedcon[4]-encoder;
 	total_encoder+=carspeedcon[0];
 
-	output=(float)(carspeedpid[0]*carspeedcon[0] + carspeedpid[1]* total_encoder * (t-pt)/1000.0f + carspeedpid[2]*(carspeedcon[0] - carspeedcon[1])/(t-pt)*1000.0f);
+	output=(float)(carspeedpid[0]*carspeedcon[0] + carspeedpid[1]* total_encoder * (t-pt)/1000.0f /*+ carspeedpid[2]*(carspeedcon[0] - carspeedcon[1])/(t-pt)*1000.0f*/);
 	carspeedcon[1] = carspeedcon[0];
 	pt = t;
 	return output;
@@ -130,9 +130,9 @@ void App::PitBalance(Pit* pit){
 		upstand->KalmanFilter();
 		real_angle = (float) upstand->GetAngle();
 
-		balpid[0] = 200.0f/*m_bkp->GetReal()*/;
+		balpid[0] = 0.0f/*200.0f*//*m_bkp->GetReal()*/;
 		balpid[1] = m_bki->GetReal();
-		balpid[2] = 0.1f/*m_bkd->GetReal()*/;
+		balpid[2] = 0.0f/*0.1f*//*m_bkd->GetReal()*/;
 
 		balcon[6] = 0.0f;
 
@@ -221,7 +221,8 @@ void App::PitBalance(Pit* pit){
 //		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
 //		printf("%f,%f,%f\n",accel_[0],accel_[1],accel_[2]);
 //		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
-		printf("%f,%f,%d\n", real_angle, upstand->GetAccAngle(), power_l);
+		printf("%d,%d,%d,%d\n",power_r_pwm,power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl);
+//		printf("%f,%f,%d\n", real_angle, upstand->GetAccAngle(), power_l);
 //		printf("%f,%f,%f\n",real_angle, upstand->GetGyroAngle(), upstand->GetAccAngle());
 	}
 
@@ -233,11 +234,11 @@ void App::PitMoveMotor(Pit* pit){
 	m_car.m_encoder1.Update();
 	m_car.m_encoder_countr = -m_car.m_encoder0.GetCount(); //right wheel
 	m_car.m_encoder_countl = m_car.m_encoder1.GetCount(); //left wheel
-	m_car.m_encoder_spdcountr += m_car.m_encoder_countr;
-	m_car.m_encoder_spdcountl += m_car.m_encoder_countl;
+//	m_car.m_encoder_spdcountr += m_car.m_encoder_countr;
+//	m_car.m_encoder_spdcountl += m_car.m_encoder_countl;
 
-	power_l = m_balance_pid_output/* + turn_powerl*/;
-	power_r = m_balance_pid_output/* + turn_powerr*/;
+	power_l = m_balance_pid_output + turn_powerl - 400;
+	power_r = m_balance_pid_output + turn_powerr - 400;
 
 	power_l = libutil::Clamp<int16_t>(-1000,power_l, 1000);
 	power_r = libutil::Clamp<int16_t>(-1000,power_r, 1000);
@@ -249,26 +250,26 @@ void App::PitMoveMotor(Pit* pit){
 
 //	if(abs(power_l) >= 1000) power_l = 0;
 //	if(abs(power_r) >= 1000) power_r = 0;
-
-//	m_speed_control0.SetSetpoint(m_balance_pid_output);
-//	m_speed_control1.SetSetpoint(m_balance_pid_output);
+	power_r = power_l = 0;
+	m_speed_control0.SetSetpoint(power_r);
+	m_speed_control1.SetSetpoint(power_l);
 //
-//	m_speed_control0.SetKp(0.18f);
+	m_speed_control0.SetKp(0.18f);
 ////	m_speed_control0.SetKd(m_skd->GetReal());
 ////	m_speed_control0.SetKi(m_ski->GetReal());
-//	m_speed_control1.SetKp(0.2f);
+	m_speed_control1.SetKp(0.2f);
 ////	m_speed_control1.SetKd(m_skd->GetReal());
 ////	m_speed_control1.SetKi(m_ski->GetReal());
-//	int16_t r_val = speedsp + m_speed_control0.Calc(m_car.m_encoder_countr);
-//	int16_t l_val = speedsp + m_speed_control1.Calc(m_car.m_encoder_countl);
-//	power_r = sign(r_val) * RpmToPwm_R(abs(r_val));
-//	power_l = sign(l_val) * RpmToPwm_L(abs(l_val));
+	int16_t r_val = /*power_r + */m_speed_control0.Calc(m_car.m_encoder_countr);
+	int16_t l_val = /*power_l + */m_speed_control1.Calc(m_car.m_encoder_countl);
+	power_r_pwm = sign(r_val) * RpmToPwm_R(abs(r_val));
+	power_l_pwm = sign(l_val) * RpmToPwm_L(abs(l_val));
 
 
-	m_car.m_motor_r.SetClockwise(power_r < 0); //Right Motor - false forward, true backward
-	m_car.m_motor_l.SetClockwise(power_l > 0); //Left Motor - true forward, false backward
-	m_car.m_motor_r.SetPower((uint16_t)abs(power_r));
-	m_car.m_motor_l.SetPower((uint16_t)abs(power_l));
+	m_car.m_motor_r.SetClockwise(power_r_pwm < 0); //Right Motor - false forward, true backward
+	m_car.m_motor_l.SetClockwise(power_l_pwm > 0); //Left Motor - true forward, false backward
+	m_car.m_motor_r.SetPower((uint16_t)abs(0/*power_r_pwm*/));
+	m_car.m_motor_l.SetPower((uint16_t)abs(power_l_pwm));
 
 }
 

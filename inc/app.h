@@ -12,6 +12,7 @@
 #include <libutil/positional_pid_controller.h>
 #include <libbase/kl26/pit.h>
 #include "upstand.h"
+#include "moving_average.h"
 
 using namespace libutil;
 using namespace libbase::kl26;
@@ -73,7 +74,7 @@ private:
 	int16_t power_l_pwm=0, power_r_pwm=0;
 	int16_t speedsp = 0;
 
-	int m_pit_count = 0;
+	int m_pit_count = 0, m_pit_count2 = 0;
 
 	/*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
@@ -96,13 +97,27 @@ private:
 	 * carspeedcon[3]=summation for ki;
 	 * carspeedcon[4]=setpoint;
 	*/
-	int16_t carspeedcon[5]={0,0,0,0,0};
+	int16_t carspeedconr[5]={0,0,0,0,0};
 
 	/*carspeedpid[0]=kp;
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpid[3]={0.0f,0.0f,0.0f};
+	float carspeedpidr[3]={1.2f,0.04f,0.0f};
+
+	/*carspeedcon[0]=error(k);
+	 * carspeedcon[1]=error(k-1);
+	 * carspeedcon[2]=previous slope of de/dt for low-pass filtering;
+	 * carspeedcon[3]=summation for ki;
+	 * carspeedcon[4]=setpoint;
+	*/
+	int16_t carspeedconl[5]={0,0,0,0,0};
+
+	/*carspeedpid[0]=kp;
+	* carspeedpid[1]=ki;
+	* carspeedpid[2]=kd;
+	*/
+	float carspeedpidl[3]={1.5f,0.04f,0.0f};
 
 	/* time[0] for spd period;
 	 * time[1] for spd period;
@@ -110,6 +125,8 @@ private:
 	 * time[3] for bal period;
 	*/
 	uint16_t time[4]={0,0,0,0};
+
+	MovingAverage m_movavgr,m_movavgl;
 
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_;
 	enum CCD_COLOR{
@@ -126,5 +143,7 @@ private:
 		config.lcd = &(m_car.m_lcd);
 		return config;
 	}
+
+//	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

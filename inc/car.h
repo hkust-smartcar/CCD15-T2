@@ -24,6 +24,8 @@
 //#include <libutil/positional_pid_controller.h>
 #include <libutil/remote_var_manager.h>
 #include <libbase/kl26/adc.h>
+#include <libbase/kl26/hardware.h>
+#include <libsc/joystick.h>
 
 
 #ifndef INC_CAR_H_
@@ -46,22 +48,21 @@ public:
 	int16_t m_encoder_countr, m_encoder_countl, m_encoder_count_c, m_encoder_speed_c, m_speed_output;
 	int16_t m_encoder_spdcountr = 0, m_encoder_spdcountl = 0;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
+	Joystick m_joy;
 	Mpu6050 m_mpu6050;
 	Mma8451q m_mma8451q;
-//	Adc m_acc_adc;
-//	Adc m_gyro_adc;
 	DirEncoder m_encoder0;
 	DirEncoder m_encoder1;
 	DirMotor m_motor_r;
 	DirMotor m_motor_l;
 	Tsl1401cl m_ccd;
-	uint16_t edge[2]={0,libsc::Tsl1401cl::kSensorW};
 
 	JyMcuBt106* m_com;
 
 	BatteryMeter m_bat;
 
 	St7735r m_lcd;
+	uint16_t edge[2]={0,libsc::Tsl1401cl::kSensorW};
 
 private:
 	Mma8451q::Config GetMma8451qConfig(){

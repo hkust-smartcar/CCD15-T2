@@ -3,6 +3,7 @@
 #include <libutil/misc.h>
 #include <libbase/kl26/adc.h>
 
+
 using namespace libbase;
 using namespace libsc;
 using namespace libbase::kl26;
@@ -57,6 +58,13 @@ Led::Config GetLedConfig(int id){
 	return ledconfig;
 }
 
+Joystick::Config GetJoyStickConfig(){
+	Joystick::Config joyconfig;
+	joyconfig.id = 0;
+	joyconfig.is_active_low = true;
+	return joyconfig;
+}
+
 DirEncoder::Config GetDirEncoderConfig(int id){
 	DirEncoder::Config econfig1;
 	econfig1.id = id;
@@ -92,10 +100,9 @@ Car::Car():
 				m_led2(GetLedConfig(1)),
 				m_led3(GetLedConfig(2)),
 				m_led4(GetLedConfig(3)),
+				m_joy(GetJoyStickConfig()),
 				m_mpu6050(GetMpu6050Config()),
 				m_mma8451q(GetMma8451qConfig()),
-//				m_acc_adc(GetAccConfig()),
-//				m_gyro_adc(GetGyroConfig()),
 				m_encoder0(GetDirEncoderConfig(0)),
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),
@@ -105,6 +112,12 @@ Car::Car():
 				m_lcd(GetSt7735RConfig())
 
 {
+	/*
+	 * Force NVIC interrupt priority for UART higher than PIT
+	 */
+	NVIC_SetPriority(UART0_IRQn, 0);
+	NVIC_SetPriority(PIT_IRQn, 1);
+
 	m_led.SetEnable(true);
 	m_led2.SetEnable(false);
 	m_led3.SetEnable(true);

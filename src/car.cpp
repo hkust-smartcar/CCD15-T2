@@ -89,8 +89,23 @@ St7735r::Config GetSt7735RConfig(){
 	return config;
 }
 
+void Car::Sw1Down(int id){
+	if(id==0){
+		m_car_move_motor = !m_car_move_motor;
+	}
+}
+
+void Car::Sw2Down(int id){
+	if(id==1){
+		m_car_move_forward = !m_car_move_forward;
+	}
+}
+
 void Car::Sw3Down(int id){
-	m_lcdupdate = !m_lcdupdate;
+	if(id==2){
+		m_lcdupdate = !m_lcdupdate;
+	}
+
 }
 
 Car::Car():
@@ -105,6 +120,8 @@ Car::Car():
 				m_led3(GetLedConfig(2)),
 				m_led4(GetLedConfig(3)),
 				m_joy(GetJoyStickConfig()),
+				m_sw1(GetButtonConfig(0)),
+				m_sw2(GetButtonConfig(1)),
 				m_sw3(GetButtonConfig(2)),
 				m_mpu6050(GetMpu6050Config()),
 				m_mma8451q(GetMma8451qConfig()),
@@ -115,6 +132,8 @@ Car::Car():
 				m_ccd(0),
 				m_bat(GetBatteryConfig()),
 				m_lcd(GetSt7735RConfig()),
+				m_car_move_motor(false),
+				m_car_move_forward(false),
 				m_lcdupdate(false)
 
 {

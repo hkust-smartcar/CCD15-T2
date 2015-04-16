@@ -40,6 +40,8 @@ using namespace libutil;
 class Car{
 public:
 	Car();
+	void Sw1Down(int);
+	void Sw2Down(int);
 	void Sw3Down(int);
 
 	RemoteVarManager* m_varmanager;
@@ -47,7 +49,7 @@ public:
 	int16_t m_encoder_spdcountr = 0, m_encoder_spdcountl = 0;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Joystick m_joy;
-	Button m_sw3;
+	Button m_sw1,m_sw2,m_sw3;
 	Mpu6050 m_mpu6050;
 	Mma8451q m_mma8451q;
 	DirEncoder m_encoder0;
@@ -63,6 +65,8 @@ public:
 	St7735r m_lcd;
 	uint16_t edge[2]={0,libsc::Tsl1401cl::kSensorW};
 
+	bool m_car_move_motor;
+	bool m_car_move_forward;
 	bool m_lcdupdate;
 
 private:
@@ -79,7 +83,15 @@ private:
 		btnconfig.id = id;
 		btnconfig.is_active_low = true;
 		btnconfig.listener_trigger = Button::Config::Trigger::kDown;
-		btnconfig.listener = std::bind(&Car::Sw3Down, this, std::placeholders::_1);
+		if(id==0){
+			btnconfig.listener = std::bind(&Car::Sw1Down, this, std::placeholders::_1);
+		}
+		else if(id==1){
+			btnconfig.listener = std::bind(&Car::Sw2Down, this, std::placeholders::_1);
+		}
+		else if(id==2){
+			btnconfig.listener = std::bind(&Car::Sw3Down, this, std::placeholders::_1);
+		}
 		return btnconfig;
 	}
 

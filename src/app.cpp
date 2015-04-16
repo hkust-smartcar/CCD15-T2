@@ -305,6 +305,9 @@ void App::PitMoveMotor(Pit* pit){
 
 //	carspeedconr[4] = 0;
 //	carspeedconl[4] = 0;
+	if(!m_car.m_car_move_motor){
+		power_r_pwm = power_l_pwm = 0;
+	}
 	m_car.m_motor_r.SetClockwise(power_r_pwm < 0); //Right Motor - false forward, true backward
 	m_car.m_motor_l.SetClockwise(power_l_pwm > 0); //Left Motor - true forward, false backward
 	m_car.m_motor_r.SetPower((uint16_t)abs(power_r_pwm));

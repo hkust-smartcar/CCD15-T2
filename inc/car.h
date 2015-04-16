@@ -4,6 +4,7 @@
  *  Created on: Feb 25, 2015
  *      Author: harrison
  */
+#pragma once
 
 #include <cstdint>
 #include <libbase/helper.h>
@@ -21,15 +22,11 @@
 #include <libsc/kl26/uart_device.h>
 #include <libsc/st7735r.h>
 #include <libsc/battery_meter.h>
-//#include <libutil/positional_pid_controller.h>
 #include <libutil/remote_var_manager.h>
 #include <libbase/kl26/adc.h>
 #include <libbase/kl26/hardware.h>
 #include <libsc/joystick.h>
-
-
-#ifndef INC_CAR_H_
-#define INC_CAR_H_
+#include <libsc/button.h>
 
 
 #define RAD2ANGLE 57.296f
@@ -43,12 +40,14 @@ using namespace libutil;
 class Car{
 public:
 	Car();
+	void Sw3Down(int);
 
 	RemoteVarManager* m_varmanager;
-	int16_t m_encoder_countr, m_encoder_countl, m_encoder_count_c, m_encoder_speed_c, m_speed_output;
+	int16_t m_encoder_countr, m_encoder_countl, m_encoder_countr_t, m_encoder_countl_t, m_encoder_count_c, m_encoder_speed_c, m_speed_output;
 	int16_t m_encoder_spdcountr = 0, m_encoder_spdcountl = 0;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Joystick m_joy;
+	Button m_sw3;
 	Mpu6050 m_mpu6050;
 	Mma8451q m_mma8451q;
 	DirEncoder m_encoder0;
@@ -64,6 +63,8 @@ public:
 	St7735r m_lcd;
 	uint16_t edge[2]={0,libsc::Tsl1401cl::kSensorW};
 
+	bool m_lcdupdate;
+
 private:
 	Mma8451q::Config GetMma8451qConfig(){
 		Mma8451q::Config accel_config;
@@ -73,10 +74,14 @@ private:
 		return accel_config;
 	}
 
+	Button::Config GetButtonConfig(int id){
+		Button::Config btnconfig;
+		btnconfig.id = id;
+		btnconfig.is_active_low = true;
+		btnconfig.listener_trigger = Button::Config::Trigger::kDown;
+		btnconfig.listener = std::bind(&Car::Sw3Down, this, std::placeholders::_1);
+		return btnconfig;
+	}
+
 };
 
-
-
-
-
-#endif /* INC_CAR_H_ */

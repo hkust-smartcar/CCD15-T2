@@ -144,6 +144,8 @@ private:
 		return config;
 	}
 
+
+
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

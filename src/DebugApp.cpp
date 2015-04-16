@@ -16,23 +16,8 @@ DebugApp::DebugApp():
 	Timer::TimerInt t = System::Time();
 	Timer::TimerInt pt = t;
 	while(true){
-		t = System::Time();
-		if(t-pt>1){
-			pt = t;
-
-			if(t%1000==0){
-				m_car.m_encoder0.Update();
-				m_car.m_encoder1.Update();
-//				m_lcd_typewriter.WriteString(String::Format("encoder:").c_str());
-//				m_lcd_typewriter.WriteString(String::Format("encoder: %d %d\n",m_car.m_encoder0.GetCount(), m_car.m_encoder1.GetCount()).c_str());
-				printf("encoder: %d %d\n",m_car.m_encoder0.GetCount(), m_car.m_encoder1.GetCount());
-				m_car.m_led.Switch();
-				m_car.m_led2.Switch();
-				m_car.m_led3.Switch();
-				m_car.m_led4.Switch();
-			}
-		}
 	}
+
 }
 
 DebugApp::~DebugApp() {

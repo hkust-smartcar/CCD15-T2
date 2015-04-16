@@ -89,6 +89,10 @@ St7735r::Config GetSt7735RConfig(){
 	return config;
 }
 
+void Car::Sw3Down(int id){
+	m_lcdupdate = !m_lcdupdate;
+}
+
 Car::Car():
 				m_varmanager(new RemoteVarManager(15)),
 				m_encoder_countr(0),
@@ -101,6 +105,7 @@ Car::Car():
 				m_led3(GetLedConfig(2)),
 				m_led4(GetLedConfig(3)),
 				m_joy(GetJoyStickConfig()),
+				m_sw3(GetButtonConfig(2)),
 				m_mpu6050(GetMpu6050Config()),
 				m_mma8451q(GetMma8451qConfig()),
 				m_encoder0(GetDirEncoderConfig(0)),
@@ -109,7 +114,8 @@ Car::Car():
 				m_motor_l(GetDirMotorConfig(1)),
 				m_ccd(0),
 				m_bat(GetBatteryConfig()),
-				m_lcd(GetSt7735RConfig())
+				m_lcd(GetSt7735RConfig()),
+				m_lcdupdate(false)
 
 {
 	/*

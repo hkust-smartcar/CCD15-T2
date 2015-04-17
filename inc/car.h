@@ -44,6 +44,7 @@ public:
 	void Sw1Down(int);
 	void Sw2Down(int);
 	void Sw3Down(int);
+	void SelectDown(int);
 	void GetInfrared(Gpi *gpi);
 
 	RemoteVarManager* m_varmanager;
@@ -72,6 +73,8 @@ public:
 	bool m_car_move_motor;
 	bool m_car_move_forward;
 	bool m_lcdupdate;
+	int m_print_state = 0;
+	int m_num_print_states = 3;
 
 private:
 	Mma8451q::Config GetMma8451qConfig(){
@@ -98,6 +101,15 @@ private:
 			btnconfig.listener = std::bind(&Car::Sw3Down, this, std::placeholders::_1);
 		}
 		return btnconfig;
+	}
+
+	Joystick::Config GetJoyStickConfig(){
+		Joystick::Config joyconfig;
+		joyconfig.id = 0;
+		joyconfig.is_active_low = true;
+		joyconfig.listener_triggers[4] = Joystick::Config::Trigger::kDown;
+		joyconfig.listeners[4] =  std::bind(&Car::SelectDown, this, std::placeholders::_1);
+		return joyconfig;
 	}
 
 	Gpi::Config GetInfraredConfig(){

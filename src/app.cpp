@@ -278,14 +278,20 @@ void App::PitBalance(Pit* pit){
 					m_car.m_encoder_countl_t
 					).c_str());
 		}
-//		printf("%.3f %.3f %.3f\n", balpid[0], balpid[1], balpid[2]);
-		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
-//		printf("%f,%f,%f\n",accel_[0],accel_[1],accel_[2]);
+		switch(m_car.m_print_state){
+
+			case 1:
+				printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
+				break;
+			case 2:
+				printf("%d,%d,%d,%d\n",power_r_pwm,power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl);
+				break;
+			case 0:
+				default:
+					break;
+		}
 //		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
 //		printf("%d,%d,%d,%d\n",carspeedconr[4],carspeedconl[4],m_car.m_encoder_countr, m_car.m_encoder_countl);
-//		printf("%d,%d,%d,%d\n",power_r_pwm,power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl);
-//		printf("%f,%f,%d\n", real_angle, upstand->GetAccAngle(), power_l);
-//		printf("%f,%f,%f\n",real_angle, upstand->GetGyroAngle(), upstand->GetAccAngle());
 	}
 
 	m_pit_count++;
@@ -364,10 +370,6 @@ App::App():
 
 	while(true)
 	{
-//		if(t_!=System::Time()){
-//			t_ = System::Time();
-//			pt_ = t_;
-//		}
 	}
 
 }

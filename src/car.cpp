@@ -2,6 +2,7 @@
 #include <libsc/led.h>
 #include <libutil/misc.h>
 #include <libbase/kl26/adc.h>
+#include <libbase/kl26/soft_pwm.h>
 
 
 using namespace libbase;
@@ -58,12 +59,7 @@ Led::Config GetLedConfig(int id){
 	return ledconfig;
 }
 
-Joystick::Config GetJoyStickConfig(){
-	Joystick::Config joyconfig;
-	joyconfig.id = 0;
-	joyconfig.is_active_low = true;
-	return joyconfig;
-}
+
 
 DirEncoder::Config GetDirEncoderConfig(int id){
 	DirEncoder::Config econfig1;
@@ -126,10 +122,173 @@ void Car::Sw3Down(int id){
 
 }
 
-void Car::GetInfrared(Gpi *gpi){
+void Car::SelectDown(int id){
+	m_print_state++;
+	m_print_state%=m_num_print_states;
+	printf("printstates:%d\n",m_print_state);
 	m_buzzer.SetBeep(true);
 	System::DelayMs(50);
 	m_buzzer.SetBeep(false);
+}
+
+void Car::GetInfrared(Gpi *gpi){
+	static bool state = true;
+	m_buzzer.SetBeep(state);
+	state=!state;
+	/*struct note{
+		std::string note;
+		uint32_t period;
+	};
+
+	SoftPwm::Config buzzercfg;
+//	buzzercfg.alignment = SoftPwm::Config::Alignment::kEdge;
+//	buzzercfg.is_active_high = true;
+	buzzercfg.pit_channel = 1;
+	buzzercfg.pin = Pin::Name::kPta12;
+	buzzercfg.period = 1000;
+	buzzercfg.pos_width = 0;
+	SoftPwm buzzer(buzzercfg);
+	note notes[] = {
+//		0-11
+		{"C",61158},
+		{"C# / Db",57723},
+		{"D",54484},
+		{"D# / Eb",51427},
+		{"E",48541},
+		{"F",45815},
+		{"F# / Gb",43245},
+		{"G",40818},
+		{"G# / Ab",38527},
+		{"A",36364},
+		{"A# / Bb",34323},
+		{"B",32396},
+//		12-23
+		{"C",30578},
+		{"C# / Db",28862},
+		{"D",27242},
+		{"D# / Eb",25713},
+		{"E",24270},
+		{"F",22907},
+		{"F# / Gb",21622},
+		{"G",20409},
+		{"G# / Ab",19263},
+		{"A",18182},
+		{"A# / Bb",17161},
+		{"B",16198},
+//		24-35
+		{"C",15289},
+		{"C# / Db",14431},
+		{"D",13621},
+		{"D# / Eb",12856},
+		{"E",12135},
+		{"F",11454},
+		{"F# / Gb",10811},
+		{"G",10204},
+		{"G# / Ab",9631},
+		{"A",9091},
+		{"A# / Bb",8581},
+		{"B",8099},
+//		36-47
+		{"C",7645},
+		{"C# / Db",7215},
+		{"D",6811},
+		{"D# / Eb",6428},
+		{"E",6067},
+		{"F",5727},
+		{"F# / Gb",5405},
+		{"G",5102},
+		{"G# / Ab",4816},
+		{"A",4545},
+		{"A# / Bb",4290},
+		{"B",4050},
+//		48-59
+		{"C",3822},
+		{"C# / Db",3608},
+		{"D",3405},
+		{"D# / Eb",3214},
+		{"E",3034},
+		{"F",2863},
+		{"F# / Gb",2703},
+		{"G",2551},
+		{"G# / Ab",2408},
+		{"A",2273},
+		{"A# / Bb",2145},
+		{"B",2025},
+//		60-71
+		{"C",1911},
+		{"C# / Db",1804},
+		{"D",1703},
+		{"D# / Eb",1607},
+		{"E",1517},
+		{"F",1432},
+		{"F# / Gb",1351},
+		{"G",1276},
+		{"G# / Ab",1204},
+		{"A",1136},
+		{"A# / Bb",1073},
+		{"B",1012},
+//		72-83
+		{"C",956},
+		{"C# / Db",902},
+		{"D",851},
+		{"D# / Eb",804},
+		{"E",758},
+		{"F",716},
+		{"F# / Gb",676},
+		{"G",638},
+		{"G# / Ab",602},
+		{"A",568},
+		{"A# / Bb",536},
+		{"B",506},
+//		84-95
+		{"C",478},
+		{"C# / Db",451},
+		{"D",426},
+		{"D# / Eb",402},
+		{"E",379},
+		{"F",358},
+		{"F# / Gb",338},
+		{"G",319},
+		{"G# / Ab",301},
+		{"A",284},
+		{"A# / Bb",268},
+		{"B",253},
+//		96-107
+		{"C",239},
+		{"C# / Db",225},
+		{"D",213},
+		{"D# / Eb",201},
+		{"E",190},
+		{"F",179},
+		{"F# / Gb",169},
+		{"G",159},
+		{"G# / Ab",150},
+		{"A",142},
+		{"A# / Bb",134},
+		{"B",127},
+//		108-119
+		{"C",119},
+		{"C# / Db",113},
+		{"D",106},
+		{"D# / Eb",100},
+		{"E",95},
+		{"F",89},
+		{"F# / Gb",84},
+		{"G",80},
+		{"G# / Ab",75},
+		{"A",71},
+		{"A# / Bb",67},
+		{"B",63},
+		{" ", 1}
+	};
+
+	int octave = 6;
+	int notesid[5] = {12*(octave-1) + 12, 12*(octave-1) + 10, 12*(octave-1) + 9, 12*(octave-1) + 10, 12*(octave-1+1) + 1 };
+	for(int i=0; i<5; i++){
+		printf("%s\n",notes[notesid[i]-1].note.c_str());
+		buzzer.SetPeriod(notes[notesid[i]-1].period,(notes[notesid[i]-1].period)*1/100);
+		System::DelayMs(300);
+	}*/
 }
 
 Car::Car():

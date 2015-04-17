@@ -207,14 +207,14 @@ void App::PitBalance(Pit* pit){
 
 				rect_.x = 0;
 				rect_.y = 0;
-				rect_.w = 128;
+				rect_.w = 24;
 				rect_.h = 16;
 				m_car.m_lcd.SetRegion(rect_);
 				m_lcd_typewriter.WriteString(String::Format("%3d\n",right_edge - left_edge).c_str());
 
 				for(int i=0; i<Tsl1401cl::kSensorW; i++){
 					rect_.x = i;
-					rect_.y = y+16;
+					rect_.y = y+16*3;
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
@@ -234,7 +234,7 @@ void App::PitBalance(Pit* pit){
 						m_car.m_lcd.FillColor(color);
 				}
 				y++;
-				y=y%(160-16);
+				y=y%(160-16*3);
 			}
 //		}
 		pin->Clear();
@@ -279,7 +279,7 @@ void App::PitBalance(Pit* pit){
 					).c_str());
 		}
 //		printf("%.3f %.3f %.3f\n", balpid[0], balpid[1], balpid[2]);
-//		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
+		printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
 //		printf("%f,%f,%f\n",accel_[0],accel_[1],accel_[2]);
 //		printf("%d,%d,%d,%d\n",power_l,m_balance_pid_output, m_car.m_encoder_countr, m_car.m_encoder_countl);
 //		printf("%d,%d,%d,%d\n",carspeedconr[4],carspeedconl[4],m_car.m_encoder_countr, m_car.m_encoder_countl);
@@ -324,7 +324,13 @@ App::App():
 	m_movavgr(3),
 	m_movavgl(3)
 {
-	m_lcd_typewriter.WriteString(String::Format("%.3fV\n",m_car.m_bat.GetVoltage()).c_str());
+	St7735r::Rect rect_;
+	rect_.x = 88;
+	rect_.y = 0;
+	rect_.w = 40;
+	rect_.h = 16;
+	m_car.m_lcd.SetRegion(rect_);
+	m_lcd_typewriter.WriteString(String::Format("%.2fV\n",m_car.m_bat.GetVoltage()).c_str());
 	m_car.m_varmanager->Broadcast(m_car.m_com);
 
 	/*

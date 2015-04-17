@@ -21,6 +21,45 @@ Led::Config GetLedConfig2(int id){
 
 int main(){
 	System::Init();
+//	TpmPwm::Config buzzercfg;
+//	buzzercfg.alignment = TpmPwm::Config::Alignment::kEdge;
+//	buzzercfg.is_active_high = true;
+//	buzzercfg.pin = Pin::Name::kPta12;
+//	buzzercfg.period = 3822;
+//	buzzercfg.pos_width = 0;
+//	TpmPwm buzzer(buzzercfg);
+//
+//	System::DelayMs(1000);
+//
+//	while(true){
+//		buzzer.SetPeriod(3822,38);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(3608,36);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(3405,34);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(3214,32);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(3034,30);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2863,28);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2703,27);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2551,25);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2408,24);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2273,22);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2145,21);
+//		System::DelayMs(1000);
+//		buzzer.SetPeriod(2025,20);
+//		System::DelayMs(1000);
+//	}
+
+
+
 	App m_app;
 
 //	JyMcuBt106::Config uartconfig;

@@ -89,23 +89,47 @@ St7735r::Config GetSt7735RConfig(){
 	return config;
 }
 
+SimpleBuzzer::Config GetBuzzerConfig(){
+	SimpleBuzzer::Config config;
+	config.id = 0;
+	config.is_active_low = false;
+	return config;
+}
+
+
+
 void Car::Sw1Down(int id){
 	if(id==0){
 		m_car_move_motor = !m_car_move_motor;
+		m_buzzer.SetBeep(true);
+		System::DelayMs(10);
+		m_buzzer.SetBeep(false);
 	}
 }
 
 void Car::Sw2Down(int id){
 	if(id==1){
 		m_car_move_forward = !m_car_move_forward;
+		m_buzzer.SetBeep(true);
+		System::DelayMs(50);
+		m_buzzer.SetBeep(false);
 	}
 }
 
 void Car::Sw3Down(int id){
 	if(id==2){
 		m_lcdupdate = !m_lcdupdate;
+		m_buzzer.SetBeep(true);
+		System::DelayMs(50);
+		m_buzzer.SetBeep(false);
 	}
 
+}
+
+void Car::GetInfrared(Gpi *gpi){
+	m_buzzer.SetBeep(true);
+	System::DelayMs(50);
+	m_buzzer.SetBeep(false);
 }
 
 Car::Car():
@@ -132,6 +156,8 @@ Car::Car():
 				m_ccd(0),
 				m_bat(GetBatteryConfig()),
 				m_lcd(GetSt7735RConfig()),
+				m_buzzer(GetBuzzerConfig()),
+				m_infrared(GetInfraredConfig()),
 				m_car_move_motor(false),
 				m_car_move_forward(false),
 				m_lcdupdate(false)
@@ -141,7 +167,8 @@ Car::Car():
 	 * Force NVIC interrupt priority for UART higher than PIT
 	 */
 	NVIC_SetPriority(UART0_IRQn, 0);
-	NVIC_SetPriority(PIT_IRQn, 1);
+	NVIC_SetPriority(PORTC_PORTD_IRQn, 1);
+	NVIC_SetPriority(PIT_IRQn, 2);
 
 	m_led.SetEnable(true);
 	m_led2.SetEnable(false);
@@ -156,6 +183,6 @@ Car::Car():
 
 	libutil::InitDefaultFwriteHandler(m_com);
 
-//	m_lcd.Clear(0x0);
+	m_lcd.Clear(0x0);
 
 }

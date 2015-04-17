@@ -27,6 +27,7 @@
 #include <libbase/kl26/hardware.h>
 #include <libsc/joystick.h>
 #include <libsc/button.h>
+#include <libsc/simple_buzzer.h>
 
 
 #define RAD2ANGLE 57.296f
@@ -43,6 +44,7 @@ public:
 	void Sw1Down(int);
 	void Sw2Down(int);
 	void Sw3Down(int);
+	void GetInfrared(Gpi *gpi);
 
 	RemoteVarManager* m_varmanager;
 	int16_t m_encoder_countr, m_encoder_countl, m_encoder_countr_t, m_encoder_countl_t, m_encoder_count_c, m_encoder_speed_c, m_speed_output;
@@ -63,6 +65,8 @@ public:
 	BatteryMeter m_bat;
 
 	St7735r m_lcd;
+	SimpleBuzzer m_buzzer;
+	Gpi m_infrared;
 	uint16_t edge[2]={0,libsc::Tsl1401cl::kSensorW};
 
 	bool m_car_move_motor;
@@ -73,7 +77,8 @@ private:
 	Mma8451q::Config GetMma8451qConfig(){
 		Mma8451q::Config accel_config;
 		accel_config.id = 0;
-		accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k800Hz;
+		accel_config.power_mode = Mma8451q::Config::PowerMode::kLowNoiseLowPower;
+		accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k200Hz;
 		accel_config.i2c_master_ptr = m_mpu6050.GetI2cMaster();
 		return accel_config;
 	}
@@ -93,6 +98,14 @@ private:
 			btnconfig.listener = std::bind(&Car::Sw3Down, this, std::placeholders::_1);
 		}
 		return btnconfig;
+	}
+
+	Gpi::Config GetInfraredConfig(){
+		Gpi::Config config;
+		config.pin = Pin::Name::kPtd6;
+		config.interrupt = Pin::Config::Interrupt::kFalling;
+		config.isr = std::bind(&Car::GetInfrared, this, std::placeholders::_1);
+		return config;
 	}
 
 };

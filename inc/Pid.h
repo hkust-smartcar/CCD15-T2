@@ -1,7 +1,7 @@
 /*
  * Pid.h
  *
- *  Created on: 2014¦~11¤ë8¤é
+ *  Created on: 2014ï¿½~11ï¿½ï¿½8ï¿½ï¿½
  *      Author: YunKei
  */
 
@@ -32,7 +32,7 @@ namespace Math{
 			double DefaultPeriod;
 
 	};
-};
+}
 
 using namespace Math;
 

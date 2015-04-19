@@ -18,7 +18,6 @@
 #include "Quaternion.h"
 #include "upstand.h"
 
-
 using namespace libsc::kl26;
 using namespace libbase::kl26;
 using namespace libsc;
@@ -48,26 +47,48 @@ uint16_t App::RpmToPwm_L(uint16_t count){
 //	return (count == 0) ? 0 : (uint16_t)(5.9219f*count + 58.4286f);
 //}
 
-
 int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float omega){
 	uint32_t period;
 	int16_t output;
 	static int16_t total_output = 0;
 	static uint32_t prev_time = 0;
+	if(prev_time == 0){
+		prev_time = time[2] = System::Time();
+		return 0;
+	}
 	float temp;
 
-	period=System::Time()-prev_time;
-	time[2]=System::Time();
-	balcon[0]=(balcon[4]+balcon[5]+balcon[6])-real_angle;	// 512*104/44=13312/11
-	temp=(balcon[0]-balcon[1])/period;
+	period = System::Time()-prev_time;
+	prev_time = time[2] = System::Time();
+	balcon[0] = (balcon[4] + balcon[5] + balcon[6]) - real_angle;	// 512*104/44=13312/11
+	temp = (balcon[0]  -balcon[1]) / period;
 //	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]*time[2]+balpid[2]*(temp+balcon[2])*10;
 //	output=(int16_t)(balpid[0]*(balcon[0] - balcon[1]));
 	total_output += balcon[0] * period;
 	/*(temp+balcon[2])/2)*/
-	output=(int16_t)(balpid[0]*balcon[0] + balpid[2] * omega/* + balpid[1] * total_output*/);
-	balcon[1]=balcon[0];
+	output = (int16_t)(balpid[0]*balcon[0] + balpid[2] * omega/* + balpid[1] * total_output*/);
+	balcon[1] = balcon[0];
 //	balcon[2]=temp;
 	return output;
+}
+
+float App::Output_turning(int16_t* turncon, float* turnpid, uint16_t* time){
+	uint16_t period;
+	int16_t outputcoeff;
+	if(time[4] == 0){
+		time[4] = System::Time();
+		return 0;
+	}
+	float temp;
+
+	period = System::Time() - time[4];
+	temp = (turncon[0] - turncon[1]) / period;
+
+	outputcoeff = turnpid[0] * turncon[0] + turnpid[2] * temp;
+
+	turncon[1] = turncon[0];
+	turncon[2] = temp;
+	return outputcoeff;
 }
 
 float App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder){
@@ -123,7 +144,6 @@ void App::PitBalance(Pit* pit){
 
 		m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, -gyro_[1]);
 
-
 //		m_movavgr.Add(-m_car.m_encoder0.GetCount());
 //		m_movavgl.Add(m_car.m_encoder1.GetCount());
 //		m_car.m_encoder_countr = m_movavgr.GetAverage();
@@ -141,9 +161,8 @@ void App::PitBalance(Pit* pit){
 		int16_t l_val = carspeedconl[4] + Output_speed(carspeedconl, carspeedpidl, m_car.m_encoder_countl);
 //		power_r_pwm = sign(r_val) * RpmToPwm_R(abs(r_val));
 //		power_l_pwm = sign(l_val) * RpmToPwm_L(abs(l_val));
-
-
 	}
+
 	if(m_pit_count%4==0){
 		m_car.m_encoder0.Update();
 		m_car.m_encoder1.Update();
@@ -152,6 +171,7 @@ void App::PitBalance(Pit* pit){
 		m_car.m_encoder_countl = m_car.m_encoder1.GetCount();
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 	}
+
 	if(m_pit_count%2==1){
 		pin->Set();
 		m_car.m_ccd.StartSample();
@@ -179,28 +199,55 @@ void App::PitBalance(Pit* pit){
 			}
 			int left_edge = 0;
 			int right_edge = 127;
-			int cameramid = (0 + 127)/2;
-			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
-				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
-					left_edge = i;
-				}
-				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
-					right_edge = i;
-				}
-			}
+//			int cameramid = (0 + 127)/2;
+//			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
+//				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
+//					left_edge = i;
+//				}
+//				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
+//					right_edge = i;
+//				}
+//			}
 			for (int i=64; i<libsc::Tsl1401cl::kSensorW-1; i++){
 				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge=i;
 			}
 			for (int i=64; i>=0; i--){
 				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE) left_edge=i;
 			}
-			int mid = (left_edge + right_edge)/2 + 2;
 
+			mid = (left_edge + right_edge) + 4;
+			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
+			turn_coeff_b = Output_turning(turncon_f, turnpid_f, time);
+			encoder_count_t = encoder_countr + encoder_countl;
+			turn_powerb = turn_coeff_b * encoder_count_t / 500;
+			turn_powerb = libutil::Clamp<int16_t>(-200,turn_powerb, 200);
+			turn_powerl = -1 * turn_powerb;
+			turn_powerr = turn_powerb;
 
+/* for the second ccd*/
+//			turncon_f[0] = mid-(Tsl1401cl::kSensorW-1);
+//			turn_coeff_f = Output_turning(turncon_f, turnpid_f, time2);
+//			encoder_count_t = encoder_countr + encoder_countl;
+//				turn_powerf = turn_coeff_f * encoder_count_t / 1000;
+//				turn_powerf = libutil::Clamp<int16_t>(-100,turn_powerf, 100);
+//			if (either ccd is all white)
+//				crossing = 1;
+//			else
+//				crossing = 0;
+//			if (turn_powerb>50||crossing){	//help turning
+//				turn_powerl -= turn_powerf;
+//				turn_powerr += turn_powerf;
+//			}
+//			else{	//prepare turning
+//				turn_powerl += turn_powerf;
+//				turn_powerr -= turn_powerf;
+//			}
 
-			int error = cameramid - mid;
-			turn_powerl = -4*error;
-			turn_powerr = 4*error;
+//			int mid = (left_edge + right_edge)/2 + 2;
+//			int error = cameramid - mid;
+//			turn_powerl = -4*error;
+//			turn_powerr = 4*error;
+
 			if(m_car.m_lcdupdate){
 				St7735r::Rect rect_;
 				uint16_t color = 0;

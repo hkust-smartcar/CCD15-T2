@@ -29,6 +29,7 @@ public:
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float  omega);
 	float Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
+	float App::Output_turning(int16_t* turncon, float* turnpid, uint16_t* time);
 	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
@@ -73,6 +74,9 @@ private:
 	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_powerl=0, turn_powerr=0;
 	int16_t power_l_pwm=0, power_r_pwm=0;
 	int16_t speedsp = 0;
+	int16_t mid = 127;
+	int16_t turn_coeff_b, turn_coeff_f, turn_powerb, turn_powerf;
+	int16_t encoder_count_t;
 
 	int m_pit_count = 0, m_pit_count2 = 0;
 
@@ -123,8 +127,27 @@ private:
 	 * time[1] for spd period;
 	 * time[2] for bal period;
 	 * time[3] for bal period;
+	 * time[4] for turning period;
+	 * time[5] for turning period;
 	*/
-	uint16_t time[4]={0,0,0,0};
+	uint16_t time[6]={0,0,0,0,0,0};
+	uint16_t time2[5]={0,0,0,0,0};
+
+	/* turncon[0]=error(k);
+	 * turncon[1]=error(k-1);
+	 * turncon[2]=previous slope of de/dt for low-pass filtering;
+	 * turncon[3]=midpoint;
+	 */
+	bool crossing=0;
+	int16_t turncon_f[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
+	int16_t turncon_b[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
+
+	/*pid[0]=kp;
+	 * pid[1]=ki;
+	 * pid[2]=kd;
+	 */
+	float turnpid_f[3]={0.0f,0.0f,0.0f};
+	float turnpid_b[3]={1.0f,0.0f,1.0f};
 
 	MovingAverage m_movavgr,m_movavgl;
 

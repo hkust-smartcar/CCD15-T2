@@ -78,6 +78,8 @@ private:
 	int16_t speedsp = 0;
 	uint8_t left_edge = 0;
 	uint8_t right_edge = 127;
+	uint16_t avg = 0;
+	uint32_t sum = 0;
 
 	int16_t mid = 127;
 	int16_t encoder_count_t;

@@ -196,7 +196,33 @@ void App::PitBalance(Pit* pit){
 			}
 			int mid = (left_edge + right_edge)/2 + 2;
 
+			mid = (left_edge + right_edge) + 4;
+			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
+			turn_coeff_b = Output_turning(turncon_f, turnpid_f, time);
+			encoder_count_t = encoder_countr + encoder_countl;
+			turn_powerb = turn_coeff_b * encoder_count_t / 500;
+			turn_powerb = libutil::Clamp<int16_t>(-200,turn_powerb, 200);
+			turn_powerl = -1 * turn_powerb;
+			turn_powerr = turn_powerb;
 
+/* for the second ccd*/
+//			turncon_f[0] = mid-(Tsl1401cl::kSensorW-1);
+//			turn_coeff_f = Output_turning(turncon_f, turnpid_f, time2);
+//			encoder_count_t = encoder_countr + encoder_countl;
+//				turn_powerf = turn_coeff_f * encoder_count_t / 1000;
+//				turn_powerf = libutil::Clamp<int16_t>(-100,turn_powerf, 100);
+//			if (either ccd is all white)
+//				crossing = 1;
+//			else
+//				crossing = 0;
+//			if (turn_powerb>50||crossing){	//help turning
+//				turn_powerl -= turn_powerf;
+//				turn_powerr += turn_powerf;
+//			}
+//			else{	//prepare turning
+//				turn_powerl += turn_powerf;
+//				turn_powerr -= turn_powerf;
+//			}
 
 			int error = cameramid - mid;
 			turn_powerl = -4*error;

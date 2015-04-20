@@ -48,6 +48,24 @@ uint16_t App::RpmToPwm_L(uint16_t count){
 //	return (count == 0) ? 0 : (uint16_t)(5.9219f*count + 58.4286f);
 //}
 
+float App::Output_turning(int16_t* turncon, float* turnpid, uint16_t* time){
+    uint16_t period;
+    int16_t outputcoeff;
+    if(time[4] == 0){
+        time[4] = System::Time();
+        return 0;
+    }
+    float temp;
+
+    period = System::Time() - time[4];
+    temp = (turncon[0] - turncon[1]) / period;
+
+    outputcoeff = turnpid[0] * turncon[0] + turnpid[2] * temp;
+
+    turncon[1] = turncon[0];
+    turncon[2] = temp;
+    return outputcoeff;
+}
 
 int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float omega){
 	uint32_t period;
@@ -159,14 +177,14 @@ void App::PitBalance(Pit* pit){
 
 //		if(m_car.m_ccd.IsImageReady()){
 			ccd_data_ = m_car.m_ccd.GetData();
-			uint16_t avg = 0;
-			uint32_t sum = 0;
+			avg = 0;
+			sum = 0;
 			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 				sum += (uint32_t)ccd_data_[i];
 			}
 			avg = (uint16_t) (sum / libsc::Tsl1401cl::kSensorW);
 			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				if(ccd_data_[i] >= avg){
+				if(ccd_data_[i] >= avg+2000){
 						color[i] = CCD_WHITE;
 				}else{
 					color[i] = CCD_BLACK;
@@ -177,17 +195,16 @@ void App::PitBalance(Pit* pit){
 	//							color = ~0;
 	//						}
 			}
-			int left_edge = 0;
-			int right_edge = 127;
-			int cameramid = (0 + 127)/2;
-			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
-				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
-					left_edge = i;
-				}
-				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
-					right_edge = i;
-				}
-			}
+
+//			int cameramid = (0 + 127)/2;
+//			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
+//				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
+//					left_edge = i;
+//				}
+//				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
+//					right_edge = i;
+//				}
+//			}
 			for (int i=64; i<libsc::Tsl1401cl::kSensorW-1; i++){
 				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge=i;
 			}
@@ -224,9 +241,10 @@ void App::PitBalance(Pit* pit){
 //				turn_powerr -= turn_powerf;
 //			}
 
-			int error = cameramid - mid;
-			turn_powerl = -4*error;
-			turn_powerr = 4*error;
+//			int error = cameramid - mid;
+//			turn_powerl = -4*error;
+//			turn_powerr = 4*error;
+
 			if(m_car.m_lcdupdate){
 				St7735r::Rect rect_;
 				uint16_t color = 0;

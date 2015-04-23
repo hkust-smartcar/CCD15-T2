@@ -59,7 +59,7 @@ public:
 	DirEncoder m_encoder1;
 	DirMotor m_motor_r;
 	DirMotor m_motor_l;
-	Tsl1401cl m_ccd;
+	Tsl1401cl m_ccd,m_ccd2;
 
 	JyMcuBt106* m_com;
 

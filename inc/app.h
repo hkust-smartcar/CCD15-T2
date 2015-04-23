@@ -153,6 +153,8 @@ private:
 	 */
 	float turnpid_f[3]={0.0f,0.0f,0.0f};
 	float turnpid_b[3]={1.0f,0.0f,1.0f};
+	bool last_y[128]={0};
+	bool last_y2[128]={0};
 
 	MovingAverage m_movavgr,m_movavgl;
 
@@ -160,6 +162,12 @@ private:
 	enum CCD_COLOR{
 		CCD_BLACK = 0,
 		CCD_WHITE
+	};
+
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_2;
+		enum CCD_COLOR{
+			CCD_BLACK = 0,
+			CCD_WHITE
 	};
 
 	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> color;

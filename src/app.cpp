@@ -170,6 +170,38 @@ void App::PitBalance(Pit* pit){
 		m_car.m_encoder_countl = m_car.m_encoder1.GetCount();
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 	}
+
+
+	if(m_pit_count%2==0){
+		pin->Set();
+		m_car.m_ccd2.StartSample();
+		while(!m_car.m_ccd2.SampleProcess()){}
+//		if(m_car.m_ccd.IsImageReady()){
+		ccd_data_2 = m_car.m_ccd2.GetData();
+		if(m_car.m_lcdupdate){
+			St7735r::Rect rect_;
+			uint16_t color2 = 0;
+
+			for(int i=0; i<Tsl1401cl::kSensorW; i++){
+				rect_.x = i;
+				rect_.y = last_y2[i];
+				rect_.w = 1;
+				rect_.h = 1;
+				m_car.m_lcd.SetRegion(rect_);
+				color2 = 0;
+				m_car.m_lcd.FillColor(color2);
+				last_y[i] = 130-ccd_data_2[i]/4;
+				rect_.x = i;
+				rect_.y = last_y2[i];
+				rect_.w = 1;
+				rect_.h = 1;
+				m_car.m_lcd.SetRegion(rect_);
+				color2 = ~0;
+				m_car.m_lcd.FillColor(color2);
+			}
+		}
+	}
+
 	if(m_pit_count%2==1){
 		pin->Set();
 		m_car.m_ccd.StartSample();
@@ -244,6 +276,29 @@ void App::PitBalance(Pit* pit){
 //			int error = cameramid - mid;
 //			turn_powerl = -4*error;
 //			turn_powerr = 4*error;
+
+			if(m_car.m_lcdupdate){
+				St7735r::Rect rect_;
+				uint16_t color = 0;
+
+				for(int i=0; i<Tsl1401cl::kSensorW; i++){
+					rect_.x = i;
+					rect_.y = last_y[i];
+					rect_.w = 1;
+					rect_.h = 1;
+					m_car.m_lcd.SetRegion(rect_);
+					color = 0;
+					m_car.m_lcd.FillColor(color);
+					last_y[i] = 65-ccd_data_[i]/4;
+					rect_.x = i;
+					rect_.y = last_y[i];
+					rect_.w = 1;
+					rect_.h = 1;
+					m_car.m_lcd.SetRegion(rect_);
+					color = ~0;
+					m_car.m_lcd.FillColor(color);
+				}
+			}
 
 			if(m_car.m_lcdupdate){
 				St7735r::Rect rect_;

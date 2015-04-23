@@ -313,6 +313,7 @@ Car::Car():
 				m_motor_r(GetDirMotorConfig(0)),
 				m_motor_l(GetDirMotorConfig(1)),
 				m_ccd(0),
+				m_ccd2(1),
 				m_bat(GetBatteryConfig()),
 				m_lcd(GetSt7735RConfig()),
 				m_buzzer(GetBuzzerConfig()),

@@ -173,11 +173,9 @@ void App::PitBalance(Pit* pit){
 
 
 	if(m_pit_count%2==0){
-		pin->Set();
-		m_car.m_ccd2.StartSample();
-		while(!m_car.m_ccd2.SampleProcess()){}
-//		if(m_car.m_ccd.IsImageReady()){
-		ccd_data_2 = m_car.m_ccd2.GetData();
+		m_car.m_ccd_1.StartSample();
+		while(!m_car.m_ccd_1.SampleProcess()){}
+		ccd_data_2 = m_car.m_ccd_1.GetData();
 		if(m_car.m_lcdupdate){
 			St7735r::Rect rect_;
 			uint16_t color2 = 0;
@@ -190,7 +188,7 @@ void App::PitBalance(Pit* pit){
 				m_car.m_lcd.SetRegion(rect_);
 				color2 = 0;
 				m_car.m_lcd.FillColor(color2);
-				last_y[i] = 130-ccd_data_2[i]/4;
+				last_y2[i] = 130-ccd_data_2[i]/4;
 				rect_.x = i;
 				rect_.y = last_y2[i];
 				rect_.w = 1;
@@ -203,30 +201,30 @@ void App::PitBalance(Pit* pit){
 	}
 
 	if(m_pit_count%2==1){
-		pin->Set();
-		m_car.m_ccd.StartSample();
-		while(!m_car.m_ccd.SampleProcess()){}
+//		pin->Set();
+		m_car.m_ccd_2.StartSample();
+		while(!m_car.m_ccd_2.SampleProcess()){}
 
 //		if(m_car.m_ccd.IsImageReady()){
-			ccd_data_ = m_car.m_ccd.GetData();
-			avg = 0;
-			sum = 0;
-			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				sum += (uint32_t)ccd_data_[i];
-			}
-			avg = (uint16_t) (sum / libsc::Tsl1401cl::kSensorW);
-			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				if(ccd_data_[i] >= avg+2000){
-						color[i] = CCD_WHITE;
-				}else{
-					color[i] = CCD_BLACK;
-				}
-	//						if(ccd_data_[i] < 8000){
-	//							color = 0;
-	//						}else if(ccd_data_[i] > 57000){
-	//							color = ~0;
-	//						}
-			}
+			ccd_data_ = m_car.m_ccd_2.GetData();
+//			avg = 0;
+//			sum = 0;
+//			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+//				sum += (uint32_t)ccd_data_[i];
+//			}
+//			avg = (uint16_t) (sum / libsc::Tsl1401cl::kSensorW);
+//			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+//				if(ccd_data_[i] >= avg+2000){
+//						color[i] = CCD_WHITE;
+//				}else{
+//					color[i] = CCD_BLACK;
+//				}
+//	//						if(ccd_data_[i] < 8000){
+//	//							color = 0;
+//	//						}else if(ccd_data_[i] > 57000){
+//	//							color = ~0;
+//	//						}
+//			}
 
 //			int cameramid = (0 + 127)/2;
 //			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
@@ -237,22 +235,22 @@ void App::PitBalance(Pit* pit){
 //					right_edge = i;
 //				}
 //			}
-			for (int i=64; i<libsc::Tsl1401cl::kSensorW-1; i++){
-				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge=i;
-			}
-			for (int i=64; i>=0; i--){
-				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE) left_edge=i;
-			}
-			int mid = (left_edge + right_edge)/2 + 2;
-
-			mid = (left_edge + right_edge) + 4;
-			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
-			turn_coeff_b = Output_turning(turncon_f, turnpid_f, time);
-			encoder_count_t = encoder_countr + encoder_countl;
-			turn_powerb = turn_coeff_b * encoder_count_t / 500;
-			turn_powerb = libutil::Clamp<int16_t>(-200,turn_powerb, 200);
-			turn_powerl = -1 * turn_powerb;
-			turn_powerr = turn_powerb;
+//			for (int i=64; i<libsc::Tsl1401cl::kSensorW-1; i++){
+//				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge=i;
+//			}
+//			for (int i=64; i>=0; i--){
+//				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE) left_edge=i;
+//			}
+//			int mid = (left_edge + right_edge)/2 + 2;
+//
+//			mid = (left_edge + right_edge) + 4;
+//			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
+//			turn_coeff_b = Output_turning(turncon_f, turnpid_f, time);
+////			encoder_count_t = encoder_countr + encoder_countl;
+//			turn_powerb = turn_coeff_b * encoder_count_t / 500;
+//			turn_powerb = libutil::Clamp<int16_t>(-200,turn_powerb, 200);
+//			turn_powerl = -1 * turn_powerb;
+//			turn_powerr = turn_powerb;
 
 /* for the second ccd*/
 //			turncon_f[0] = mid-(Tsl1401cl::kSensorW-1);
@@ -300,43 +298,43 @@ void App::PitBalance(Pit* pit){
 				}
 			}
 
-			if(m_car.m_lcdupdate){
-				St7735r::Rect rect_;
-				uint16_t color = 0;
+//			if(m_car.m_lcdupdate){
+//				St7735r::Rect rect_;
+//				uint16_t color = 0;
 
-				rect_.x = 0;
-				rect_.y = 0;
-				rect_.w = 24;
-				rect_.h = 16;
-				m_car.m_lcd.SetRegion(rect_);
-				m_lcd_typewriter.WriteString(String::Format("%3d\n",right_edge - left_edge).c_str());
+//				rect_.x = 0;
+//				rect_.y = 0;
+//				rect_.w = 24;
+//				rect_.h = 16;
+//				m_car.m_lcd.SetRegion(rect_);
+//				m_lcd_typewriter.WriteString(String::Format("%3d\n",right_edge - left_edge).c_str());
 
-				for(int i=0; i<Tsl1401cl::kSensorW; i++){
-					rect_.x = i;
-					rect_.y = y+16*3;
-					rect_.w = 1;
-					rect_.h = 1;
-					m_car.m_lcd.SetRegion(rect_);
-					if(ccd_data_[i] >= avg){
-							color = ~0;
-					}else{
-						color = 0;
-					}
-					if(avg < 63){
-						color = 0;
-					}else if(avg > 191){
-						color = ~0;
-					}
-					if(i==mid){
-						color = 0xf800;
-					}
-						m_car.m_lcd.FillColor(color);
-				}
-				y++;
-				y=y%(160-16*3);
-			}
+//				for(int i=0; i<Tsl1401cl::kSensorW; i++){
+//					rect_.x = i;
+//					rect_.y = y+16*3;
+//					rect_.w = 1;
+//					rect_.h = 1;
+//					m_car.m_lcd.SetRegion(rect_);
+//					if(ccd_data_[i] >= avg){
+//							color = ~0;
+//					}else{
+//						color = 0;
+//					}
+//					if(avg < 63){
+//						color = 0;
+//					}else if(avg > 191){
+//						color = ~0;
+//					}
+//					if(i==mid){
+//						color = 0xf800;
+//					}
+//						m_car.m_lcd.FillColor(color);
+//				}
+//				y++;
+//				y=y%(160-16*3);
+//			}
 //		}
-		pin->Clear();
+//		pin->Clear();
 	}
 	if(m_pit_count%200==0){
 //		power_r_pwm += 10;
@@ -350,32 +348,32 @@ void App::PitBalance(Pit* pit){
 	}
 	if(m_pit_count%5==0){
 		if(m_car.m_lcdupdate){
-			St7735r::Rect rect_;
+//			St7735r::Rect rect_;
+//
+//			rect_.x = 0;
+//			rect_.y = 16;
+//			rect_.w = 128;
+//			rect_.h = 16;
+//			m_car.m_lcd.SetRegion(rect_);
+//
+//			m_lcd_typewriter.WriteString(String::Format("%d %d %d %d %d\n",
+//					m_car.m_joy.GetState() == Joystick::State::kUp,
+//					m_car.m_joy.GetState() == Joystick::State::kDown,
+//					m_car.m_joy.GetState() == Joystick::State::kLeft,
+//					m_car.m_joy.GetState() == Joystick::State::kRight,
+//					m_car.m_joy.GetState() == Joystick::State::kSelect
+//					).c_str());
+//
+//			rect_.x = 0;
+//			rect_.y = 31;
+//			rect_.w = 128;
+//			rect_.h = 16;
+//			m_car.m_lcd.SetRegion(rect_);
 
-			rect_.x = 0;
-			rect_.y = 16;
-			rect_.w = 128;
-			rect_.h = 16;
-			m_car.m_lcd.SetRegion(rect_);
-
-			m_lcd_typewriter.WriteString(String::Format("%d %d %d %d %d\n",
-					m_car.m_joy.GetState() == Joystick::State::kUp,
-					m_car.m_joy.GetState() == Joystick::State::kDown,
-					m_car.m_joy.GetState() == Joystick::State::kLeft,
-					m_car.m_joy.GetState() == Joystick::State::kRight,
-					m_car.m_joy.GetState() == Joystick::State::kSelect
-					).c_str());
-
-			rect_.x = 0;
-			rect_.y = 31;
-			rect_.w = 128;
-			rect_.h = 16;
-			m_car.m_lcd.SetRegion(rect_);
-
-			m_lcd_typewriter.WriteString(String::Format("%d %d\n",
-					m_car.m_encoder_countr_t,
-					m_car.m_encoder_countl_t
-					).c_str());
+//			m_lcd_typewriter.WriteString(String::Format("%d %d\n",
+//					m_car.m_encoder_countr_t,
+//					m_car.m_encoder_countl_t
+//					).c_str());
 		}
 		switch(m_car.m_print_state){
 
@@ -442,9 +440,9 @@ App::App():
 	 * Pin for debugging
 	 *
 	 */
-	Gpo::Config pinadcfg;
-	pinadcfg.pin = Pin::Name::kPte19;
-	pin = new Gpo(pinadcfg);
+//	Gpo::Config pinadcfg;
+//	pinadcfg.pin = Pin::Name::kPte19;
+//	pin = new Gpo(pinadcfg);
 
 //	Gpo::Config pinclkcfg;
 //	pinclkcfg.pin = Pin::Name::kPte18;

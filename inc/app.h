@@ -76,12 +76,11 @@ private:
 	int16_t turn_powerb=0,turn_powerf=0;
 	float turn_coeff_b,turn_coeff_f;
 	int16_t speedsp = 0;
-	uint8_t left_edge = 0;
-	uint8_t right_edge = 127;
-	uint16_t avg = 0;
-	uint32_t sum = 0;
+	uint8_t left_edge1 = 0, left_edge2 = 0;
+	uint8_t right_edge1 = 127, right_edge2 = 0;
+	uint16_t avg1 = 0, avg2 = 0;
+	uint32_t sum1 = 0, sum2 = 0;
 
-	int16_t mid = 127;
 	int16_t encoder_count_t;
 
 	int m_pit_count = 0, m_pit_count2 = 0;
@@ -155,6 +154,8 @@ private:
 	float turnpid_b[3]={1.0f,0.0f,1.0f};
 	uint16_t last_y[128]={0};
 	uint16_t last_y2[128]={0};
+	uint16_t mid1 = 64;
+	uint16_t mid2 = 64;
 
 	MovingAverage m_movavgr,m_movavgl;
 

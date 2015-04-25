@@ -152,10 +152,13 @@ private:
 	 */
 	float turnpid_f[3]={0.0f,0.0f,0.0f};
 	float turnpid_b[3]={1.0f,0.0f,1.0f};
-	uint16_t last_y[128]={0};
+	uint16_t last_y1[128]={0};
 	uint16_t last_y2[128]={0};
 	uint16_t mid1 = 64;
 	uint16_t mid2 = 64;
+	bool colour = 0;
+
+
 
 	MovingAverage m_movavgr,m_movavgl;
 
@@ -168,7 +171,9 @@ private:
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_2;
 
 
-	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> color;
+	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> color1;
+
+	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> color2;
 	int y = 0;
 
 	LcdTypewriter::Config GetLcdTypewriterConfig(){

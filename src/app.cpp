@@ -48,16 +48,16 @@ uint16_t App::RpmToPwm_L(uint16_t count){
 //	return (count == 0) ? 0 : (uint16_t)(5.9219f*count + 58.4286f);
 //}
 
-float App::Output_turning(int16_t* turncon, float* turnpid, uint16_t* time){
+float App::Output_turning(int16_t* turncon, float* turnpid, uint16_t time){
     uint16_t period;
     int16_t outputcoeff;
-    if(time[4] == 0){
-        time[4] = System::Time();
+    if(time == 0){
+        time = System::Time();
         return 0;
     }
     float temp;
 
-    period = System::Time() - time[4];
+    period = System::Time() - time;
     temp = (turncon[0] - turncon[1]) / period;
 
     outputcoeff = turnpid[0] * turncon[0] + turnpid[2] * temp;
@@ -333,32 +333,32 @@ void App::PitBalance(Pit* pit){
 				}
 			}
 //
-//			mid2 = (left_edge2 + right_edge2) + 4;
-//			turncon_b[0] = mid2-(Tsl1401cl::kSensorW-1);
-//			turn_coeff_b = Output_turning(turncon_f, turnpid_f, time);
+//			mid2 = (left_edge2 + right_edge2)/2;
+//			turncon_2[0] = mid2-Tsl1401cl::kSensorW/2;
+//			turn_coeff_2 = Output_turning(turncon_2, turnpid_2, time2);
 ////			encoder_count_t = encoder_countr + encoder_countl;
-//			turn_powerb = turn_coeff_b * encoder_count_t / 500;
-//			turn_powerb = libutil::Clamp<int16_t>(-200,turn_powerb, 200);
-//			turn_powerl = -1 * turn_powerb;
-//			turn_powerr = turn_powerb;
+//			turn_power_2 = turn_coeff_2 * encoder_count_t / 500;
+//			turn_power_2 = libutil::Clamp<int16_t>(-200,turn_power_2, 200);
+//			turn_powerl = -1 * turn_power_2;
+//			turn_powerr = turn_power_2;
 
 /* for the second ccd*/
-//			turncon_f[0] = mid2-(Tsl1401cl::kSensorW-1);
-//			turn_coeff_f = Output_turning(turncon_f, turnpid_f, time2);
+//			turncon_1[0] = mid1-Tsl1401cl::kSensorW/2;
+//			turn_coeff_1 = Output_turning(turncon_1, turnpid_1, time1);
 //			encoder_count_t = encoder_countr + encoder_countl;
-//				turn_powerf = turn_coeff_f * encoder_count_t / 1000;
-//				turn_powerf = libutil::Clamp<int16_t>(-100,turn_powerf, 100);
-//			if (either ccd is all white)
+//				turn_power_1 = turn_coeff_1 * encoder_count_t / 1000;
+//				turn_power_1 = libutil::Clamp<int16_t>(-100,turn_power_1, 100);
+//			if (left_edge1+right_edge1>=100||left_edge2+right_edge2>=100)
 //				crossing = 1;
 //			else
 //				crossing = 0;
-//			if (turn_powerb>50||crossing){	//help turning
-//				turn_powerl -= turn_powerf;
-//				turn_powerr += turn_powerf;
+//			if (turn_power_2>50||crossing){	//help turning
+//				turn_powerl -= turn_power_1;
+//				turn_powerr += turn_power_1;
 //			}
-//			else{	//prepare turning
-//				turn_powerl += turn_powerf;
-//				turn_powerr -= turn_powerf;
+//			else{	//opposite direction to prepare turning
+//				turn_powerl += turn_power_1;
+//				turn_powerr -= turn_power_1;
 //			}
 
 //			int error = cameramid - mid2;

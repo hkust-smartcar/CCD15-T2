@@ -20,8 +20,8 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
-	config.core_clock_khz = 100000;
-	config.bus_clock_khz = 100000;
+	config.core_clock_khz = 70000;
+	config.bus_clock_khz = 35000;
 	return config;
 }
 
@@ -312,8 +312,8 @@ Car::Car():
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),
 				m_motor_l(GetDirMotorConfig(1)),
-				m_ccd_2(1),
-				m_ccd_1(0),
+				m_ccd_2(0),
+				m_ccd_1(1),
 				m_bat(GetBatteryConfig()),
 				m_lcd(GetSt7735RConfig()),
 				m_buzzer(GetBuzzerConfig()),

@@ -81,7 +81,7 @@ private:
 	uint16_t avg = 0;
 	uint32_t sum = 0;
 
-	int16_t mid = 127;
+	int16_t mid = 64;
 	int16_t encoder_count_t;
 
 	int m_pit_count = 0, m_pit_count2 = 0;

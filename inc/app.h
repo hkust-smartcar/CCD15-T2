@@ -28,7 +28,7 @@ public:
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float  omega);
-	float Output_turning(int16_t* turncon, float* turnpid, uint16_t time);
+	float Output_turning(int16_t* turncon, float* turnpid, uint16_t* time);
 	float Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
 	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 	void PitBalance(Pit* pit);
@@ -73,10 +73,8 @@ private:
 
 	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_powerl=0, turn_powerr=0;
 	int16_t power_l_pwm=0, power_r_pwm=0;
-
-	int16_t turn_power_1=0,turn_power_2=0;
-	float turn_coeff_1,turn_coeff_2;
-
+	int16_t turn_powerb=0,turn_powerf=0;
+	float turn_coeff_b,turn_coeff_f;
 	int16_t speedsp = 0;
 	uint8_t left_edge1 = 0, left_edge2 = 0;
 	uint8_t right_edge1 = 127, right_edge2 = 0;
@@ -137,9 +135,7 @@ private:
 	 * time[4] for turning period
 	*/
 	uint16_t time[6]={0,0,0,0,0,0};
-
-	/* for ccd */
-	uint16_t time1=0, time2=0;
+	uint16_t time2[5]={0,0,0,0,0};
 
 	/* turncon[0]=error(k);
 	 * turncon[1]=error(k-1);
@@ -147,15 +143,15 @@ private:
 	 * turncon[3]=midpoint;
 	 */
 	bool crossing=0;
-	int16_t turncon_1[4]={0,0,0,libsc::Tsl1401cl::kSensorW/2};
-	int16_t turncon_2[4]={0,0,0,libsc::Tsl1401cl::kSensorW/2};
+	int16_t turncon_f[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
+	int16_t turncon_b[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	float turnpid_1[3]={0.0f,0.0f,0.0f};
-	float turnpid_2[3]={1.0f,0.0f,1.0f};
+	float turnpid_f[3]={0.0f,0.0f,0.0f};
+	float turnpid_b[3]={1.0f,0.0f,1.0f};
 	uint16_t last_y1[128]={0};
 	uint16_t last_y2[128]={0};
 	uint16_t mid1 = 64;

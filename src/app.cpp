@@ -169,6 +169,14 @@ void App::PitBalance(Pit* pit){
 		m_car.m_encoder_countr_t += m_car.m_encoder_countr;
 		m_car.m_encoder_countl = m_car.m_encoder1.GetCount();
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
+
+		if(m_car.m_car_move_forward){
+			m_car.m_car_speed = 300.0f;
+		}else{
+			m_car.m_car_speed = 0.0f;
+		}
+		balcon[6] = (float)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.02f;
+
 	}
 
 

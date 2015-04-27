@@ -50,6 +50,7 @@ public:
 	RemoteVarManager* m_varmanager;
 	int16_t m_encoder_countr, m_encoder_countl, m_encoder_countr_t, m_encoder_countl_t, m_encoder_count_c, m_encoder_speed_c, m_speed_output;
 	int16_t m_encoder_spdcountr = 0, m_encoder_spdcountl = 0;
+	int16_t m_car_speed = 0;
 	libsc::Led m_led, m_led2, m_led3, m_led4;
 	Joystick m_joy;
 	Button m_sw1,m_sw2,m_sw3;

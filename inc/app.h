@@ -170,7 +170,7 @@ private:
 		CCD_BLACK = 0,
 		CCD_WHITE
 	};
-	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_1;
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_;
 
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_2;
 

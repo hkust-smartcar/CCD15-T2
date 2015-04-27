@@ -187,8 +187,6 @@ void App::PitBalance(Pit* pit){
 					color1[i] = CCD_WHITE;
 			}else{
 				color1[i] = CCD_BLACK;
-			}
-		}
 		if(m_car.m_lcdupdate){
 			St7735r::Rect rect_;
 			for(int i=0; i<80; i+=4){
@@ -207,7 +205,6 @@ void App::PitBalance(Pit* pit){
 				colour = 0;
 				m_car.m_lcd.FillColor(colour);
 			}
-		}
 		for (int i=mid1; i<libsc::Tsl1401cl::kSensorW-1; i++){
 			if(color1[i]==CCD_WHITE && color1[i+1]==CCD_BLACK) right_edge1=i;
 		}
@@ -243,7 +240,7 @@ void App::PitBalance(Pit* pit){
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
 				colour = 0;
-				m_car.m_lcd.FillColor(colour);
+				m_car.m_lcd.FillColor(colour2);
 				last_y1[i] = 79-ccd_data_1[i]*78/255;
 				rect_.x = i;
 				rect_.y = last_y1[i];
@@ -271,7 +268,7 @@ void App::PitBalance(Pit* pit){
 			avg2 = (uint16_t) (sum2 / libsc::Tsl1401cl::kSensorW);
 			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 				if(ccd_data_2[i] >= avg2+2000){
-						color2[i] = CCD_WHITE;
+						color2[[i] = CCD_WHITE;
 				}else{
 					color2[i] = CCD_BLACK;
 				}
@@ -309,7 +306,6 @@ void App::PitBalance(Pit* pit){
 					colour = 0;
 					m_car.m_lcd.FillColor(colour);
 				}
-			}
 			for (int i=mid2; i<libsc::Tsl1401cl::kSensorW-1; i++){
 				if(color2[i]==CCD_WHITE && color2[i+1]==CCD_BLACK) right_edge2=i;
 			}

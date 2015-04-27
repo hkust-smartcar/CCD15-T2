@@ -184,71 +184,85 @@ void App::PitBalance(Pit* pit){
 		avg1 = (uint16_t) (sum1 / libsc::Tsl1401cl::kSensorW);
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(ccd_data_1[i] >= avg1+2000){
-					color1[i] = CCD_WHITE;
+					color[i] = CCD_WHITE;
 			}else{
-				color1[i] = CCD_BLACK;
+				color[i] = CCD_BLACK;
+			}
+//						if(ccd_data_1[i] < 8000){
+//							color = 0;
+//						}else if(ccd_data_1[i] > 57000){
+//							color = ~0;
+//						}
+		}
+
+//			int cameramid = (0 + 127)/2;
+//			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
+//				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
+//					left_edge1 = i;
+//				}
+//				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
+//					right_edge1 = i;
+//				}
+//			}
 		if(m_car.m_lcdupdate){
-			St7735r::Rect rect_;
 			for(int i=0; i<80; i+=4){
 				rect_.x = left_edge1;
 				rect_.y = i;
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
-				colour = 0;
-				m_car.m_lcd.FillColor(colour);
+				color = 0;
+				m_car.m_lcd.FillColor(color);
 				rect_.x = right_edge1;
 				rect_.y = i;
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
-				colour = 0;
-				m_car.m_lcd.FillColor(colour);
+				color = 0;
+				m_car.m_lcd.FillColor(color);
 			}
 		for (int i=mid1; i<libsc::Tsl1401cl::kSensorW-1; i++){
-			if(color1[i]==CCD_WHITE && color1[i+1]==CCD_BLACK) right_edge1=i;
+			if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge1=i;
 		}
 		for (int i=mid1; i>=0; i--){
-			if(color1[i]==CCD_BLACK && color1[i+1]==CCD_WHITE) left_edge1=i;
+			if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE) left_edge1=i;
 		}
 		mid1 = (left_edge1 + right_edge1)/2 + 2;
 		if(m_car.m_lcdupdate){
-			St7735r::Rect rect_;
 			for(int i=0; i<80; i+=4){
 				rect_.x = left_edge1;
 				rect_.y = i;
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
-				colour = ~0;
-				m_car.m_lcd.FillColor(colour);
+				color = ~0;
+				m_car.m_lcd.FillColor(color);
 				rect_.x = right_edge1;
 				rect_.y = i;
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
-				colour = ~0;
-				m_car.m_lcd.FillColor(colour);
+				color = ~0;
+				m_car.m_lcd.FillColor(color);
 			}
 		}
 		if(m_car.m_lcdupdate){
-			St7735r::Rect rect_;
 			for(int i=0; i<Tsl1401cl::kSensorW; i++){
 				rect_.x = i;
-				rect_.y = last_y1[i];
+				rect_.y = last_y2[i];
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
-				colour = 0;
-				m_car.m_lcd.FillColor(colour2);
-				last_y1[i] = 79-ccd_data_1[i]*78/255;
+				color2 = 0;
+				m_car.m_lcd.FillColor(color2);
+				last_y2[i] = 79-ccd_data_1[i]*78/255;
 				rect_.x = i;
-				rect_.y = last_y1[i];
+				rect_.y = last_y2[i];
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
-				colour = ~0;
-				m_car.m_lcd.FillColor(colour);
+				color = ~0;
+				m_car.m_lcd.FillColor(color2);
 			}
 		}
 	}
@@ -268,9 +282,9 @@ void App::PitBalance(Pit* pit){
 			avg2 = (uint16_t) (sum2 / libsc::Tsl1401cl::kSensorW);
 			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 				if(ccd_data_2[i] >= avg2+2000){
-						color2[[i] = CCD_WHITE;
+						color[i] = CCD_WHITE;
 				}else{
-					color2[i] = CCD_BLACK;
+					color[i] = CCD_BLACK;
 				}
 	//						if(ccd_data_2[i] < 8000){
 	//							color = 0;
@@ -281,55 +295,53 @@ void App::PitBalance(Pit* pit){
 
 //			int cameramid = (0 + 127)/2;
 //			for(int i=1; i<libsc::Tsl1401cl::kSensorW-1; i++){
-//				if(color2[i]==CCD_BLACK && color2[i+1]==CCD_WHITE){
+//				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
 //					left_edge2 = i;
 //				}
-//				if(color2[i]==CCD_WHITE && color2[i+1]==CCD_BLACK){
+//				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
 //					right_edge2 = i;
 //				}
 //			}
 			if(m_car.m_lcdupdate){
-				St7735r::Rect rect_;
 				for(int i=81; i<159; i+=4){
 					rect_.x = left_edge2;
 					rect_.y = i;
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
-					colour = 0;
-					m_car.m_lcd.FillColor(colour);
+					color = 0;
+					m_car.m_lcd.FillColor(color);
 					rect_.x = right_edge2;
 					rect_.y = i;
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
-					colour = 0;
-					m_car.m_lcd.FillColor(colour);
+					color = 0;
+					m_car.m_lcd.FillColor(color);
 				}
 			for (int i=mid2; i<libsc::Tsl1401cl::kSensorW-1; i++){
-				if(color2[i]==CCD_WHITE && color2[i+1]==CCD_BLACK) right_edge2=i;
+				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK) right_edge2=i;
 			}
 			for (int i=mid2; i>=0; i--){
-				if(color2[i]==CCD_BLACK && color2[i+1]==CCD_WHITE) left_edge2=i;
+				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE) left_edge2=i;
 			}
 			mid2 = (left_edge2 + right_edge2)/2 + 2;
 			if(m_car.m_lcdupdate){
-				St7735r::Rect rect_;
 				for(int i=81; i<159; i+=4){
 					rect_.x = left_edge2;
 					rect_.y = i;
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
-					colour = ~0;
-					m_car.m_lcd.FillColor(colour);
+					color = ~0;
+					m_car.m_lcd.FillColor(color);
 					rect_.x = right_edge2;
 					rect_.y = i;
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
-					colour = ~0;
-					m_car.m_lcd.FillColor(colour);
+					color = ~0;
+					m_car.m_lcd.FillColor(color);
 				}
 			}
 //
@@ -367,22 +379,24 @@ void App::PitBalance(Pit* pit){
 
 			if(m_car.m_lcdupdate){
 				St7735r::Rect rect_;
+				uint16_t color = 0;
+
 				for(int i=0; i<Tsl1401cl::kSensorW; i++){
 					rect_.x = i;
-					rect_.y = last_y2[i];
+					rect_.y = last_y[i];
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
-					colour = 0;
-					m_car.m_lcd.FillColor(colour);
-					last_y2[i] = 159-ccd_data_2[i]*78/255;
+					color = 0;
+					m_car.m_lcd.FillColor(color);
+					last_y[i] = 159-ccd_data_2[i]*78/255;
 					rect_.x = i;
-					rect_.y = last_y2[i];
+					rect_.y = last_y[i];
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
-					colour = ~0;
-					m_car.m_lcd.FillColor(colour);
+					color = ~0;
+					m_car.m_lcd.FillColor(color);
 				}
 			}
 

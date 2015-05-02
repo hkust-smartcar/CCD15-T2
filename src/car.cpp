@@ -297,6 +297,8 @@ Car::Car():
 				m_encoder_countl(0),
 				m_encoder_count_c(0),
 				m_encoder_speed_c(0),
+				m_encoder_countr_t(0),
+				m_encoder_countl_t(0),
 				m_speed_output(0),
 				m_led(GetLedConfig(0)),
 				m_led2(GetLedConfig(1)),
@@ -312,15 +314,15 @@ Car::Car():
 				m_encoder1(GetDirEncoderConfig(1)),
 				m_motor_r(GetDirMotorConfig(0)),
 				m_motor_l(GetDirMotorConfig(1)),
-				m_ccd_2(0),
-				m_ccd_1(1),
+				m_ccd_2(1),
+				m_ccd_1(0),
 				m_bat(GetBatteryConfig()),
 				m_lcd(GetSt7735RConfig()),
 				m_buzzer(GetBuzzerConfig()),
 				m_infrared(GetInfraredConfig()),
 				m_car_move_motor(false),
 				m_car_move_forward(false),
-				m_lcdupdate(false)
+				m_lcdupdate(true)
 
 {
 	/*
@@ -343,6 +345,5 @@ Car::Car():
 
 	libutil::InitDefaultFwriteHandler(m_com);
 
-	m_lcd.Clear(0x0);
-
+	m_lcd.Clear(0);
 }

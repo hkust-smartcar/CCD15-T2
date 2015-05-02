@@ -161,7 +161,7 @@ void App::PitBalance(Pit* pit){
 
 
 	}
-	if(m_pit_count%4==0){
+	if(m_pit_count%1==0){
 		m_car.m_encoder0.Update();
 		m_car.m_encoder1.Update();
 		m_car.m_encoder_countr = -m_car.m_encoder0.GetCount();
@@ -207,8 +207,7 @@ void App::PitBalance(Pit* pit){
 		}
 	}
 
-	if(m_pit_count%4==1){
-//		pin->Set();
+	if(m_pit_count%2==1){
 		m_car.m_ccd_2.StartSample();
 		while(!m_car.m_ccd_2.SampleProcess()){}
 
@@ -252,7 +251,7 @@ void App::PitBalance(Pit* pit){
 					left_edge=i; break;
 				}
 			}
-			int mid = (left_edge + right_edge)/2;
+			int route_mid = (left_edge + right_edge)/2;
 //
 //			mid = (left_edge + right_edge) + 4;
 //			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
@@ -282,11 +281,12 @@ void App::PitBalance(Pit* pit){
 //				turn_powerr -= turn_powerf;
 //			}
 
-			int error = cameramid - mid;
-			turn_powerl = -4*error;
-			turn_powerr = 4*error;
+			int error = cameramid - route_mid;
+			turn_powerl = -7*error;
+			turn_powerr = 7*error;
 
 			if(m_car.m_lcdupdate){
+				pin->Set();
 				St7735r::Rect rect_;
 				uint16_t color = 0;
 
@@ -307,6 +307,7 @@ void App::PitBalance(Pit* pit){
 					color = ~0;
 					m_car.m_lcd.FillColor(color);
 				}
+				pin->Clear();
 			}
 
 //			if(m_car.m_lcdupdate){
@@ -345,7 +346,7 @@ void App::PitBalance(Pit* pit){
 //				y=y%(160-16*3);
 //			}
 //		}
-//		pin->Clear();
+
 	}
 	if(m_pit_count%200==0){
 //		power_r_pwm += 10;
@@ -385,6 +386,20 @@ void App::PitBalance(Pit* pit){
 //					m_car.m_encoder_countr_t,
 //					m_car.m_encoder_countl_t
 //					).c_str());
+
+			St7735r::Rect rect_;
+
+			rect_.x = 0;
+			rect_.y = 16;
+			rect_.w = 128;
+			rect_.h = 16;
+			m_car.m_lcd.SetRegion(rect_);
+
+			m_lcd_typewriter.WriteString(String::Format("%4d %4d\n",
+					turn_powerl,
+					turn_powerr
+					).c_str());
+
 		}
 		switch(m_car.m_print_state){
 
@@ -392,7 +407,7 @@ void App::PitBalance(Pit* pit){
 				printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
 				break;
 			case 2:
-				printf("%d,%d,%d,%d\n",power_r_pwm,power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl);
+				printf("%d,%d,%d,%d,%d,%d\n",turn_powerl,turn_powerr,m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_countr_t, m_car.m_encoder_countl_t);
 				break;
 			case 0:
 				default:
@@ -452,9 +467,9 @@ App::App():
 	 * Pin for debugging
 	 *
 	 */
-//	Gpo::Config pinadcfg;
-//	pinadcfg.pin = Pin::Name::kPte19;
-//	pin = new Gpo(pinadcfg);
+	Gpo::Config pinadcfg;
+	pinadcfg.pin = Pin::Name::kPtc3;
+	pin = new Gpo(pinadcfg);
 
 //	Gpo::Config pinclkcfg;
 //	pinclkcfg.pin = Pin::Name::kPte18;

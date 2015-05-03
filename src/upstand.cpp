@@ -44,14 +44,14 @@ void Upstand::KalmanFilter(void)
 	            float Priori_Convariance = 0;
       static   float gyro_angle = 0;
 	  volatile float Accelerometer = 0;
-	  volatile float Gyroscope     = 0;
+//	  volatile float Gyroscope     = 0;
 	  volatile float AngleGyro     = 0;
 	  volatile float AngleAcc      = 0;
 	  static   float Posterior_Estimation   = 0;
 	  static   float Posterior_Convariance  = 0;
 	            float Priori_Estimation_Real = 0;
 //	  volatile float GyroscopeReal = 0;
-	  volatile float AngleGyroReal = 0;
+//	  volatile float AngleGyroReal = 0;
 	  static   float Posterior_Estimation_Real  = 0;
 
 	  /* 基本参数赋值 */

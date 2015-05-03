@@ -64,19 +64,13 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 	int16_t output;
 	static int16_t total_output = 0;
 	static uint32_t prev_time = 0;
-	float temp;
 
 	period=System::Time()-prev_time;
 	time[2]=System::Time();
 	balcon[0]=(balcon[4]+balcon[5]+balcon[6])-real_angle;	// 512*104/44=13312/11
-	temp=(balcon[0]-balcon[1])/period;
-//	output=balpid[0]*balcon[0]+balpid[1]*balcon[3]*time[2]+balpid[2]*(temp+balcon[2])*10;
-//	output=(int16_t)(balpid[0]*(balcon[0] - balcon[1]));
 	total_output += balcon[0] * period;
-	/*(temp+balcon[2])/2)*/
 	output=(int16_t)(balpid[0]*balcon[0] + balpid[2] * omega/* + balpid[1] * total_output*/);
 	balcon[1]=balcon[0];
-//	balcon[2]=temp;
 	return output;
 }
 
@@ -111,50 +105,45 @@ Pit::Config GetPitConfig2(const uint8_t pit_channel,
 	return config;
 }
 
-void App::PitBalance(Pit* pit){
+void App::PitBalance(Pit*){
 	if(m_pit_count%2==0){
-//		pin->Set();
 		m_car.m_mpu6050.Update();
 		m_car.m_mma8451q.Update();
-//		pin->Clear();
-//		accel_ = m_car.m_mma8451q.GetAccel();
-//		accel_ = m_car.m_mpu6050.GetAccel();
-		gyro_ = m_car.m_mpu6050.GetOmega();
+		m_gyro_ = m_car.m_mpu6050.GetOmega();
+
+		m_upstand->KalmanFilter();
+		m_real_angle = (float) m_upstand->GetAngle();
+
+		m_balpid[0] = 200.0f/*m_bkp->GetReal()*/;
+		m_balpid[1] = m_bki->GetReal();
+		m_balpid[2] = 0.0f/*m_bkd->GetReal()*/;
 
 
-		upstand->KalmanFilter();
-		real_angle = (float) upstand->GetAngle();
-
-		balpid[0] = /*30.0f*/200.0f/*m_bkp->GetReal()*/;
-		balpid[1] = m_bki->GetReal();
-		balpid[2] = 0.0f/*m_bkd->GetReal()*/;
-
-
-		m_balance_pid_output = -Output_b(balcon, balpid, time, real_angle, -gyro_[1]);
+		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
 		m_balance_pid_output = 0;
-		power_r = m_balance_pid_output + turn_powerr;
-		power_l = m_balance_pid_output + turn_powerl;
+		m_power_r = m_balance_pid_output + m_turn_powerr;
+		m_power_l = m_balance_pid_output + m_turn_powerl;
 
 	}
 	if(m_pit_count%2==0){
 		m_car.m_ccd_2.StartSample();
 		while(!m_car.m_ccd_2.SampleProcess()){}
-		ccd_data_2 = m_car.m_ccd_2.GetData();
+		m_ccd_data_2 = m_car.m_ccd_2.GetData();
 		if(m_car.m_lcdupdate){
 			St7735r::Rect rect_;
 			uint16_t color2 = 0;
 
 			for(int i=0; i<Tsl1401cl::kSensorW; i++){
 				rect_.x = i;
-				rect_.y = last_y2[i];
+				rect_.y = m_last_y2[i];
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
 				color2 = 0;
 				m_car.m_lcd.FillColor(color2);
-				last_y2[i] = 130-ccd_data_2[i]/4;
+				m_last_y2[i] = 130-m_ccd_data_2[i]/4;
 				rect_.x = i;
-				rect_.y = last_y2[i];
+				rect_.y = m_last_y2[i];
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
@@ -168,41 +157,35 @@ void App::PitBalance(Pit* pit){
 		m_car.m_ccd_1.StartSample();
 		while(!m_car.m_ccd_1.SampleProcess()){}
 
-	//		if(m_car.m_ccd.IsImageReady()){
-			ccd_data_ = m_car.m_ccd_1.GetData();
-			avg = 0;
-			sum = 0;
+			m_ccd_data_ = m_car.m_ccd_1.GetData();
+			m_avg = 0;
+			m_sum = 0;
 			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				sum += (uint32_t)ccd_data_[i];
+				m_sum += (uint32_t)m_ccd_data_[i];
 			}
-			avg = (uint16_t) (sum / libsc::Tsl1401cl::kSensorW);
+			m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
 			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				if(ccd_data_[i] >= avg-5){
-						color[i] = CCD_WHITE;
+				if(m_ccd_data_[i] >= m_avg-5){
+						m_color[i] = CCD_WHITE;
 				}else{
-					color[i] = CCD_BLACK;
+					m_color[i] = CCD_BLACK;
 				}
-	//						if(ccd_data_[i] < 8000){
-	//							color = 0;
-	//						}else if(ccd_data_[i] > 57000){
-	//							color = ~0;
-	//						}
 			}
 
 			int cameramid = (0 + 127)/2;
-			right_edge = libsc::Tsl1401cl::kSensorW-1;
-			left_edge = 0;
-			for (int i=mid; i<libsc::Tsl1401cl::kSensorW-1; i++){
-				if(color[i]==CCD_WHITE && color[i+1]==CCD_BLACK){
-					right_edge=i; break;
+			m_right_edge = libsc::Tsl1401cl::kSensorW-1;
+			m_left_edge = 0;
+			for (int i=m_mid; i<libsc::Tsl1401cl::kSensorW-1; i++){
+				if(m_color[i]==CCD_WHITE && m_color[i+1]==CCD_BLACK){
+					m_right_edge=i; break;
 				}
 			}
-			for (int i=mid; i>=0; i--){
-				if(color[i]==CCD_BLACK && color[i+1]==CCD_WHITE){
-					left_edge=i; break;
+			for (int i=m_mid; i>=0; i--){
+				if(m_color[i]==CCD_BLACK && m_color[i+1]==CCD_WHITE){
+					m_left_edge=i; break;
 				}
 			}
-			int route_mid = (left_edge + right_edge)/2;
+			int route_mid = (m_left_edge + m_right_edge)/2;
 	//
 	//			mid = (left_edge + right_edge) + 4;
 	//			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
@@ -235,34 +218,34 @@ void App::PitBalance(Pit* pit){
 			int error = cameramid - route_mid;
 			m_movavgturn.Add(error);
 
-			turn_powerl = 10*m_movavgturn.GetAverage();
-			turn_powerl = libutil::Clamp<int16_t>(-800,turn_powerl, 800);
-			turn_powerr = -10*m_movavgturn.GetAverage();
-			turn_powerr = libutil::Clamp<int16_t>(-800,turn_powerr, 800);
+			m_turn_powerl = 10*m_movavgturn.GetAverage();
+			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
+			m_turn_powerr = -10*m_movavgturn.GetAverage();
+			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 
 			if(m_car.m_lcdupdate){
-				pin->Set();
+				m_pin->Set();
 				St7735r::Rect rect_;
 				uint16_t color = 0;
 
 				for(int i=0; i<Tsl1401cl::kSensorW; i++){
 					rect_.x = i;
-					rect_.y = last_y[i];
+					rect_.y = m_last_y[i];
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
 					color = 0;
 					m_car.m_lcd.FillColor(color);
-					last_y[i] = 65-ccd_data_[i]/4;
+					m_last_y[i] = 65-m_ccd_data_[i]/4;
 					rect_.x = i;
-					rect_.y = last_y[i];
+					rect_.y = m_last_y[i];
 					rect_.w = 1;
 					rect_.h = 1;
 					m_car.m_lcd.SetRegion(rect_);
 					color = ~0;
 					m_car.m_lcd.FillColor(color);
 				}
-				pin->Clear();
+				m_pin->Clear();
 			}
 
 	//			if(m_car.m_lcdupdate){
@@ -318,7 +301,7 @@ void App::PitBalance(Pit* pit){
 			m_car.m_car_speed = 0.0f;
 		}
 
-		balcon[6] = (float)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.02f;
+		m_balcon[6] = (float)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.02f;
 
 //		power_r_pwm += Output_speed(carspeedconr, carspeedpidr, m_car.m_encoder_countr);
 //		power_l_pwm += Output_speed(carspeedconl, carspeedpidl, m_car.m_encoder_countl);
@@ -383,10 +366,10 @@ void App::PitBalance(Pit* pit){
 		switch(m_car.m_print_state){
 
 			case 1:
-				printf("%f,%f,%f\n",real_angle,upstand->GetAccAngle(),upstand->GetGyroAngle());
+				printf("%f,%f,%f\n",m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle());
 				break;
 			case 2:
-				printf("%d,%d,%d,%d,%d,%d\n",power_r,power_l,m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_countr_t, m_car.m_encoder_countl_t);
+				printf("%d,%d,%d,%d,%d,%d\n",m_power_r,m_power_l,m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_countr_t, m_car.m_encoder_countl_t);
 				break;
 			case 0:
 				default:
@@ -397,9 +380,7 @@ void App::PitBalance(Pit* pit){
 	m_pit_count++;
 }
 
-void App::PitMoveMotor(Pit* pit){
-
-
+void App::PitMoveMotor(Pit*){
 	/*
 	 * Protection for motors
 	 * */
@@ -407,17 +388,17 @@ void App::PitMoveMotor(Pit* pit){
 //	if(abs(power_l) >= 1000) power_l = 0;
 //	if(abs(power_r) >= 1000) power_r = 0;
 
-	power_r_pwm = sign(power_l)*(int16_t)RpmToPwm_R((uint16_t)abs(power_r));
-	power_l_pwm = sign(power_l)*(int16_t)RpmToPwm_L((uint16_t)abs(power_l));
+	m_power_r_pwm = sign(m_power_l)*(int16_t)RpmToPwm_R((uint16_t)abs(m_power_r));
+	m_power_l_pwm = sign(m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs(m_power_l));
 
 	if(!m_car.m_car_move_motor){
-		power_r_pwm = power_l_pwm = 0;
-		power_r = power_l = 0;
+		m_power_r_pwm = m_power_l_pwm = 0;
+		m_power_r = m_power_l = 0;
 	}
-	m_car.m_motor_r.SetClockwise(power_r_pwm < 0); //Right Motor - false forward, true backward
-	m_car.m_motor_l.SetClockwise(power_l_pwm > 0); //Left Motor - true forward, false backward
-	m_car.m_motor_r.SetPower((uint16_t)abs(power_r_pwm));
-	m_car.m_motor_l.SetPower((uint16_t)abs(power_l_pwm));
+	m_car.m_motor_r.SetClockwise(m_power_r_pwm < 0); //Right Motor - false forward, true backward
+	m_car.m_motor_l.SetClockwise(m_power_l_pwm > 0); //Left Motor - true forward, false backward
+	m_car.m_motor_r.SetPower((uint16_t)abs(m_power_r_pwm));
+	m_car.m_motor_l.SetPower((uint16_t)abs(m_power_l_pwm));
 	m_pit_count2++;
 }
 
@@ -446,7 +427,7 @@ App::App():
 	 */
 	Gpo::Config pinadcfg;
 	pinadcfg.pin = Pin::Name::kPtc0;
-	pin = new Gpo(pinadcfg);
+	m_pin = new Gpo(pinadcfg);
 
 //	Gpo::Config pinclkcfg;
 //	pinclkcfg.pin = Pin::Name::kPte18;
@@ -460,14 +441,10 @@ App::App():
 //	pinadcfg.pin = Pin::Name::kPte16;
 //	Gpo pinad(pinadcfg);
 
-	upstand = new Upstand(&(m_car.m_mpu6050), &(m_car.m_mma8451q));
-
-	Timer::TimerInt t_ = System::Time(), pt_ = t_;
-	Timer::TimerInt gyro_t = 0, gyro_pt = System::Time();
+	m_upstand = new Upstand(&(m_car.m_mpu6050), &(m_car.m_mma8451q));
 
 	Pit m_pit(GetPitConfig(0, std::bind(&App::PitBalance, this, std::placeholders::_1)));
 	Pit m_pit2(GetPitConfig2(1, std::bind(&App::PitMoveMotor, this, std::placeholders::_1)));
-
 
 	while(true)
 	{

@@ -122,7 +122,7 @@ void Car::Sw3Down(int id){
 
 }
 
-void Car::SelectDown(int id){
+void Car::SelectDown(int){
 	m_print_state++;
 	m_print_state%=m_num_print_states;
 	printf("printstates:%d\n",m_print_state);
@@ -131,7 +131,7 @@ void Car::SelectDown(int id){
 	m_buzzer.SetBeep(false);
 }
 
-void Car::GetInfrared(Gpi *gpi){
+void Car::GetInfrared(Gpi *){
 	static bool state = true;
 	m_buzzer.SetBeep(state);
 	state=!state;
@@ -295,8 +295,6 @@ Car::Car():
 				m_varmanager(new RemoteVarManager(15)),
 				m_encoder_countr(0),
 				m_encoder_countl(0),
-				m_encoder_count_c(0),
-				m_encoder_speed_c(0),
 				m_encoder_countr_t(0),
 				m_encoder_countl_t(0),
 				m_speed_output(0),

@@ -64,25 +64,25 @@ private:
 	PositionalPidController<int16_t,int16_t> m_speed_control0;
 	PositionalPidController<int16_t,int16_t> m_speed_control1;
 
-	Gpo* pin;
+	Gpo* m_pin;
 
-	std::array<float, 3> accel_, gyro_;
-	float real_angle = 0, acc_angle = 0, gyro_angle = 0, prev_gyro_angle = 0, avg_gyro = 0, total_gyro=0;
+	std::array<float, 3> m_accel_, m_gyro_;
+	float m_real_angle = 0, m_acc_angle = 0, m_gyro_angle = 0, m_prev_gyro_angle = 0, m_avg_gyro = 0, m_total_gyro=0;
 
-	Upstand* upstand;
+	Upstand* m_upstand;
 
-	int16_t power_l=0, power_r=0, u_s0=0, u_s1=0, u_b=0, turn_powerl=0, turn_powerr=0;
-	int16_t power_l_pwm=0, power_r_pwm=0;
-	int16_t turn_powerb=0,turn_powerf=0;
-	float turn_coeff_b,turn_coeff_f;
-	int16_t speedsp = 0;
-	uint8_t left_edge = 0;
-	uint8_t right_edge = 127;
-	uint16_t avg = 0;
-	uint32_t sum = 0;
+	int16_t m_power_l=0, m_power_r=0, m_u_s0=0, m_u_s1=0, m_u_b=0, m_turn_powerl=0, m_turn_powerr=0;
+	int16_t m_power_l_pwm=0, m_power_r_pwm=0;
+	int16_t m_turn_powerb=0,m_turn_powerf=0;
+	float m_turn_coeff_b,m_turn_coeff_f;
+	int16_t m_speedsp = 0;
+	uint8_t m_left_edge = 0;
+	uint8_t m_right_edge = 127;
+	uint16_t m_avg = 0;
+	uint32_t m_sum = 0;
 
-	int16_t mid = 64;
-	int16_t encoder_count_t;
+	int16_t m_mid = 64;
+	int16_t m_encoder_count_t;
 
 	int m_pit_count = 0, m_pit_count2 = 0;
 
@@ -93,13 +93,13 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[7]={0,0,0,0,25.5f,0,0};
+	float m_balcon[7]={0,0,0,0,25.5f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	float balpid[3]={0.0f,0.0f,0.0f};
+	float m_balpid[3]={0.0f,0.0f,0.0f};
 
 	/*carspeedcon[0]=error(k);
 	 * carspeedcon[1]=error(k-1);
@@ -107,13 +107,13 @@ private:
 	 * carspeedcon[3]=summation for ki;
 	 * carspeedcon[4]=setpoint;
 	*/
-	int16_t carspeedconr[5]={0,0,0,0,0};
+	int16_t m_carspeedconr[5]={0,0,0,0,0};
 
 	/*carspeedpid[0]=kp;
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpidr[3]={0.1f,0.0f,0.0f};
+	float m_carspeedpidr[3]={0.1f,0.0f,0.0f};
 
 	/*carspeedcon[0]=error(k);
 	 * carspeedcon[1]=error(k-1);
@@ -121,40 +121,40 @@ private:
 	 * carspeedcon[3]=summation for ki;
 	 * carspeedcon[4]=setpoint;
 	*/
-	int16_t carspeedconl[5]={0,0,0,0,0};
+	int16_t m_carspeedconl[5]={0,0,0,0,0};
 
 	/*carspeedpid[0]=kp;
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpidl[3]={0.1f,0.0f,0.0f};
+	float m_carspeedpidl[3]={0.1f,0.0f,0.0f};
 
 	/* time[0] for spd period;
 	 * time[1] for spd period;
 	 * time[2] for bal period;
 	 * time[3] for bal period;
-	 * time[4] for turning period
+	 * m_time[4] for turning period
 	*/
-	uint16_t time[6]={0,0,0,0,0,0};
-	uint16_t time2[5]={0,0,0,0,0};
+	uint16_t m_time[6]={0,0,0,0,0,0};
+	uint16_t m_time2[5]={0,0,0,0,0};
 
 	/* turncon[0]=error(k);
 	 * turncon[1]=error(k-1);
 	 * turncon[2]=previous slope of de/dt for low-pass filtering;
 	 * turncon[3]=midpoint;
 	 */
-	bool crossing=0;
-	int16_t turncon_f[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
-	int16_t turncon_b[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
+	bool m_crossing=0;
+	int16_t m_turncon_f[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
+	int16_t m_turncon_b[4]={0,0,0,libsc::Tsl1401cl::kSensorW-1};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
 	 * pid[2]=kd;
 	 */
-	float turnpid_f[3]={0.0f,0.0f,0.0f};
-	float turnpid_b[3]={1.0f,0.0f,1.0f};
-	uint16_t last_y[128]={0};
-	uint16_t last_y2[128]={0};
+	float m_turnpid_f[3]={0.0f,0.0f,0.0f};
+	float m_turnpid_b[3]={1.0f,0.0f,1.0f};
+	uint16_t m_last_y[128]={0};
+	uint16_t m_last_y2[128]={0};
 
 	MovingAverage m_movavgr,m_movavgl,m_movavgturn;
 
@@ -162,13 +162,13 @@ private:
 		CCD_BLACK = 0,
 		CCD_WHITE
 	};
-	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_;
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_;
 
-	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> ccd_data_2;
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_2;
 
 
-	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> color;
-	int y = 0;
+	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> m_color;
+	int m_y = 0;
 
 	LcdTypewriter::Config GetLcdTypewriterConfig(){
 		LcdTypewriter::Config config;

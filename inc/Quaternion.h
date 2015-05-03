@@ -52,4 +52,4 @@ namespace Math{
 			void EulerToQuaternion(double*, double*);
 			void QuaternionToEuler(double*, double*);
 	};
-};
+}

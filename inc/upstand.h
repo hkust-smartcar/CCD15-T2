@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =====================================================================================
  *        COPYRIGHT NOTICE
  *        Copyright (c) 2012  HUST-Renesas Lab
@@ -29,7 +29,7 @@ using namespace libsc;
 #define TIME_CONSTANT       (2 / 1000.0f) /**< 采样间隔时间常数（单位：ms） */
 //#define TIME_CONSTANT       0.6 /**< 采样间隔时间常数（单位：ms） */
 #define  AD_INTERVAL        0.004f
-#define ACCY_CONVARIANCE    500  /**< 加速度计Y轴协方差 */
+#define ACCY_CONVARIANCE    200  /**< 加速度计Y轴协方差 */
 #define GYRO_CONVARIANCE    1    /**< 陀螺仪协方差 */
 //#define ACCY_AD2DEG_RATIO   0.46f   /**< 加速度计角度转换比例 */
 #define ANGLE_ZERO          156           /**< 加速度计静态零点设置值（粗调） */

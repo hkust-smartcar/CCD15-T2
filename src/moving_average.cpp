@@ -15,7 +15,7 @@ MovingAverage::MovingAverage(int size_):
 }
 
 void MovingAverage::Add(int32_t val){
-	if(actualsize<4){
+	if(actualsize<targetsize){
 		actualsize++;
 	}
 	vals[last_index++] = val;

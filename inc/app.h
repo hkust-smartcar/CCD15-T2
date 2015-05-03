@@ -29,7 +29,7 @@ public:
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float  omega);
 	float Output_turning(int16_t* turncon, float* turnpid, uint16_t* time);
-	float Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
+	int16_t Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
 	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
@@ -93,7 +93,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float balcon[7]={0,0,0,0,24.5f,0,0};
+	float balcon[7]={0,0,0,0,25.5f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -113,7 +113,7 @@ private:
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpidr[3]={1.2f,0.04f,0.0f};
+	float carspeedpidr[3]={0.1f,0.0f,0.0f};
 
 	/*carspeedcon[0]=error(k);
 	 * carspeedcon[1]=error(k-1);
@@ -127,7 +127,7 @@ private:
 	* carspeedpid[1]=ki;
 	* carspeedpid[2]=kd;
 	*/
-	float carspeedpidl[3]={1.5f,0.04f,0.0f};
+	float carspeedpidl[3]={0.1f,0.0f,0.0f};
 
 	/* time[0] for spd period;
 	 * time[1] for spd period;
@@ -156,7 +156,7 @@ private:
 	uint16_t last_y[128]={0};
 	uint16_t last_y2[128]={0};
 
-	MovingAverage m_movavgr,m_movavgl;
+	MovingAverage m_movavgr,m_movavgl,m_movavgturn;
 
 	enum CCD_COLOR{
 		CCD_BLACK = 0,

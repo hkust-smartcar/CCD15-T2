@@ -322,7 +322,7 @@ Car::Car():
 				m_infrared(GetInfraredConfig()),
 				m_car_move_motor(false),
 				m_car_move_forward(false),
-				m_lcdupdate(true)
+				m_lcdupdate(false)
 
 {
 	/*

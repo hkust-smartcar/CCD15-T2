@@ -6,7 +6,7 @@
  *
  *        @file     upstand_signal.c
  *
- *        @brief    ç›´ç«‹ä¿¡å·å¤„ç†
+ *        @brief    Ö±Á¢ĞÅºÅ´¦Àí
  *
  *        @version  0.1
  *        @date     2012/5/22 11:27:35
@@ -22,21 +22,21 @@
 #include "upstand.h"
 
 /**
- *    @brief  å¡å°”æ›¼æ»¤æ³¢å™¨å‡½æ•°ï¼Œå¤„ç†è§’åº¦ä¿¡æ¯èåˆè¿‡ç¨‹
+ *    @brief  ¿¨¶ûÂüÂË²¨Æ÷º¯Êı£¬´¦Àí½Ç¶ÈĞÅÏ¢ÈÚºÏ¹ı³Ì
  *
- *    @param  TIME_CONSTANT       é‡‡æ ·é—´éš”æ—¶é—´å¸¸æ•°ï¼ˆå•ä½ï¼šmsï¼‰
- *    @param  ACCY_CONVARIANCE    åŠ é€Ÿåº¦è®¡Yè½´åæ–¹å·®
- *    @param  GYRO_CONVARIANCE    é™€èºä»ªåæ–¹å·®
- *    @param  ACCY_AD2DEG_RATIO   åŠ é€Ÿåº¦è®¡è§’åº¦è½¬æ¢æ¯”ä¾‹
- *    @param  GYRO_AD2DEG_RATIO   é™€èºä»ªè§’åº¦è½¬æ¢æ¯”ä¾‹
- *    @param  ANGLE_ZERO          åŠ é€Ÿåº¦è®¡é™æ€é›¶ç‚¹è®¾ç½®å€¼ï¼ˆç²—è°ƒï¼‰
- *    @param  ANGLE_ZERO_FIXTURE  åŠ é€Ÿåº¦è®¡é™æ€é›¶ç‚¹è®¾ç½®å€¼ï¼ˆç»†è°ƒï¼‰
+ *    @param  TIME_CONSTANT       ²ÉÑù¼ä¸ôÊ±¼ä³£Êı£¨µ¥Î»£ºms£©
+ *    @param  ACCY_CONVARIANCE    ¼ÓËÙ¶È¼ÆYÖáĞ­·½²î
+ *    @param  GYRO_CONVARIANCE    ÍÓÂİÒÇĞ­·½²î
+ *    @param  ACCY_AD2DEG_RATIO   ¼ÓËÙ¶È¼Æ½Ç¶È×ª»»±ÈÀı
+ *    @param  GYRO_AD2DEG_RATIO   ÍÓÂİÒÇ½Ç¶È×ª»»±ÈÀı
+ *    @param  ANGLE_ZERO          ¼ÓËÙ¶È¼Æ¾²Ì¬ÁãµãÉèÖÃÖµ£¨´Öµ÷£©
+ *    @param  ANGLE_ZERO_FIXTURE  ¼ÓËÙ¶È¼Æ¾²Ì¬ÁãµãÉèÖÃÖµ£¨Ï¸µ÷£©
  *
- *    @note   å‚æ•°ä½“ç°åœ¨å®å®šä¹‰é‡Œï¼Œåªé’ˆå¯¹ä¸åŒçš„è½¦ä½“æ¨¡å‹åšå¾®è°ƒ
+ *    @note   ²ÎÊıÌåÏÖÔÚºê¶¨ÒåÀï£¬Ö»Õë¶Ô²»Í¬µÄ³µÌåÄ£ĞÍ×öÎ¢µ÷
  */
 void Upstand::KalmanFilter(void)
 {
-	  /* å‡½æ•°å†…éƒ¨å˜é‡å®šä¹‰ */
+	  /* º¯ÊıÄÚ²¿±äÁ¿¶¨Òå */
 	            float Q  = 0;
 	            static         float R  = 0;
 	            float KalmanGain         = 0;
@@ -54,7 +54,7 @@ void Upstand::KalmanFilter(void)
 	  volatile float AngleGyroReal = 0;
 	  static   float Posterior_Estimation_Real  = 0;
 
-	  /* åŸºæœ¬å‚æ•°èµ‹å€¼ */
+	  /* »ù±¾²ÎÊı¸³Öµ */
 //	  Timer::TimerInt t = System::Time();
 //	  static Timer::TimerInt pt = 0;
       float dt = 5/1000.0f;
@@ -62,16 +62,16 @@ void Upstand::KalmanFilter(void)
 	  Q  = GYRO_CONVARIANCE;
 	  R  = ACCY_CONVARIANCE;
 
-	  /* ä¼ æ„Ÿå™¨å–å€¼ */
+	  /* ´«¸ĞÆ÷È¡Öµ */
 	  std::array<float, 3> omega_ = m_mpu->GetOmega();
 	  std::array<float, 3> accel_ = m_mma->GetAccel();
 //	  m_gyro_ad = (int32_t)-omega_[1];
 //	  m_acc_ad = (int32_t)accel_[2];
 
-	  /* è®¾å®šé›¶ç‚¹ */
+	  /* Éè¶¨Áãµã */
 	  Accelerometer = accel_[1]/*(float)(ANGLE_ZERO) - (float)m_acc_ad*/;
 //	  Accelerometer = m_acc_adc->GetResultF();
-//     Gyroscope     = ((float)gl_gyro_zero - (float)gl_gyro_ad + ((float)gl_speed_fb_fix - (float)gl_speed_lr_fix)/ 10.0);      /* åŠ é€Ÿåº¦è®¡è§’åº¦è½¬åŒ– */
+//     Gyroscope     = ((float)gl_gyro_zero - (float)gl_gyro_ad + ((float)gl_speed_fb_fix - (float)gl_speed_lr_fix)/ 10.0);      /* ¼ÓËÙ¶È¼Æ½Ç¶È×ª»¯ */
 	  if(Accelerometer > 1.0f){
 		  Accelerometer = 1.0f;
 	  }else if(Accelerometer < -1.0f){
@@ -79,13 +79,13 @@ void Upstand::KalmanFilter(void)
 	  }
 	  AngleAcc  = RAD2ANGLE * asin(Accelerometer);
 
-      /* é™€èºä»ªè§’åº¦è½¬åŒ– */
+      /* ÍÓÂİÒÇ½Ç¶È×ª»¯ */
       AngleGyro = omega_[1];
 //	  AngleGyro = m_gyro_adc->GetResultF();
 	  m_angle_gyro = AngleGyro;
 
 
-      /* å¡å°”æ›¼å…ˆéªŒä¼°è®¡ï¼šæ—¶é—´æ›´æ–° */
+      /* ¿¨¶ûÂüÏÈÑé¹À¼Æ£ºÊ±¼ä¸üĞÂ */
       /* Priori Estimation : X(k|k-1) = A(k,k-1)*X(k-1|k-1) + B(k)*u(k) */
       Priori_Estimation  = Posterior_Estimation + AngleGyro * dt;
        gyro_angle += AngleGyro * dt;
@@ -93,23 +93,23 @@ void Upstand::KalmanFilter(void)
        /* Update Estimation Convariance : P(k|k-1) = A(k,k-1)*P(k-1|k-1)*A(k,k-1)'+Q(k) */
        Priori_Convariance = sqrt( Posterior_Convariance * Posterior_Convariance + Q * Q );
 
-       /* å¡å°”æ›¼åéªŒä¼°è®¡ï¼šæµ‹é‡æ›´æ–° */
+       /* ¿¨¶ûÂüºóÑé¹À¼Æ£º²âÁ¿¸üĞÂ */
        /* Calculation of Kalman Gain : K(k) = P(k|k-1)*H(k)' / (H(k)*P(k|k-1)*H(k)' + R(k)) */
        KalmanGain = sqrt( Priori_Convariance * Priori_Convariance / ( Priori_Convariance * Priori_Convariance + R * R ) );
        /* Posterior Estimation: X(k|k) = X(k|k-1)+K(k)*(Z(k)-H(k)*X(k|k-1)) */
        Posterior_Estimation  = Priori_Estimation + KalmanGain * ( AngleAcc - Priori_Estimation );
        Posterior_Estimation_Real  = Priori_Estimation_Real + KalmanGain * ( AngleAcc - Priori_Estimation_Real );/*#*/
-       /* Update Posterior Convariance : P(k|k) =ï¼ˆI-K(k)*H(k)ï¼‰*P(k|k-1) */
+       /* Update Posterior Convariance : P(k|k) =£¨I-K(k)*H(k)£©*P(k|k-1) */
        Posterior_Convariance = sqrt( ( 1 -KalmanGain ) * Priori_Convariance * Priori_Convariance );
 
-      /* å®é™…è§’åº¦è¾“å‡º:åŠ é€Ÿåº¦è®¡/é™€èºä»ª/èåˆåè§’åº¦ */
+      /* Êµ¼Ê½Ç¶ÈÊä³ö:¼ÓËÙ¶È¼Æ/ÍÓÂİÒÇ/ÈÚºÏºó½Ç¶È */
       m_angle_acc        = AngleAcc;
 
-      /* é€Ÿåº¦é™„åŠ è§’åº¦ï¼šé™€èºä»ª/é™„åŠ è§’ */
+      /* ËÙ¶È¸½¼Ó½Ç¶È£ºÍÓÂİÒÇ/¸½¼Ó½Ç */
 //      gl_speed_gyro       = (int32_t)( Gyroscope - GyroscopeReal );
 //      gl_speed_angle      = (int32_t)( Posterior_Estimation * 10 - Posterior_Estimation_Real * 10 );
 
-      /* æ§åˆ¶è§’åº¦è¾“å‡º */
+      /* ¿ØÖÆ½Ç¶ÈÊä³ö */
       m_angle            = ( Posterior_Estimation );
 //      m_angle_gyro       = (int32_t)( Gyroscope );
 
@@ -129,21 +129,21 @@ void Upstand::BalanceFilter(void)
 //    dt = AD_INTERVAL;
 //    a = TIME_CONSTANT / ( TIME_CONSTANT + dt );
 //
-//	/* ä¼ æ„Ÿå™¨å–å€¼ */
+//	/* ´«¸ĞÆ÷È¡Öµ */
 //	gl_gyro_ad = gyro_read(GYRO0);
 //	gl_acc_ad  = acc_read(ACC0);
 //
-//	/* è®¾å®šç²¾åº¦ */
+//	/* Éè¶¨¾«¶È */
 //	SET_ACCURACY(gl_gyro_ad,9);
 //	SET_ACCURACY(gl_acc_ad, 9);
 //	gl_acc = gl_acc_ad;
 //	gl_gyr = gl_gyro_ad;
 //
-//	/* è®¾å®šé›¶ç‚¹ */
+//	/* Éè¶¨Áãµã */
 //	acc_fix = ( (float)(ANGLE_ZERO +(float)(gl_acc_fix/10.0) ) - (float)gl_acc_ad );
 //	gyr_fix = ((float)gl_gyro_ad - (float)gl_gyro_zero );
 //
-//    /* èåˆè¿›é€Ÿåº¦æ§åˆ¶ï¼Œæ­¤å¤„ç”¨åŠ å· */
+//    /* ÈÚºÏ½øËÙ¶È¿ØÖÆ£¬´Ë´¦ÓÃ¼ÓºÅ */
 //    //gyr_fix += (((float)gl_speed_lr_fix  + (float)gl_speed_fb_fix ) / 10) ;
 //
 //    /* calculate angle and angular speed */
@@ -155,7 +155,7 @@ void Upstand::BalanceFilter(void)
 }
 
 /**
- *    @brief  é™€èºä»ªé›¶ç‚¹ä¿®æ­£å‡½æ•°
+ *    @brief  ÍÓÂİÒÇÁãµãĞŞÕıº¯Êı
  */
 void Upstand::GyroDriftAutoFix(void)
 {
@@ -197,7 +197,7 @@ void Upstand::GyroDriftAutoFix(void)
 //	switch(step)
 //	{
 //		case 0:
-//			/* æ ‡å®šå¼€å…³å»æŠ–åŠ¨ */
+//			/* ±ê¶¨¿ª¹ØÈ¥¶¶¶¯ */
 //			if(cnt>500)
 //			{
 //				step = 1;
@@ -205,7 +205,7 @@ void Upstand::GyroDriftAutoFix(void)
 //			}
 //			break;
 //		case 1:
-//			/* å¿«é€Ÿè°ƒæ•´é›¶ç‚¹ */
+//			/* ¿ìËÙµ÷ÕûÁãµã */
 //			calctemp += gl_gyro_ad;
 //			if(cnt == 100)
 //			{
@@ -216,7 +216,7 @@ void Upstand::GyroDriftAutoFix(void)
 //			}
 //			break;
 //		case 2:
-//			/* æ¼‚ç§»ç´¯è®¡æ¡ä»¶é™åˆ¶ */
+//			/* Æ¯ÒÆÀÛ¼ÆÌõ¼şÏŞÖÆ */
 //			drift += gl_angle_gyro_real;
 //			if(cnt>300)
 //			{

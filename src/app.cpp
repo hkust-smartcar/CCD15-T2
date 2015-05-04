@@ -116,9 +116,9 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 200.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 360.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
-		m_balpid[2] = 0.0f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 2.0f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -143,7 +143,7 @@ void App::PitBalance(Pit*){
 				m_car.m_lcd.SetRegion(rect_);
 				color2 = 0;
 				m_car.m_lcd.FillColor(color2);
-				m_last_y2[i] = 130-m_ccd_data_2[i]/4;
+				m_last_y2[i] = 160-m_ccd_data_2[i]/4;
 				rect_.x = i;
 				rect_.y = m_last_y2[i];
 				rect_.w = 1;
@@ -159,44 +159,35 @@ void App::PitBalance(Pit*){
 		m_car.m_ccd_1.StartSample();
 		while(!m_car.m_ccd_1.SampleProcess()){}
 
-			m_ccd_data_ = m_car.m_ccd_1.GetData();
-			m_avg = 0;
-			m_sum = 0;
-			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				m_sum += (uint32_t)m_ccd_data_[i];
+		m_ccd_data_ = m_car.m_ccd_1.GetData();
+		m_avg = 0;
+		m_sum = 0;
+		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+			m_sum += (uint32_t)m_ccd_data_[i];
+		}
+		m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
+		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+			if(m_ccd_data_[i] >= m_avg-5){
+					m_color[i] = CCD_WHITE;
+			}else{
+				m_color[i] = CCD_BLACK;
 			}
-			m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
-			for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-				if(m_ccd_data_[i] >= m_avg-5){
-						m_color[i] = CCD_WHITE;
-				}else{
-					m_color[i] = CCD_BLACK;
-				}
-			}
+		}
 
-			int cameramid = (0 + 127)/2;
-			m_right_edge = libsc::Tsl1401cl::kSensorW-1;
-			m_left_edge = 0;
-			for (int i=m_mid; i<libsc::Tsl1401cl::kSensorW-1; i++){
-				if(m_color[i]==CCD_WHITE && m_color[i+1]==CCD_BLACK){
-					m_right_edge=i; break;
-				}
+		int cameramid = (0 + 127)/2;
+		m_right_edge = libsc::Tsl1401cl::kSensorW-1;
+		m_left_edge = 0;
+		for (int i=m_mid; i<libsc::Tsl1401cl::kSensorW-1; i++){
+			if(m_color[i]==CCD_WHITE && m_color[i+1]==CCD_BLACK){
+				m_right_edge=i; break;
 			}
-			for (int i=m_mid; i>=0; i--){
-				if(m_color[i]==CCD_BLACK && m_color[i+1]==CCD_WHITE){
-					m_left_edge=i; break;
-				}
+		}
+		for (int i=m_mid; i>=0; i--){
+			if(m_color[i]==CCD_BLACK && m_color[i+1]==CCD_WHITE){
+				m_left_edge=i; break;
 			}
-			int route_mid = (m_left_edge + m_right_edge)/2;
-	//
-	//			mid = (left_edge + right_edge) + 4;
-	//			turncon_b[0] = mid-(Tsl1401cl::kSensorW-1);
-	//			turn_coeff_b = Output_turning(turncon_f, turnpid_f, time);
-	////			encoder_count_t = encoder_countr + encoder_countl;
-	//			turn_powerb = turn_coeff_b * encoder_count_t / 500;
-	//			turn_powerb = libutil::Clamp<int16_t>(-200,turn_powerb, 200);
-	//			turn_powerl = -1 * turn_powerb;
-	//			turn_powerr = turn_powerb;
+		}
+		int route_mid = (m_left_edge + m_right_edge)/2;
 
 	/* for the second ccd*/
 	//			turncon_f[0] = mid-(Tsl1401cl::kSensorW-1);
@@ -218,15 +209,31 @@ void App::PitBalance(Pit*){
 	//			}
 
 			int error = cameramid - route_mid;
-//			m_movavgturn.Add((int32_t)error);
 
-//			m_turn_powerl = 10*(int16_t)m_movavgturn.GetAverage();
-//			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-//			m_turn_powerr = -10*(int16_t)m_movavgturn.GetAverage();
-//			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
-			m_turn_powerl = -7*(int16_t)error;
+			int sum_if_diff_is_positive = 0;
+			for (int i=0; i<libsc::Tsl1401cl::kSensorW-1; i++){
+				if((m_ccd_data_[i] - m_ccd_data_2[i]) > 0){
+					sum_if_diff_is_positive++;
+				}
+			}
+			if(sum_if_diff_is_positive>100){
+//				m_car.m_buzzer.SetBeep(true);
+				if(m_pit_count - m_prev_pit_count){
+//					m_car.m_buzzer.SetBeep(false);
+				}
+				m_prev_pit_count = m_pit_count;
+				m_hold_count = 100;
+				m_hold_error = (int)1.6f*error;
+			}
+			if(sum_if_diff_is_positive>80 || m_hold_count > 0){
+
+				m_hold_count--;
+				error = m_hold_error;
+			}
+
+			m_turn_powerl = -5*(int16_t)error;
 			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = 7*(int16_t)error;
+			m_turn_powerr = 5*(int16_t)error;
 			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 
 			if(m_car.m_lcdupdate){
@@ -242,7 +249,7 @@ void App::PitBalance(Pit*){
 					m_car.m_lcd.SetRegion(rect_);
 					color = 0;
 					m_car.m_lcd.FillColor(color);
-					m_last_y[i] = 65-m_ccd_data_[i]/4;
+					m_last_y[i] = 80-m_ccd_data_[i]/4;
 					rect_.x = i;
 					rect_.y = m_last_y[i];
 					rect_.w = 1;
@@ -302,12 +309,12 @@ void App::PitBalance(Pit*){
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 
 		if(m_car.m_car_move_forward){
-			m_car.m_car_speed = 200.0f;
+			m_car.m_car_speed = 400.0f;
 		}else{
 			m_car.m_car_speed = 0.0f;
 		}
 
-		m_balcon[6] = (float)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.02f;
+		m_balcon[6] = (float)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.01f;
 
 //		power_r_pwm += Output_speed(carspeedconr, carspeedpidr, m_car.m_encoder_countr);
 //		power_l_pwm += Output_speed(carspeedconl, carspeedpidl, m_car.m_encoder_countl);
@@ -416,7 +423,10 @@ App::App():
 	m_speed_control1(0,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal()),
 	m_movavgr(3),
 	m_movavgl(3),
-	m_movavgturn(10)
+	m_movavgturn(10),
+	m_turn_prev_error(0),
+	m_hold_error(0),
+	m_hold_count(0)
 {
 	St7735r::Rect rect_;
 	rect_.x = 88;

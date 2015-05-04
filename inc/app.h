@@ -93,7 +93,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,25.5f,0,0};
+	float m_balcon[7]={0,0,0,0,24.5f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -153,6 +153,12 @@ private:
 	 */
 	float m_turnpid_f[3]={0.0f,0.0f,0.0f};
 	float m_turnpid_b[3]={1.0f,0.0f,1.0f};
+
+	int m_turn_prev_error;
+	int m_hold_error;
+	int m_hold_count;
+	int m_prev_pit_count;
+
 	uint16_t m_last_y[128]={0};
 	uint16_t m_last_y2[128]={0};
 

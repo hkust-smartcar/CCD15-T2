@@ -17,6 +17,7 @@
 #include "kalman.h"
 #include "Quaternion.h"
 #include "upstand.h"
+#include "medianFilter.h"
 
 
 using namespace libsc::kl26;
@@ -118,7 +119,7 @@ void App::PitBalance(Pit*){
 
 		m_balpid[0] = 360.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
-		m_balpid[2] = 2.0f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 2.5f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -143,7 +144,7 @@ void App::PitBalance(Pit*){
 				m_car.m_lcd.SetRegion(rect_);
 				color2 = 0;
 				m_car.m_lcd.FillColor(color2);
-				m_last_y2[i] = 160-m_ccd_data_2[i]/4;
+				m_last_y2[i] = 80-m_ccd_data_2[i]/4;
 				rect_.x = i;
 				rect_.y = m_last_y2[i];
 				rect_.w = 1;
@@ -159,7 +160,16 @@ void App::PitBalance(Pit*){
 		m_car.m_ccd_1.StartSample();
 		while(!m_car.m_ccd_1.SampleProcess()){}
 
-		m_ccd_data_ = m_car.m_ccd_1.GetData();
+		m_ccd_data_raw = m_car.m_ccd_1.GetData();
+		uint16_t c[libsc::Tsl1401cl::kSensorW];
+		uint16_t s[libsc::Tsl1401cl::kSensorW];
+		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
+			c[i] = m_ccd_data_raw[i];
+		}
+		medianFilter(c, s , libsc::Tsl1401cl::kSensorW);
+		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
+			m_ccd_data_[i] = s[i];
+		}
 		m_avg = 0;
 		m_sum = 0;
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
@@ -231,9 +241,9 @@ void App::PitBalance(Pit*){
 				error = m_hold_error;
 			}
 
-			m_turn_powerl = -5*(int16_t)error;
+			m_turn_powerl = -7*(int16_t)error;
 			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = 5*(int16_t)error;
+			m_turn_powerr = 7*(int16_t)error;
 			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 
 			if(m_car.m_lcdupdate){
@@ -249,7 +259,7 @@ void App::PitBalance(Pit*){
 					m_car.m_lcd.SetRegion(rect_);
 					color = 0;
 					m_car.m_lcd.FillColor(color);
-					m_last_y[i] = 80-m_ccd_data_[i]/4;
+					m_last_y[i] = 160-m_ccd_data_[i]/4;
 					rect_.x = i;
 					rect_.y = m_last_y[i];
 					rect_.w = 1;
@@ -309,12 +319,12 @@ void App::PitBalance(Pit*){
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 
 		if(m_car.m_car_move_forward){
-			m_car.m_car_speed = 400.0f;
+			m_car.m_car_speed = 170.0f;
 		}else{
 			m_car.m_car_speed = 0.0f;
 		}
-
-		m_balcon[6] = (float)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.01f;
+		m_car.m_total_speed_error += (m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f);
+		m_balcon[6] = (float)((m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.033f + m_car.m_total_speed_error * 0.000175f);
 
 //		power_r_pwm += Output_speed(carspeedconr, carspeedpidr, m_car.m_encoder_countr);
 //		power_l_pwm += Output_speed(carspeedconl, carspeedpidl, m_car.m_encoder_countl);
@@ -419,8 +429,6 @@ App::App():
 	m_car(),
 	m_lcd_typewriter(GetLcdTypewriterConfig()),
 	m_balance_pid_output(0),
-	m_speed_control0(0,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal()),
-	m_speed_control1(0,m_skp->GetReal(),m_skd->GetReal(),m_ski->GetReal()),
 	m_movavgr(3),
 	m_movavgl(3),
 	m_movavgturn(10),

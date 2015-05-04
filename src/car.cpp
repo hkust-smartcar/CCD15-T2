@@ -97,27 +97,27 @@ SimpleBuzzer::Config GetBuzzerConfig(){
 void Car::Sw1Down(int id){
 	if(id==0){
 		m_car_move_motor = !m_car_move_motor;
-		m_buzzer.SetBeep(true);
-		System::DelayMs(10);
-		m_buzzer.SetBeep(false);
+//		m_buzzer.SetBeep(true);
+//		System::DelayMs(10);
+//		m_buzzer.SetBeep(false);
 	}
 }
 
 void Car::Sw2Down(int id){
 	if(id==1){
 		m_car_move_forward = !m_car_move_forward;
-		m_buzzer.SetBeep(true);
-		System::DelayMs(50);
-		m_buzzer.SetBeep(false);
+//		m_buzzer.SetBeep(true);
+//		System::DelayMs(50);
+//		m_buzzer.SetBeep(false);
 	}
 }
 
 void Car::Sw3Down(int id){
 	if(id==2){
 		m_lcdupdate = !m_lcdupdate;
-		m_buzzer.SetBeep(true);
-		System::DelayMs(50);
-		m_buzzer.SetBeep(false);
+//		m_buzzer.SetBeep(true);
+//		System::DelayMs(50);
+//		m_buzzer.SetBeep(false);
 	}
 
 }
@@ -126,9 +126,9 @@ void Car::SelectDown(int){
 	m_print_state++;
 	m_print_state%=m_num_print_states;
 	printf("printstates:%d\n",m_print_state);
-	m_buzzer.SetBeep(true);
-	System::DelayMs(50);
-	m_buzzer.SetBeep(false);
+//	m_buzzer.SetBeep(true);
+//	System::DelayMs(50);
+//	m_buzzer.SetBeep(false);
 }
 
 void Car::GetInfrared(Gpi *){
@@ -298,6 +298,7 @@ Car::Car():
 				m_encoder_countr_t(0),
 				m_encoder_countl_t(0),
 				m_speed_output(0),
+				m_total_speed_error(0),
 				m_led(GetLedConfig(0)),
 				m_led2(GetLedConfig(1)),
 				m_led3(GetLedConfig(2)),

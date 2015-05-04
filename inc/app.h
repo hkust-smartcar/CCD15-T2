@@ -61,8 +61,6 @@ private:
 
 	RemoteVarManager::Var* m_q = m_car.m_varmanager->Register("q",RemoteVarManager::Var::Type::kInt);
 
-	PositionalPidController<int16_t,int16_t> m_speed_control0;
-	PositionalPidController<int16_t,int16_t> m_speed_control1;
 
 	Gpo* m_pin;
 
@@ -168,7 +166,7 @@ private:
 		CCD_BLACK = 0,
 		CCD_WHITE
 	};
-	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_;
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_, m_ccd_data_raw;
 
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_2;
 

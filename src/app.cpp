@@ -25,18 +25,20 @@ using namespace libsc;
 
 /*For KL26_2015_CCD*/
 uint16_t App::RpmToPwm_R(uint16_t count){
-	if(count==0) return 0;
+//	if(count==0) return 0;
 	uint16_t val = (uint16_t)(0.3459f*count + 33.589f);
 	//Flat section before straight line
-	val = val <= 108 ? 70 : val;
+//	val = count <= 108 ? 70 : val;
+//	val = val <= 70 ? 70 : val;
 	return val;
 }
 
 uint16_t App::RpmToPwm_L(uint16_t count){
-	if(count==0) return 0;
+//	if(count==0) return 0;
 	uint16_t val = (uint16_t)(0.3168f*count + 82.325f);
 	//Flat section before straight line
-	val = val <= 216 ? 150 : val;
+//	val = count <= 216 ? 150 : val;
+//	val = val <= 150 ? 150 : val;
 	return val;
 }
 
@@ -120,7 +122,7 @@ void App::PitBalance(Pit*){
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
-		m_balance_pid_output = 0;
+//		m_balance_pid_output = 0;
 		m_power_r = m_balance_pid_output + m_turn_powerr;
 		m_power_l = m_balance_pid_output + m_turn_powerl;
 
@@ -216,11 +218,15 @@ void App::PitBalance(Pit*){
 	//			}
 
 			int error = cameramid - route_mid;
-			m_movavgturn.Add(error);
+//			m_movavgturn.Add((int32_t)error);
 
-			m_turn_powerl = 10*m_movavgturn.GetAverage();
+//			m_turn_powerl = 10*(int16_t)m_movavgturn.GetAverage();
+//			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
+//			m_turn_powerr = -10*(int16_t)m_movavgturn.GetAverage();
+//			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
+			m_turn_powerl = -7*(int16_t)error;
 			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = -10*m_movavgturn.GetAverage();
+			m_turn_powerr = 7*(int16_t)error;
 			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 
 			if(m_car.m_lcdupdate){
@@ -369,7 +375,7 @@ void App::PitBalance(Pit*){
 				printf("%f,%f,%f\n",m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle());
 				break;
 			case 2:
-				printf("%d,%d,%d,%d,%d,%d\n",m_power_r,m_power_l,m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_countr_t, m_car.m_encoder_countl_t);
+				printf("%d,%d,%d,%d,%d,%d\n",m_power_r_pwm,m_power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_countr_t, m_car.m_encoder_countl_t);
 				break;
 			case 0:
 				default:
@@ -388,8 +394,8 @@ void App::PitMoveMotor(Pit*){
 //	if(abs(power_l) >= 1000) power_l = 0;
 //	if(abs(power_r) >= 1000) power_r = 0;
 
-	m_power_r_pwm = sign(m_power_l)*(int16_t)RpmToPwm_R((uint16_t)abs(m_power_r));
-	m_power_l_pwm = sign(m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs(m_power_l));
+	m_power_r_pwm = sign((int)m_power_r)*(int16_t)RpmToPwm_R((uint16_t)abs(m_power_r));
+	m_power_l_pwm = sign((int)m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs(m_power_l));
 
 	if(!m_car.m_car_move_motor){
 		m_power_r_pwm = m_power_l_pwm = 0;

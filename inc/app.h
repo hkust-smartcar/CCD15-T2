@@ -76,8 +76,8 @@ private:
 	int16_t m_turn_powerb=0,m_turn_powerf=0;
 	float m_turn_coeff_b,m_turn_coeff_f;
 	int16_t m_speedsp = 0;
-	uint8_t m_left_edge = 0;
-	uint8_t m_right_edge = 127;
+	int m_left_edge = 0;
+	int m_right_edge = 127;
 	uint16_t m_avg = 0;
 	uint32_t m_sum = 0;
 

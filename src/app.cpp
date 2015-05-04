@@ -26,17 +26,17 @@ using namespace libsc;
 /*For KL26_2015_CCD*/
 uint16_t App::RpmToPwm_R(uint16_t count){
 	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.3655f*count + 22.592f);
+	uint16_t val = (uint16_t)(0.3459f*count + 33.589f);
 	//Flat section before straight line
-	val = val <= 93 ? 80 : val;
+	val = val <= 68 ? 70 : val;
 	return val;
 }
 
 uint16_t App::RpmToPwm_L(uint16_t count){
 	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.3383f*count + 63.564f);
+	uint16_t val = (uint16_t)(0.3168f*count + 82.325f);
 	//Flat section before straight line
-	val = val <= 82 ? 120 : val;
+	val = val <= 104 ? 130 : val;
 	return val;
 }
 

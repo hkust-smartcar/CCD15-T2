@@ -6,6 +6,7 @@
  */
 #include <car.h>
 #include <cmath>
+#include <climits>
 #include <libsc/system.h>
 #include <libsc/sys_tick_delay.h>
 #include <libutil/misc.h>
@@ -117,9 +118,9 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 360.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 600.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
-		m_balpid[2] = 2.5f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 0.0f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -172,31 +173,33 @@ void App::PitBalance(Pit*){
 		}
 		m_avg = 0;
 		m_sum = 0;
-		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-			m_sum += (uint32_t)m_ccd_data_[i];
-		}
-		m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
-		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-			if(m_ccd_data_[i] >= m_avg-5){
-					m_color[i] = CCD_WHITE;
-			}else{
-				m_color[i] = CCD_BLACK;
-			}
-		}
+//		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+//			m_sum += (uint32_t)m_ccd_data_[i];
+//		}
+//		m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
+//		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+//			if(m_ccd_data_[i] >= m_avg-5){
+//					m_color[i] = CCD_WHITE;
+//			}else{
+//				m_color[i] = CCD_BLACK;
+//			}
+//		}
 
-		int cameramid = (0 + 127)/2;
+		int cameramid = 127/2;
 		m_right_edge = libsc::Tsl1401cl::kSensorW-1;
 		m_left_edge = 0;
-		for (int i=m_mid; i<libsc::Tsl1401cl::kSensorW-1; i++){
-			if(m_color[i]==CCD_WHITE && m_color[i+1]==CCD_BLACK){
-				m_right_edge=i; break;
-			}
+		int16_t max=-1, min=INT_MAX;
+		for (int i=4; i<libsc::Tsl1401cl::kSensorW; i++){
+				if(((int16_t)m_ccd_data_[i] - (int16_t)m_ccd_data_[i-4]) > max){
+					m_left_edge = i;
+					max = ((int16_t)m_ccd_data_[i] - (int16_t)m_ccd_data_[i-4]);
+				}
+				if(((int16_t)m_ccd_data_[i] - (int16_t)m_ccd_data_[i-4]) < min){
+					m_right_edge = i;
+					min = ((int16_t)m_ccd_data_[i] - (int16_t)m_ccd_data_[i-4]);
+				}
 		}
-		for (int i=m_mid; i>=0; i--){
-			if(m_color[i]==CCD_BLACK && m_color[i+1]==CCD_WHITE){
-				m_left_edge=i; break;
-			}
-		}
+
 		int route_mid = (m_left_edge + m_right_edge)/2;
 
 	/* for the second ccd*/
@@ -241,32 +244,36 @@ void App::PitBalance(Pit*){
 				error = m_hold_error;
 			}
 
-			m_turn_powerl = -7*(int16_t)error;
-			m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = 7*(int16_t)error;
-			m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
-
+			if(m_car.m_car_move_forward){
+				m_turn_powerl = -6*(int16_t)error;
+				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
+				m_turn_powerr = 6*(int16_t)error;
+				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
+			}
 			if(m_car.m_lcdupdate){
 				m_pin->Set();
 				St7735r::Rect rect_;
 				uint16_t color = 0;
 
-				for(int i=0; i<Tsl1401cl::kSensorW; i++){
-					rect_.x = i;
-					rect_.y = m_last_y[i];
-					rect_.w = 1;
-					rect_.h = 1;
-					m_car.m_lcd.SetRegion(rect_);
-					color = 0;
-					m_car.m_lcd.FillColor(color);
+				for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+					if(i<m_left_edge || i>m_right_edge){
+						rect_.x = i;
+						rect_.y = m_last_y[i];
+						rect_.w = 1;
+						rect_.h = 1;
+						m_car.m_lcd.SetRegion(rect_);
+						color = 0;
+						m_car.m_lcd.FillColor(color);
+					}else{
+						rect_.x = i;
+						rect_.y = 160-m_ccd_data_[i]/4;
+						rect_.w = 1;
+						rect_.h = 1;
+						m_car.m_lcd.SetRegion(rect_);
+						color = ~0;
+						m_car.m_lcd.FillColor(color);
+					}
 					m_last_y[i] = 160-m_ccd_data_[i]/4;
-					rect_.x = i;
-					rect_.y = m_last_y[i];
-					rect_.w = 1;
-					rect_.h = 1;
-					m_car.m_lcd.SetRegion(rect_);
-					color = ~0;
-					m_car.m_lcd.FillColor(color);
 				}
 				m_pin->Clear();
 			}
@@ -319,12 +326,13 @@ void App::PitBalance(Pit*){
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 
 		if(m_car.m_car_move_forward){
-			m_car.m_car_speed = 170.0f;
+			m_car.m_car_speed = 150.0f;
+			m_car.m_total_speed_error += (m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f);
+			m_car.m_total_speed_error = libutil::Clamp<int16_t>(-2000,m_car.m_total_speed_error,2000);
+			m_balcon[6] = (float)((m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.02f + m_car.m_total_speed_error * 0.0012f);
 		}else{
 			m_car.m_car_speed = 0.0f;
 		}
-		m_car.m_total_speed_error += (m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f);
-		m_balcon[6] = (float)((m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.033f + m_car.m_total_speed_error * 0.000175f);
 
 //		power_r_pwm += Output_speed(carspeedconr, carspeedpidr, m_car.m_encoder_countr);
 //		power_l_pwm += Output_speed(carspeedconl, carspeedpidl, m_car.m_encoder_countl);

@@ -133,7 +133,7 @@ void Car::SelectDown(int){
 
 void Car::GetInfrared(Gpi *){
 	static bool state = true;
-	m_buzzer.SetBeep(state);
+//	m_buzzer.SetBeep(state);
 	state=!state;
 	/*struct note{
 		std::string note;

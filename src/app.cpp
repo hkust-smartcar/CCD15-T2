@@ -118,9 +118,9 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 600.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 500.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
-		m_balpid[2] = 0.0f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 2.0f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -245,10 +245,10 @@ void App::PitBalance(Pit*){
 			}
 
 			if(m_car.m_car_move_forward){
-				m_turn_powerl = -6*(int16_t)error;
-				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-				m_turn_powerr = 6*(int16_t)error;
-				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
+				m_turn_powerl = (int16_t)(-6.0f*(int16_t)error);
+//				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
+				m_turn_powerr = (int16_t)(6.0f*(int16_t)error);
+//				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			}
 			if(m_car.m_lcdupdate){
 				m_pin->Set();
@@ -326,10 +326,14 @@ void App::PitBalance(Pit*){
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 
 		if(m_car.m_car_move_forward){
-			m_car.m_car_speed = 150.0f;
-			m_car.m_total_speed_error += (m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f);
+			m_car.m_car_speed = 180.0f;
+			m_movavgspeed.Add((int32_t)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f));
+			m_car.m_total_speed_error += m_movavgspeed.GetAverage();
 			m_car.m_total_speed_error = libutil::Clamp<int16_t>(-2000,m_car.m_total_speed_error,2000);
-			m_balcon[6] = (float)((m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f)*0.02f + m_car.m_total_speed_error * 0.0012f);
+			float Kp = 0.04;
+			float Ki = 0.0018;
+			m_balcon[6] = (float)(m_movavgspeed.GetAverage()*Kp + m_car.m_total_speed_error * Ki);
+			m_balcon[6] = libutil::Clamp<float>(-3.0f,m_balcon[6],6.0f);
 		}else{
 			m_car.m_car_speed = 0.0f;
 		}
@@ -437,6 +441,7 @@ App::App():
 	m_car(),
 	m_lcd_typewriter(GetLcdTypewriterConfig()),
 	m_balance_pid_output(0),
+	m_movavgspeed(5),
 	m_movavgr(3),
 	m_movavgl(3),
 	m_movavgturn(10),

@@ -57,7 +57,7 @@ void Upstand::KalmanFilter(void)
 	  /* 基本参数赋值 */
 //	  Timer::TimerInt t = System::Time();
 //	  static Timer::TimerInt pt = 0;
-      float dt = 5/1000.0f;
+      float dt = 10/1000.0f;
 //      pt = t;
 	  Q  = GYRO_CONVARIANCE;
 	  R  = ACCY_CONVARIANCE;

@@ -118,9 +118,9 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 380.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 450.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
-		m_balpid[2] = 2.0f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 2.5f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -245,10 +245,11 @@ void App::PitBalance(Pit*){
 			}
 
 			if(m_car.m_car_move_forward){
-				m_turn_powerl = (int16_t)(-8.5f*(int16_t)error);
+				m_turn_powerl = (int16_t)(-8.5f*(int16_t)error + 95.0f*(error - m_turn_prev_error));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-				m_turn_powerr = (int16_t)(8.5f*(int16_t)error);
+				m_turn_powerr = (int16_t)(8.5f*(int16_t)error + 95.0f*(error - m_turn_prev_error));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
+				m_turn_prev_error = error;
 			}
 			if(m_car.m_lcdupdate){
 				m_pin->Set();
@@ -256,23 +257,20 @@ void App::PitBalance(Pit*){
 				uint16_t color = 0;
 
 				for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-					if(i<m_left_edge || i>m_right_edge){
-						rect_.x = i;
-						rect_.y = m_last_y[i];
-						rect_.w = 1;
-						rect_.h = 1;
-						m_car.m_lcd.SetRegion(rect_);
-						color = 0;
-						m_car.m_lcd.FillColor(color);
-					}else{
-						rect_.x = i;
-						rect_.y = 160-m_ccd_data_[i]/4;
-						rect_.w = 1;
-						rect_.h = 1;
-						m_car.m_lcd.SetRegion(rect_);
-						color = ~0;
-						m_car.m_lcd.FillColor(color);
-					}
+					rect_.x = i;
+					rect_.y = m_last_y[i];
+					rect_.w = 1;
+					rect_.h = 1;
+					m_car.m_lcd.SetRegion(rect_);
+					color = 0;
+					m_car.m_lcd.FillColor(color);
+					rect_.x = i;
+					rect_.y = 160-m_ccd_data_[i]/4;
+					rect_.w = 1;
+					rect_.h = 1;
+					m_car.m_lcd.SetRegion(rect_);
+					color = ~0;
+					m_car.m_lcd.FillColor(color);
 					m_last_y[i] = 160-m_ccd_data_[i]/4;
 				}
 				m_pin->Clear();
@@ -326,14 +324,27 @@ void App::PitBalance(Pit*){
 		m_car.m_encoder_countl_t += m_car.m_encoder_countl;
 
 		if(m_car.m_car_move_forward){
-			m_car.m_car_speed = 180.0f;
-			m_movavgspeed.Add((int32_t)(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f));
+			if(abs(m_turn_powerl)> 400){
+				m_car.m_car_speed = 380.0f;
+			}else{
+				m_car.m_car_speed = 380.0f;
+			}
+
+
+			m_movavgspeed.Add(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2);
 			m_car.m_total_speed_error += m_movavgspeed.GetAverage();
-			m_car.m_total_speed_error = libutil::Clamp<int16_t>(-2000,m_car.m_total_speed_error,2000);
-			float Kp = 0.03;
-			float Ki = 0.0018;
+			m_car.m_total_speed_error = libutil::Clamp<int16_t>(-1000,m_car.m_total_speed_error,1000);
+			float Kp = 0.02;
+//			float Ki = 0.0005;
+			float Ki = 0.001;
+			if((float)m_movavgspeed.GetAverage()<(m_car.m_car_speed*0.6f)){
+				Kp = 0.01;
+			}
 			m_balcon[6] = (float)(m_movavgspeed.GetAverage()*Kp + m_car.m_total_speed_error * Ki);
-			m_balcon[6] = libutil::Clamp<float>(-3.0f,m_balcon[6],5.0f);
+//			m_balcon[6] = libutil::Clamp<float>(-6.0f,m_balcon[6],8.0f);
+			m_movavgspeed_output.Add(m_balcon[6]);
+			m_balcon[6] = m_movavgspeed_output.GetAverage();
+			m_balcon[6] = 0;
 		}else{
 			m_car.m_car_speed = 0.0f;
 		}
@@ -441,10 +452,11 @@ App::App():
 	m_car(),
 	m_lcd_typewriter(GetLcdTypewriterConfig()),
 	m_balance_pid_output(0),
-	m_movavgspeed(5),
+	m_movavgspeed(3),
 	m_movavgr(3),
 	m_movavgl(3),
 	m_movavgturn(10),
+	m_movavgspeed_output(10),
 	m_turn_prev_error(0),
 	m_hold_error(0),
 	m_hold_count(0)

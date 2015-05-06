@@ -91,7 +91,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,24.5f,0,0};
+	float m_balcon[7]={0,0,0,0,25.5f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -160,7 +160,8 @@ private:
 	uint16_t m_last_y[128]={0};
 	uint16_t m_last_y2[128]={0};
 
-	MovingAverage m_movavgspeed,m_movavgr,m_movavgl,m_movavgturn;
+	MovingAverage<int16_t> m_movavgspeed,m_movavgr,m_movavgl,m_movavgturn;
+	MovingAverage<float> m_movavgspeed_output;
 
 	enum CCD_COLOR{
 		CCD_BLACK = 0,

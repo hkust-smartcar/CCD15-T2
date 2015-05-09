@@ -74,8 +74,12 @@ private:
 	int16_t m_turn_powerb=0,m_turn_powerf=0;
 	float m_turn_coeff_b,m_turn_coeff_f;
 	int16_t m_speedsp = 0;
-	int m_left_edge = 0;
-	int m_right_edge = 127;
+	int m_left_edge_1 = 0;
+	int m_right_edge_1 = 127;
+	int route_mid_1;
+	int m_left_edge_2 = 0;
+	int m_right_edge_2 = 127;
+	int route_mid_2;
 	uint16_t m_avg = 0;
 	uint32_t m_sum = 0;
 
@@ -91,7 +95,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,25.5f,0,0};
+	float m_balcon[7]={0,0,0,0,23.0f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -160,14 +164,15 @@ private:
 	uint16_t m_last_y[128]={0};
 	uint16_t m_last_y2[128]={0};
 
-	MovingAverage<int16_t> m_movavgspeed,m_movavgr,m_movavgl,m_movavgturn;
+	MovingAverage<int16_t> m_movavgspeed,m_movavgr,m_movavgl;
+	MovingAverage<int> m_movavgturn;
 	MovingAverage<float> m_movavgspeed_output;
 
 	enum CCD_COLOR{
 		CCD_BLACK = 0,
 		CCD_WHITE
 	};
-	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_, m_ccd_data_raw;
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_1, m_ccd_data_raw;
 
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_2;
 

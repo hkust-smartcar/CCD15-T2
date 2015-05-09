@@ -86,7 +86,7 @@ private:
 	int16_t m_mid = 64;
 	int16_t m_encoder_count_t;
 
-	int m_pit_count = 0, m_pit_count2 = 0;
+	uint32_t m_pit_count = 0, m_pit_count2 = 0;
 
 	/*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);

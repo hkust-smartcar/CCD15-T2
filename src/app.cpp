@@ -129,7 +129,8 @@ void App::PitBalance(Pit*){
 		m_power_l = m_balance_pid_output + m_turn_powerl;
 
 	}
-	if(m_pit_count%2==1){
+//	Every 20ms for the two ccds to finish sampling
+	if(m_pit_count%4==3){
 		m_car.m_ccd_2.StartSample();
 		while(!m_car.m_ccd_2.SampleProcess()){}
 		m_ccd_data_2 = m_car.m_ccd_2.GetData();
@@ -205,7 +206,7 @@ void App::PitBalance(Pit*){
 		}
 	}
 
-	if(m_pit_count%2==0){
+	if(m_pit_count%4==1){
 		m_car.m_ccd_1.StartSample();
 		while(!m_car.m_ccd_1.SampleProcess()){}
 

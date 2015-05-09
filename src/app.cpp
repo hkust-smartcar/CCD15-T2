@@ -135,7 +135,7 @@ void App::PitBalance(Pit*){
 		m_ccd_data_2 = m_car.m_ccd_2.GetData();
 
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-			if(i<40 || i>(127-40)){
+			if(i<40 || i>(127-5)){
 				m_ccd_data_2[i] = 0;
 			}else{
 				m_ccd_data_2[i] = 255;
@@ -220,7 +220,7 @@ void App::PitBalance(Pit*){
 			m_ccd_data_1[i] = s[i];
 		}
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-			if(i<10 || i>(127-10)){
+			if(i<10 || i>(127-50)){
 				m_ccd_data_1[i] = 0;
 			}else{
 				m_ccd_data_1[i] = 255;
@@ -303,7 +303,7 @@ void App::PitBalance(Pit*){
 				color = 0;
 				m_car.m_lcd.FillColor(color);
 				rect_.x = i;
-				rect_.y = 160-m_ccd_data_1[i]/4;
+				rect_.y = 159-m_ccd_data_1[i]/4;
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
@@ -331,22 +331,28 @@ void App::PitBalance(Pit*){
 //				m_car.m_car_speed = 380.0f;
 //			}
 
-			m_car.m_car_speed = (int16_t)((1.5f * 40.0f / 1000.0f * 100.0f) * 1210.0f / 18.8f);
+//			m_car.m_car_speed = (int16_t)((1.5f * 40.0f / 1000.0f * 100.0f) * 1210.0f / 18.8f);
 
-			m_movavgspeed.Add(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2);
-			m_car.m_total_speed_error += m_movavgspeed.GetAverage();
-			m_car.m_total_speed_error = libutil::Clamp<int16_t>(-1000,m_car.m_total_speed_error,1000);
-			float Kp = 0.03;
+//			m_movavgspeed.Add(m_car.m_car_speed-(m_car.m_encoder_countr + m_car.m_encoder_countl)/2);
+//			m_car.m_total_speed_error += m_movavgspeed.GetAverage();
+//			m_car.m_total_speed_error = libutil::Clamp<int16_t>(-1000,m_car.m_total_speed_error,1000);
+//			float Kp = 0.03;
 //			float Ki = 0.0005;
-			float Ki = 0.001;
-			if(m_movavgspeed.GetAverage() > 200){
-				Kp = 0.03;
-			}
-			m_balcon[6] = (float)(m_movavgspeed.GetAverage()*Kp + m_car.m_total_speed_error * Ki);
+//			float Ki = 0.001;
+//			if(m_movavgspeed.GetAverage() > 200){
+//				Kp = 0.03;
+//			}
+//			m_balcon[6] = (float)(m_movavgspeed.GetAverage()*Kp + m_car.m_total_speed_error * Ki);
 //			m_balcon[6] = libutil::Clamp<float>(-8.0f,m_balcon[6],8.0f);
-			m_movavgspeed_output.Add(m_balcon[6]);
-			m_balcon[6] = m_movavgspeed_output.GetAverage();
-			m_balcon[6] = 0;
+//			m_movavgspeed_output.Add(m_balcon[6]);
+//			m_balcon[6] = m_movavgspeed_output.GetAverage();
+//			m_balcon[6] = 0;
+//			m_car.m_car_speed = 2;
+			float maxAcceleration = 1;
+			float speedInMetre = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2 * 0.188f / 1210.0f;
+			float acceleration = (2.2f-speedInMetre)/40.0f;
+			acceleration = libutil::Clamp<float>(-maxAcceleration,acceleration,maxAcceleration);
+			m_balcon[6] = atan(acceleration/(1.2f*9.81f));
 		}else{
 			m_car.m_car_speed = 0.0f;
 			m_balcon[6] = 0;

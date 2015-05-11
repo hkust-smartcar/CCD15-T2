@@ -88,7 +88,7 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	carspeedcon[1] = carspeedcon[0];
 	return output;
 }
-void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
+void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
 	edge_data[0] = 0;
 	edge_data[1] = libsc::Tsl1401cl::kSensorW-1;
 	int16_t max=-1, min=INT_MAX;
@@ -338,11 +338,13 @@ void App::PitBalance(Pit*){
 //			m_balcon[6] = m_movavgspeed_output.GetAverage();
 //			m_balcon[6] = 0;
 //			m_car.m_car_speed = 2;
-			float maxAcceleration = 1;
+
 			float speedInMetre = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2 * 0.188f / 1210.0f;
-			float acceleration = (2.2f-speedInMetre)/40.0f;
+//			Avoid acceleration over 1ms-2
+			float maxAcceleration = 1.0f;
+			float acceleration = (2.2f-speedInMetre)/0.04f;
 			acceleration = libutil::Clamp<float>(-maxAcceleration,acceleration,maxAcceleration);
-			m_balcon[6] = atan(acceleration/(1.2f*9.81f));
+			m_balcon[6] = atan(acceleration/9.81f);
 		}else{
 			m_car.m_car_speed = 0.0f;
 			m_balcon[6] = 0;

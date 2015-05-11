@@ -88,6 +88,21 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	carspeedcon[1] = carspeedcon[0];
 	return output;
 }
+void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
+	edge_data[0] = 0;
+	edge_data[1] = libsc::Tsl1401cl::kSensorW-1;
+	int16_t max=-1, min=INT_MAX;
+	for (int i=1; i<libsc::Tsl1401cl::kSensorW; i++){
+		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > max){
+			edge_data[0] = i;
+			max = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
+		}
+		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) < min){
+			edge_data[1] = i;
+			min = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
+		}
+	}
+}
 
 Pit::Config GetPitConfig(const uint8_t pit_channel,
 		const Pit::OnPitTriggerListener &isr)
@@ -146,21 +161,8 @@ void App::PitBalance(Pit*){
 
 
 		int cameramid = 127/2;
-		m_right_edge_2 = libsc::Tsl1401cl::kSensorW-1;
-		m_left_edge_2 = 0;
-		int16_t max=-1, min=INT_MAX;
-		for (int i=1; i<libsc::Tsl1401cl::kSensorW; i++){
-			if(((int16_t)m_ccd_data_2[i] - (int16_t)m_ccd_data_2[i-1]) > max){
-				m_left_edge_2 = i;
-				max = ((int16_t)m_ccd_data_2[i] - (int16_t)m_ccd_data_2[i-1]);
-			}
-			if(((int16_t)m_ccd_data_2[i] - (int16_t)m_ccd_data_2[i-1]) < min){
-				m_right_edge_2 = i;
-				min = ((int16_t)m_ccd_data_2[i] - (int16_t)m_ccd_data_2[i-1]);
-			}
-		}
-
-		route_mid_2 = (m_left_edge_2 + m_right_edge_2)/2;
+		Update_edge(m_ccd_data_2.data(), edge_data_2);
+		route_mid_2 = (edge_data_2[0] + edge_data_2[1])/2;
 
 		if(m_car.m_lcdupdate){
 			St7735r::Rect rect_;
@@ -184,9 +186,9 @@ void App::PitBalance(Pit*){
 				m_car.m_lcd.FillColor(color2);
 			}
 
-			for(int i=m_left_edge_1; i<=m_left_edge_2; i++){
+			for(int i=edge_data_1[0]; i<=edge_data_2[0]; i++){
 				rect_.x = i;
-				rect_.y = (m_last_y2[m_left_edge_2] - m_last_y[m_left_edge_1])*(i - m_left_edge_1)/(m_left_edge_2-m_left_edge_1) + m_last_y[m_left_edge_1];
+				rect_.y = (m_last_y2[edge_data_2[0]] - m_last_y[edge_data_1[0]])*(i - edge_data_1[0])/(edge_data_2[0]-edge_data_1[0]) + m_last_y[edge_data_1[0]];
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
@@ -194,9 +196,9 @@ void App::PitBalance(Pit*){
 				m_car.m_lcd.FillColor(color2);
 			}
 
-			for(int i=m_right_edge_2; i<=m_right_edge_1; i++){
+			for(int i=edge_data_2[1]; i<=edge_data_1[1]; i++){
 				rect_.x = i;
-				rect_.y = (m_last_y2[m_right_edge_2] - m_last_y[m_right_edge_1])*(i - m_right_edge_1)/(m_right_edge_2-m_right_edge_1) + m_last_y[m_left_edge_1];
+				rect_.y = (m_last_y2[edge_data_2[1]] - m_last_y[edge_data_1[1]])*(i - edge_data_1[1])/(edge_data_2[1]-edge_data_1[1]) + m_last_y[edge_data_1[0]];
 				rect_.w = 1;
 				rect_.h = 1;
 				m_car.m_lcd.SetRegion(rect_);
@@ -242,21 +244,8 @@ void App::PitBalance(Pit*){
 //		}
 
 		int cameramid = 127/2;
-		m_right_edge_1 = libsc::Tsl1401cl::kSensorW-1;
-		m_left_edge_1 = 0;
-		int16_t max=-1, min=INT_MAX;
-		for (int i=1; i<libsc::Tsl1401cl::kSensorW; i++){
-				if(((int16_t)m_ccd_data_1[i] - (int16_t)m_ccd_data_1[i-1]) > max){
-					m_left_edge_1 = i;
-					max = ((int16_t)m_ccd_data_1[i] - (int16_t)m_ccd_data_1[i-1]);
-				}
-				if(((int16_t)m_ccd_data_1[i] - (int16_t)m_ccd_data_1[i-1]) < min){
-					m_right_edge_1 = i;
-					min = ((int16_t)m_ccd_data_1[i] - (int16_t)m_ccd_data_1[i-1]);
-				}
-		}
-
-		route_mid_1 = (m_left_edge_1 + m_right_edge_1)/2;
+		Update_edge(m_ccd_data_1.data(), edge_data_1);
+		route_mid_1 = (edge_data_1[0] + edge_data_1[1])/2;
 
 
 		m_movavgturn.Add(cameramid - route_mid_1);

@@ -23,6 +23,7 @@ public:
 	int sign(int x){
 		return (x>0) -  (x<0);
 	}
+	void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data);
 	uint16_t RpmToPwm_R(uint16_t count);
 	uint16_t RpmToPwm_L(uint16_t count);
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
@@ -30,7 +31,6 @@ public:
 	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float  omega);
 	float Output_turning(int16_t* turncon, float* turnpid, uint16_t* time);
 	int16_t Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
-	void Update_edge(uint8_t* ccd_data_, uint8_t* edge);
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
 private:
@@ -74,12 +74,13 @@ private:
 	int16_t m_turn_powerb=0,m_turn_powerf=0;
 	float m_turn_coeff_b,m_turn_coeff_f;
 	int16_t m_speedsp = 0;
-	int m_left_edge_1 = 0;
-	int m_right_edge_1 = 127;
-	int route_mid_1;
-	int m_left_edge_2 = 0;
-	int m_right_edge_2 = 127;
-	int route_mid_2;
+	/* edge_data[0] = left_edge;
+	 * edge_data[1] = right_edge;
+	 */
+	uint16_t edge_data_1[2] = {0,127};
+	uint16_t route_mid_1;
+	uint16_t edge_data_2[2] = {0,127};
+	uint16_t route_mid_2;
 	uint16_t m_avg = 0;
 	uint32_t m_sum = 0;
 

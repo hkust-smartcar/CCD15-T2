@@ -340,7 +340,7 @@ void App::PitBalance(Pit*){
 //			m_car.m_car_speed = 2;
 
 			float speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2 * 0.188f / 1210.0f / 0.04f;
-//			Avoid acceleration over 1ms-2
+//			Avoid acceleration over 2ms-2
 			float maxAcceleration = 2.0f;
 			float acceleration = (2.2f-speedInMetrePerSecond)/0.04f;
 			acceleration = libutil::Clamp<float>(-maxAcceleration,acceleration,maxAcceleration);

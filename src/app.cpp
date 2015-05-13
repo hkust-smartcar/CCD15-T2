@@ -133,7 +133,7 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 200.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 350.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
 		m_balpid[2] = 1.5f/*m_bkd->GetReal()*/;
 
@@ -150,13 +150,13 @@ void App::PitBalance(Pit*){
 		while(!m_car.m_ccd_2.SampleProcess()){}
 		m_ccd_data_2 = m_car.m_ccd_2.GetData();
 
-		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+/*		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<40 || i>(127-5)){
 				m_ccd_data_2[i] = 0;
 			}else{
 				m_ccd_data_2[i] = 255;
 			}
-		}
+		}*/
 
 
 
@@ -222,13 +222,13 @@ void App::PitBalance(Pit*){
 		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
 			m_ccd_data_1[i] = s[i];
 		}
-		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+/*		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<10 || i>(127-50)){
 				m_ccd_data_1[i] = 0;
 			}else{
 				m_ccd_data_1[i] = 255;
 			}
-		}
+		}*/
 		m_avg = 0;
 		m_sum = 0;
 //		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
@@ -273,14 +273,14 @@ void App::PitBalance(Pit*){
 		}
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(m_movavgspeed.GetAverage()/100.0f*(-6.5f*(int16_t)error + 40.0f*(error - m_turn_prev_error)));
+			m_turn_powerl = (int16_t)((-9.0f*(int16_t)error + 0.0f*(error - m_turn_prev_error)));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(m_movavgspeed.GetAverage()/100.0f*(6.5f*(int16_t)error + 40.0f*(error - m_turn_prev_error)));
+			m_turn_powerr = (int16_t)((9.0f*(int16_t)error + 0.0f*(error - m_turn_prev_error)));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = error;
 		}
 		if(m_car.m_lcdupdate){
-			m_pin->Set();
+//			m_pin->Set();
 			St7735r::Rect rect_;
 			uint16_t color = 0;
 
@@ -301,7 +301,7 @@ void App::PitBalance(Pit*){
 				m_car.m_lcd.FillColor(color);
 				m_last_y[i] = 160-m_ccd_data_1[i]/4;
 			}
-			m_pin->Clear();
+//			m_pin->Clear();
 		}
 
 	}
@@ -339,12 +339,12 @@ void App::PitBalance(Pit*){
 //			m_balcon[6] = 0;
 //			m_car.m_car_speed = 2;
 
-			float speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2 * 0.188f / 1210.0f / 0.04f;
+			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
 //			Avoid acceleration over 2ms-2
-			float maxAcceleration = 2.0f;
-			float acceleration = (2.2f-speedInMetrePerSecond)/0.04f;
+			float maxAcceleration = 0.8f;
+			float acceleration = (1.0f-m_speedInMetrePerSecond)/0.02f;
 			acceleration = libutil::Clamp<float>(-maxAcceleration,acceleration,maxAcceleration);
-			m_balcon[6] = atan(acceleration/9.81f);
+			m_balcon[6] = atan(acceleration/9.81f)*RAD2ANGLE;
 		}else{
 			m_car.m_car_speed = 0.0f;
 			m_balcon[6] = 0;
@@ -416,7 +416,7 @@ void App::PitBalance(Pit*){
 				printf("%f,%f,%f\n",m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle());
 				break;
 			case 2:
-				printf("%d,%d,%d,%d,%d,%d\n",m_power_r_pwm,m_power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl, m_car.m_encoder_countr_t, m_car.m_encoder_countl_t);
+				printf("%d,%d,%d,%d,%f,%f\n",m_power_r_pwm,m_power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl,m_balcon[6],m_speedInMetrePerSecond);
 				break;
 			case 0:
 				default:
@@ -476,7 +476,7 @@ App::App():
 	 *
 	 */
 	Gpo::Config pinadcfg;
-	pinadcfg.pin = Pin::Name::kPtc0;
+	pinadcfg.pin = Pin::Name::kPtc3;
 	m_pin = new Gpo(pinadcfg);
 
 //	Gpo::Config pinclkcfg;

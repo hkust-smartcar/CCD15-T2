@@ -20,8 +20,8 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
-	config.core_clock_khz = 70000;
-	config.bus_clock_khz = 35000;
+	config.core_clock_khz = 64000;
+	config.bus_clock_khz = 32000;
 	return config;
 }
 
@@ -106,7 +106,7 @@ void Car::Sw1Down(int id){
 void Car::Sw2Down(int id){
 	if(id==1){
 		m_car_move_forward = !m_car_move_forward;
-//		m_buzzer.SetBeep(true);
+		m_buzzer.SetBeep(true);
 //		System::DelayMs(50);
 //		m_buzzer.SetBeep(false);
 	}
@@ -115,7 +115,7 @@ void Car::Sw2Down(int id){
 void Car::Sw3Down(int id){
 	if(id==2){
 		m_lcdupdate = !m_lcdupdate;
-//		m_buzzer.SetBeep(true);
+		m_buzzer.SetBeep(true);
 //		System::DelayMs(50);
 //		m_buzzer.SetBeep(false);
 	}
@@ -133,7 +133,7 @@ void Car::SelectDown(int){
 
 void Car::GetInfrared(Gpi *){
 	static bool state = true;
-//	m_buzzer.SetBeep(state);
+	m_buzzer.SetBeep(true);
 	state=!state;
 	/*struct note{
 		std::string note;

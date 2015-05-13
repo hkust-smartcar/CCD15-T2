@@ -75,7 +75,7 @@ public:
 	bool m_car_move_forward;
 	bool m_lcdupdate;
 	int m_print_state = 0;
-	int m_num_print_states = 3;
+	int m_num_print_states = 4;
 
 private:
 	Mma8451q::Config GetMma8451qConfig(){

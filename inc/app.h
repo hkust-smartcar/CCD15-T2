@@ -134,6 +134,10 @@ private:
 
 	float m_prevSpeedInMetrePerSecond,m_speedInMetrePerSecond;
 
+	float m_acceleration;
+
+	float m_total_speed;
+
 	/* time[0] for spd period;
 	 * time[1] for spd period;
 	 * time[2] for bal period;

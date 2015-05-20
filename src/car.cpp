@@ -20,8 +20,8 @@ Mcg::Config Mcg::GetMcgConfig()
 {
 	Mcg::Config config;
 	config.external_oscillator_khz = 8000;
-	config.core_clock_khz = 64000;
-	config.bus_clock_khz = 32000;
+	config.core_clock_khz = 70000;
+	config.bus_clock_khz = 35000;
 	return config;
 }
 
@@ -31,7 +31,7 @@ Mcg::Config Mcg::GetMcgConfig()
 Mpu6050::Config GetMpu6050Config(){
 	Mpu6050::Config gyro_config;
 	gyro_config.accel_range = Mpu6050::Config::Range::kSmall;
-	gyro_config.gyro_range = Mpu6050::Config::Range::kMid;
+	gyro_config.gyro_range = Mpu6050::Config::Range::kSmall;
 	gyro_config.cal_drift = true;
 	return gyro_config;
 

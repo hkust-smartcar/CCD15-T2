@@ -16,7 +16,7 @@
 #include <libbase/kl26/clock_utils.h>
 #include "app.h"
 #include "kalman.h"
-#include "Quaternion.h"
+//#include "Quaternion.h"
 #include "upstand.h"
 #include "medianFilter.h"
 #include "Eigen/Eigen"
@@ -141,9 +141,9 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 250.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 230.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = m_bki->GetReal();
-		m_balpid[2] = 7.5f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 3.5f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -297,7 +297,7 @@ void App::PitBalance(Pit*){
 //			}
 //			m_prev_pit_count = m_pit_count;
 			m_hold_count = 6;
-			m_hold_error = (int)(error);
+			m_hold_error = (int)(1.4f*error);
 		}
 		if(sum_if_diff_is_positive>80 || m_hold_count > 0){
 			m_hold_count--;
@@ -305,9 +305,9 @@ void App::PitBalance(Pit*){
 		}
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((13.0f+m_speedInMetrePerSecond*1.3f)*(int16_t)error + 65.0f*(error - m_turn_prev_error)));
+			m_turn_powerl = (int16_t)(-((9.0f+m_speedInMetrePerSecond*6.0f)*(int16_t)error + (70.0f+m_speedInMetrePerSecond*2.6f)*(error - m_turn_prev_error)));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((13.0f+m_speedInMetrePerSecond*1.3f)*(int16_t)error + 65.0f*(error - m_turn_prev_error)));
+			m_turn_powerr = (int16_t)(((9.0f+m_speedInMetrePerSecond*6.0f)*(int16_t)error + (70.0f+m_speedInMetrePerSecond*2.6f)*(error - m_turn_prev_error)));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = error;
 		}
@@ -373,11 +373,13 @@ void App::PitBalance(Pit*){
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
 //			Avoid acceleration over 2ms-2
-			float maxAcceleration = 1.3f;
-			m_acceleration = (2.0f-m_speedInMetrePerSecond)/0.02f;
-			m_total_speed += 2.0f-m_speedInMetrePerSecond;
-			m_acceleration = libutil::Clamp<float>(-1.3f,m_acceleration + 0.01f * m_total_speed,maxAcceleration);
-//			m_acceleration = m_acceleration + 0.001f * m_total_speed;
+			float maxAcceleration = 1.2f;
+			m_acceleration = (3.0f-m_speedInMetrePerSecond)/0.02f;
+			m_total_speed += 3.0f-m_speedInMetrePerSecond;
+			m_total_speed = libutil::Clamp<float>(-3.0f,m_total_speed,3.0f);
+			m_acceleration = /*libutil::Clamp<float>(-0.05f,m_acceleration,maxAcceleration)*/libutil::Clamp<float>(-0.8f,(0.6f * m_acceleration/* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+			m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
+			//			m_acceleration = m_acceleration + 0.001f * m_total_speed;
 //			m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
 			m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
 		}else{
@@ -497,6 +499,7 @@ App::App():
 	m_movavgspeed_output(10),
 	m_prevSpeedInMetrePerSecond(0),
 	m_speedInMetrePerSecond(0),
+	m_prev_speed(0),
 	m_acceleration(0),
 	m_total_speed(0),
 	m_turn_prev_error(0),

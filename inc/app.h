@@ -96,7 +96,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,23.0f,0,0};
+	float m_balcon[7]={0,0,0,0,27.5f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -132,7 +132,7 @@ private:
 	*/
 	float m_carspeedpidl[3]={0.1f,0.0f,0.0f};
 
-	float m_prevSpeedInMetrePerSecond,m_speedInMetrePerSecond;
+	float m_prevSpeedInMetrePerSecond,m_speedInMetrePerSecond,m_prev_speed;
 
 	float m_acceleration;
 

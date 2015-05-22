@@ -44,6 +44,8 @@ public:
 	void Sw1Down(int);
 	void Sw2Down(int);
 	void Sw3Down(int);
+	void SelectRight(int);
+	void SelectLeft(int);
 	void SelectDown(int);
 	void GetInfrared(Gpi *gpi);
 
@@ -77,7 +79,9 @@ public:
 	int m_print_state = 0;
 	int m_num_print_states = 4;
 
+	float m_shift_balance_angle;
 private:
+
 	Mma8451q::Config GetMma8451qConfig(){
 		Mma8451q::Config accel_config;
 		accel_config.id = 0;
@@ -108,6 +112,10 @@ private:
 		Joystick::Config joyconfig;
 		joyconfig.id = 0;
 		joyconfig.is_active_low = true;
+		joyconfig.listener_triggers[2] = Joystick::Config::Trigger::kDown;
+		joyconfig.listeners[2] =  std::bind(&Car::SelectLeft, this, std::placeholders::_1);
+		joyconfig.listener_triggers[3] = Joystick::Config::Trigger::kDown;
+		joyconfig.listeners[3] =  std::bind(&Car::SelectRight, this, std::placeholders::_1);
 		joyconfig.listener_triggers[4] = Joystick::Config::Trigger::kDown;
 		joyconfig.listeners[4] =  std::bind(&Car::SelectDown, this, std::placeholders::_1);
 		return joyconfig;

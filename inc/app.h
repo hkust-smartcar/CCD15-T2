@@ -38,28 +38,9 @@ private:
 	LcdTypewriter m_lcd_typewriter;
 	int16_t m_balance_pid_output;
 
-	RemoteVarManager::Var* m_skp = m_car.m_varmanager->Register("skp",RemoteVarManager::Var::Type::kReal);
-	RemoteVarManager::Var* m_skd = m_car.m_varmanager->Register("skd",RemoteVarManager::Var::Type::kReal);
-	RemoteVarManager::Var* m_ski = m_car.m_varmanager->Register("ski",RemoteVarManager::Var::Type::kReal);
-
-	RemoteVarManager::Var* m_skpl = m_car.m_varmanager->Register("skpl",RemoteVarManager::Var::Type::kReal);
-
 	RemoteVarManager::Var* m_bkp = m_car.m_varmanager->Register("bkp",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_bkd = m_car.m_varmanager->Register("bkd",RemoteVarManager::Var::Type::kReal);
-	RemoteVarManager::Var* m_bki = m_car.m_varmanager->Register("bki",RemoteVarManager::Var::Type::kReal);
-
-	RemoteVarManager::Var* m_boff = m_car.m_varmanager->Register("boff",RemoteVarManager::Var::Type::kReal);
-
-	RemoteVarManager::Var* m_carkp = m_car.m_varmanager->Register("carkp",RemoteVarManager::Var::Type::kReal);
-	RemoteVarManager::Var* m_carkd = m_car.m_varmanager->Register("carkd",RemoteVarManager::Var::Type::kReal);
-	RemoteVarManager::Var* m_carki = m_car.m_varmanager->Register("carki",RemoteVarManager::Var::Type::kReal);
-
-	RemoteVarManager::Var* m_carspeed = m_car.m_varmanager->Register("carspeed",RemoteVarManager::Var::Type::kReal);
-
-	RemoteVarManager::Var* m_r1 = m_car.m_varmanager->Register("r1",RemoteVarManager::Var::Type::kReal);
-	RemoteVarManager::Var* m_r2 = m_car.m_varmanager->Register("r2",RemoteVarManager::Var::Type::kReal);
-
-	RemoteVarManager::Var* m_q = m_car.m_varmanager->Register("q",RemoteVarManager::Var::Type::kInt);
+	RemoteVarManager::Var* m_stop = m_car.m_varmanager->Register("stop",RemoteVarManager::Var::Type::kInt);
 
 
 	Gpo* m_pin;
@@ -96,7 +77,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,27.5f,0,0};
+	float m_balcon[7]={0,0,0,0,27.6f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;

@@ -131,6 +131,16 @@ void Car::SelectDown(int){
 //	m_buzzer.SetBeep(false);
 }
 
+void Car::SelectRight(int){
+	m_shift_balance_angle += 0.5f;
+}
+
+
+void Car::SelectLeft(int){
+	m_shift_balance_angle -= 0.5f;
+}
+
+
 void Car::GetInfrared(Gpi *){
 	static bool state = true;
 	m_buzzer.SetBeep(true);
@@ -292,7 +302,7 @@ void Car::GetInfrared(Gpi *){
 }
 
 Car::Car():
-				m_varmanager(new RemoteVarManager(15)),
+				m_varmanager(new RemoteVarManager(3)),
 				m_encoder_countr(0),
 				m_encoder_countl(0),
 				m_encoder_countr_t(0),
@@ -321,7 +331,8 @@ Car::Car():
 				m_infrared(GetInfraredConfig()),
 				m_car_move_motor(false),
 				m_car_move_forward(false),
-				m_lcdupdate(false)
+				m_lcdupdate(false),
+				m_shift_balance_angle(0.0f)
 
 {
 	/*

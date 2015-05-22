@@ -78,7 +78,7 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 
 	float error = omega;
 	static float prev_error = 0.0f;
-	prev_error = balpid[2] * 0.6f * error + 0.4f * prev_error;
+	prev_error = balpid[2] * 0.4f * error + 0.6f * prev_error;
 
 //	output=(int16_t)(balpid[0]*balcon[0] + balpid[2] * omega/* + balpid[1] * total_output*/);
 	output=(int16_t)(balpid[0]*balcon[0] + prev_error);
@@ -150,7 +150,7 @@ void App::PitBalance(Pit*){
 
 		m_balpid[0] = 350.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
-		m_balpid[2] = 14.0f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 19.0f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -205,10 +205,10 @@ void App::PitBalance(Pit*){
 				for(int i=edge_data_1[0]; i<=edge_data_2[0]; i++){
 					rect_.x = i;
 					rect_.y = (m_last_y2[edge_data_2[0]] - m_last_y[edge_data_1[0]])*(i - edge_data_1[0])/(edge_data_2[0]-edge_data_1[0]) + m_last_y[edge_data_1[0]];
-					rect_.w = 1;
-					rect_.h = 1;
+					rect_.w = 2;
+					rect_.h = 2;
 					m_car.m_lcd.SetRegion(rect_);
-					color2 = 0xF800;
+					color2 = 0b0000011111111111;
 					m_car.m_lcd.FillColor(color2);
 				}
 			}
@@ -216,10 +216,10 @@ void App::PitBalance(Pit*){
 				for(int i=edge_data_2[1]; i<=edge_data_1[1]; i++){
 					rect_.x = i;
 					rect_.y = (m_last_y2[edge_data_2[1]] - m_last_y[edge_data_1[1]])*(i - edge_data_1[1])/(edge_data_2[1]-edge_data_1[1]) + m_last_y[edge_data_1[0]];
-					rect_.w = 1;
-					rect_.h = 1;
+					rect_.w = 2;
+					rect_.h = 2;
 					m_car.m_lcd.SetRegion(rect_);
-					color2 = 0xF800;
+					color2 = 0b0000011111111111;
 					m_car.m_lcd.FillColor(color2);
 				}
 			}
@@ -233,8 +233,8 @@ void App::PitBalance(Pit*){
 			for(int i=edge_data_1[0]; i<=edge_data_2[0]; i++){
 				rect_.x = i;
 				rect_.y = (m_last_y2[edge_data_2[0]] - m_last_y[edge_data_1[0]])*(i - edge_data_1[0])/(edge_data_2[0]-edge_data_1[0]) + m_last_y[edge_data_1[0]];
-				rect_.w = 1;
-				rect_.h = 1;
+				rect_.w = 2;
+				rect_.h = 2;
 				m_car.m_lcd.SetRegion(rect_);
 				m_car.m_lcd.FillColor(color2);
 			}
@@ -243,8 +243,8 @@ void App::PitBalance(Pit*){
 			for(int i=edge_data_2[1]; i<=edge_data_1[1]; i++){
 				rect_.x = i;
 				rect_.y = (m_last_y2[edge_data_2[1]] - m_last_y[edge_data_1[1]])*(i - edge_data_1[1])/(edge_data_2[1]-edge_data_1[1]) + m_last_y[edge_data_1[0]];
-				rect_.w = 1;
-				rect_.h = 1;
+				rect_.w = 2;
+				rect_.h = 2;
 				m_car.m_lcd.SetRegion(rect_);
 				m_car.m_lcd.FillColor(color2);
 			}
@@ -312,9 +312,9 @@ void App::PitBalance(Pit*){
 		}
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((20.0f+m_speedInMetrePerSecond*0.0f)*error + (1.6f+m_speedInMetrePerSecond*0.0f)*(error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((20.0f+m_speedInMetrePerSecond*0.0f)*error + (1.7f+m_speedInMetrePerSecond*0.0f)*(error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((20.0f+m_speedInMetrePerSecond*0.0f)*error + (1.6f+m_speedInMetrePerSecond*0.0f)*(error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((20.0f+m_speedInMetrePerSecond*0.0f)*error + (1.7f+m_speedInMetrePerSecond*0.0f)*(error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = error;
 		}
@@ -380,15 +380,15 @@ void App::PitBalance(Pit*){
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
 //			Avoid acceleration over 2ms-2
-			float maxAcceleration = 1.0f;
+			float maxAcceleration = 1.2f;
 			m_acceleration = (2.0f-m_speedInMetrePerSecond)/0.02f;
 			m_total_speed += m_acceleration * 0.02f;
 			m_total_speed = libutil::Clamp<float>(-2.0f,m_total_speed,2.0f);
-			m_acceleration = /*libutil::Clamp<float>(-0.05f,m_acceleration,maxAcceleration)*/libutil::Clamp<float>(-0.4f,(0.5f * m_acceleration /*+ 0.1f * (m_acceleration - m_prev_speed)*/ + 0.4f * m_total_speed /* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
-			m_prev_speed = (2.0f-m_speedInMetrePerSecond)/0.02;
+			m_acceleration = /*libutil::Clamp<float>(-0.05f,m_acceleration,maxAcceleration)*/libutil::Clamp<float>(-1.2f,(0.6f * m_acceleration + 0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + 0.5f * m_total_speed /* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+//			m_prev_speed = (2.0f-m_speedInMetrePerSecond)/0.02;
+			m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 			//			m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
 			//			m_acceleration = m_acceleration + 0.001f * m_total_speed;
-//			m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
 			m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
 		}else{
 			m_car.m_car_speed = 0.0f;
@@ -517,7 +517,9 @@ App::App():
 	m_total_speed(0),
 	m_turn_prev_error(0),
 	m_hold_error(0),
-	m_hold_count(0)
+	m_hold_count(0),
+	m_threshold_1(0),
+	m_threshold_2(0)
 {
 	St7735r::Rect rect_;
 	rect_.x = 88;
@@ -549,6 +551,30 @@ App::App():
 //	Gpo pinad(pinadcfg);
 
 	m_upstand = new Upstand(&(m_car.m_mpu6050), &(m_car.m_mma8451q));
+
+	/*
+	 * Sample CCD1 for average to get black and white threshold
+	 */
+	m_car.m_ccd_1.StartSample();
+	while(!m_car.m_ccd_1.SampleProcess()){}
+	m_ccd_data_1 = m_car.m_ccd_1.GetData();
+	uint32_t sum = 0;
+	for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+		sum += m_ccd_data_1[i];
+	}
+	m_threshold_1 = sum / libsc::Tsl1401cl::kSensorW;
+
+	/*
+	 * Sample CCD2 for average to get black and white threshold
+	 */
+	m_car.m_ccd_2.StartSample();
+	while(!m_car.m_ccd_2.SampleProcess()){}
+	m_ccd_data_2 = m_car.m_ccd_2.GetData();
+	sum = 0;
+	for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+		sum += m_ccd_data_2[i];
+	}
+	m_threshold_2 = sum / libsc::Tsl1401cl::kSensorW;
 
 	Pit m_pit(GetPitConfig(0, std::bind(&App::PitBalance, this, std::placeholders::_1)));
 	Pit m_pit2(GetPitConfig2(1, std::bind(&App::PitMoveMotor, this, std::placeholders::_1)));

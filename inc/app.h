@@ -64,6 +64,7 @@ private:
 	uint16_t route_mid_2;
 	uint16_t m_avg = 0;
 	uint32_t m_sum = 0;
+	uint16_t m_threshold_1, m_threshold_2;
 
 	int16_t m_mid = 64;
 	int16_t m_encoder_count_t;

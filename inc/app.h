@@ -58,10 +58,12 @@ private:
 	/* edge_data[0] = left_edge;
 	 * edge_data[1] = right_edge;
 	 */
-	uint16_t edge_data_1[2] = {0,127};
-	uint16_t route_mid_1;
+	uint16_t m_prev_edge_data_1[2] = {0,127};
+	uint16_t m_edge_data_1[2] = {0,127};
+	uint16_t m_route_mid_1;
+	uint16_t prev_edge_data_2[2] = {0,127};
 	uint16_t edge_data_2[2] = {0,127};
-	uint16_t route_mid_2;
+	uint16_t m_route_mid_2;
 	uint16_t m_avg = 0;
 	uint32_t m_sum = 0;
 	uint16_t m_threshold_1, m_threshold_2;
@@ -120,6 +122,8 @@ private:
 
 	float m_total_speed;
 
+	float m_speed_setpoint;
+
 	/* time[0] for spd period;
 	 * time[1] for spd period;
 	 * time[2] for bal period;
@@ -144,6 +148,8 @@ private:
 	 */
 	float m_turnpid_f[3]={0.0f,0.0f,0.0f};
 	float m_turnpid_b[3]={1.0f,0.0f,1.0f};
+
+	bool m_triggered_90;
 
 	int m_turn_prev_error;
 	int m_hold_error;

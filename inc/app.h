@@ -61,8 +61,8 @@ private:
 	uint16_t m_prev_edge_data_1[2] = {0,127};
 	uint16_t m_edge_data_1[2] = {0,127};
 	uint16_t m_route_mid_1;
-	uint16_t prev_edge_data_2[2] = {0,127};
-	uint16_t edge_data_2[2] = {0,127};
+	uint16_t m_prev_edge_data_2[2] = {0,127};
+	uint16_t m_edge_data_2[2] = {0,127};
 	uint16_t m_route_mid_2;
 	uint16_t m_avg = 0;
 	uint32_t m_sum = 0;

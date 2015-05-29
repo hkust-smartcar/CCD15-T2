@@ -96,28 +96,37 @@ SimpleBuzzer::Config GetBuzzerConfig(){
 
 void Car::Sw1Down(int id){
 	if(id==0){
-		m_car_move_motor = !m_car_move_motor;
-//		m_buzzer.SetBeep(true);
-//		System::DelayMs(10);
-//		m_buzzer.SetBeep(false);
+
 	}
 }
 
 void Car::Sw2Down(int id){
 	if(id==1){
-		m_car_move_forward = !m_car_move_forward;
-		m_buzzer.SetBeep(true);
-//		System::DelayMs(50);
+		m_car_move_motor = !m_car_move_motor;
+//		m_buzzer.SetBeep(true);
+//		System::DelayMs(10);
 //		m_buzzer.SetBeep(false);
+
 	}
 }
 
 void Car::Sw3Down(int id){
 	if(id==2){
-		m_lcdupdate = !m_lcdupdate;
-		m_buzzer.SetBeep(true);
+		if(m_car_move_motor){
+			m_car_move_forward = !m_car_move_forward;
+//			m_buzzer.SetBeep(true);
+		}
+		else{
+			m_lcdupdate = !m_lcdupdate;
+		}
+
 //		System::DelayMs(50);
 //		m_buzzer.SetBeep(false);
+
+		/*m_lcdupdate = !m_lcdupdate;
+		m_buzzer.SetBeep(true);
+//		System::DelayMs(50);
+//		m_buzzer.SetBeep(false);*/
 	}
 
 }
@@ -143,7 +152,7 @@ void Car::SelectLeft(int){
 
 void Car::GetInfrared(Gpi *){
 	static bool state = true;
-	m_buzzer.SetBeep(true);
+//	m_buzzer.SetBeep(true);
 	state=!state;
 	/*struct note{
 		std::string note;
@@ -329,7 +338,7 @@ Car::Car():
 				m_lcd(GetSt7735RConfig()),
 				m_buzzer(GetBuzzerConfig()),
 				m_infrared(GetInfraredConfig()),
-				m_car_move_motor(false),
+				m_car_move_motor(true),
 				m_car_move_forward(false),
 				m_lcdupdate(false),
 				m_shift_balance_angle(0.0f)
@@ -346,6 +355,10 @@ Car::Car():
 	m_led2.SetEnable(false);
 	m_led3.SetEnable(true);
 	m_led4.SetEnable(false);
+
+	m_buzzer.SetBeep(true);
+	System::DelayMs(200);
+	m_buzzer.SetBeep(false);
 
 	JyMcuBt106::Config uartconfig;
 	uartconfig.baud_rate = libbase::kl26::Uart::Config::BaudRate::k115200;

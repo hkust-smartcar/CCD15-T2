@@ -165,7 +165,6 @@ void App::PitBalance(Pit*){
 		while(!m_car.m_ccd_2.SampleProcess()){}
 		m_ccd_data_2 = m_car.m_ccd_2.GetData();
 
-		uint16_t cameramid = 127/2;
 		m_prev_edge_data_2[0] = m_edge_data_2[0];
 		m_prev_edge_data_2[1] = m_edge_data_2[1];
 		Update_edge(m_ccd_data_2.data(), m_edge_data_2);
@@ -244,7 +243,9 @@ void App::PitBalance(Pit*){
 		m_car.m_ccd_1.StartSample();
 		while(!m_car.m_ccd_1.SampleProcess()){}
 
-		m_ccd_data_raw = m_car.m_ccd_1.GetData();
+		m_ccd_data_1 = m_car.m_ccd_1.GetData();
+
+/*		m_ccd_data_raw = m_car.m_ccd_1.GetData();
 		uint16_t c[libsc::Tsl1401cl::kSensorW];
 		uint16_t s[libsc::Tsl1401cl::kSensorW];
 		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
@@ -253,7 +254,7 @@ void App::PitBalance(Pit*){
 		medianFilter(c, s , libsc::Tsl1401cl::kSensorW);
 		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
 			m_ccd_data_1[i] = s[i];
-		}
+		}*/
 
 		m_avg = 0;
 		m_sum = 0;

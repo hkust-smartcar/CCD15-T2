@@ -328,10 +328,7 @@ void App::PitBalance(Pit*){
 			}
 		}*/
 
-		if(m_hold_count > 0){
-			m_hold_count--;
-			error = m_hold_error;
-		}
+
 
 /*		int sum_if_diff_is_positive = 0;
 		for (int i=0; i<libsc::Tsl1401cl::kSensorW-1; i++){
@@ -358,6 +355,13 @@ void App::PitBalance(Pit*){
 		 */
 		if((abs(m_edge_data_2[1] - m_edge_data_2[0]) - abs(m_prev_edge_data_2[1] - m_prev_edge_data_2[0])) > 50){
 			m_car.m_buzzer.SetBeep(true);
+			m_hold_error = m_prev_edge_data_2[1] - m_prev_edge_data_2[0];
+			m_hold_count = 20;
+		}
+
+		if(m_hold_count > 0){
+			m_hold_count--;
+			error = m_hold_error;
 		}
 
 		if(m_car.m_car_move_forward){

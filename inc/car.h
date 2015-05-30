@@ -81,6 +81,7 @@ public:
 
 	float m_shift_balance_angle;
 private:
+	Timer::TimerInt m_prev_pressed_time;
 
 	Mma8451q::Config GetMma8451qConfig(){
 		Mma8451q::Config accel_config;

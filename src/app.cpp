@@ -111,11 +111,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
 			min = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
 		}
 	}
-//	If left edge is on right of right edge, then ignore
-	if(edge_data[0]>edge_data[1]){
-		edge_data[0] = 10;
-		edge_data[1] = libsc::Tsl1401cl::kSensorW-11;
-	}
+
 }
 
 Pit::Config GetPitConfig(const uint8_t pit_channel,
@@ -298,8 +294,6 @@ void App::PitBalance(Pit*){
 		 * Clamp trust so that must sum up to 1
 		 */
 		trust = libutil::Clamp<float>(0.0f,trust,1.0f);
-
-		m_movavgturn.Add(m_mid - m_route_mid_1);
 		int error = (int)(trust * (m_mid - m_route_mid_1) + (1.0f-trust) * (m_mid - m_route_mid_2));
 
 		/*
@@ -377,7 +371,13 @@ void App::PitBalance(Pit*){
 		/*
 		 * Cross road detection
 		 */
-		if((abs(m_edge_data_2[1] - m_edge_data_2[0]) - abs(m_prev_edge_data_2[1] - m_prev_edge_data_2[0])) > 50){
+		if(
+				// If left edge is on right of right edge, then this maybe a cross road
+				(m_edge_data_2[0]>m_edge_data_2[1] && (m_edge_data_2[0] - m_edge_data_2[1])>10) ||
+				// If sudden change in width, then this maybe a cross road
+				((abs(m_edge_data_2[1] - m_edge_data_2[0]) - abs(m_prev_edge_data_2[1] - m_prev_edge_data_2[0])) > 50)
+		)
+		{
 			m_car.m_buzzer.SetBeep(true);
 			m_hold_error = m_prev_edge_data_2[1] - m_prev_edge_data_2[0];
 			m_hold_count = 20;

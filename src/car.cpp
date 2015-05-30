@@ -111,7 +111,8 @@ void Car::Sw2Down(int id){
 }
 
 void Car::Sw3Down(int id){
-	if(id==2){
+	if(id==2 && (System::Time() - m_prev_pressed_time > 1000)){
+		m_prev_pressed_time = System::Time();
 		if(m_car_move_motor){
 			m_car_move_forward = !m_car_move_forward;
 //			m_buzzer.SetBeep(true);
@@ -341,8 +342,8 @@ Car::Car():
 				m_car_move_motor(true),
 				m_car_move_forward(false),
 				m_lcdupdate(false),
-				m_shift_balance_angle(0.0f)
-
+				m_shift_balance_angle(0.0f),
+				m_prev_pressed_time(0)
 {
 	/*
 	 * Force NVIC interrupt priority for UART higher than PIT

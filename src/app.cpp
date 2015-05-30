@@ -275,7 +275,30 @@ void App::PitBalance(Pit*){
 		Update_edge(m_ccd_data_1.data(), m_edge_data_1);
 		m_route_mid_1 = (m_edge_data_1[0] + m_edge_data_1[1])/2;
 
+		/*
+		 * Change trust based on speed
+		 */
 		float trust = 0.0f;
+		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint;
+
+		/*
+		 * Change trust of closer CCD based on width of the closer CCD
+		 * So that the car won't go out of boundary
+		 */
+
+		uint16_t width_1 = m_edge_data_1[1] - m_edge_data_1[0];
+		/*
+		 * Width needs to be bigger than 0, so that won't mess up with single black line case
+		 */
+		if(width_1 > 0 && width_1 < 40){
+			trust = 1.0f;
+		}
+
+		/*
+		 * Clamp trust so that must sum up to 1
+		 */
+		trust = libutil::Clamp<float>(0.0f,trust,1.0f);
+
 		m_movavgturn.Add(m_mid - m_route_mid_1);
 		int error = (int)(trust * (m_mid - m_route_mid_1) + (1.0f-trust) * (m_mid - m_route_mid_2));
 
@@ -305,13 +328,13 @@ void App::PitBalance(Pit*){
 			}
 		}
 
-		if(total_white_1 >= 940 && total_white_2 >= 60 &&
-				(abs(m_edge_data_1[1] - m_edge_data_1[0]) - abs(m_prev_edge_data_1[1] - m_prev_edge_data_1[0])) > 13 &&
+		if(/*total_white_1 >= 940 && */total_white_2 >= 90 &&
+				(abs(m_edge_data_1[1] - m_edge_data_1[0]) - abs(m_prev_edge_data_1[1] - m_prev_edge_data_1[0])) > 10 &&
 				/*((right_white >= 6) ^ (left_white >= 6))*/
 				(
-					(((m_prev_edge_data_1[0] - m_edge_data_1[0]) > 13) && abs(m_prev_edge_data_1[1] - m_edge_data_1[1]) <= 1)
+					(((m_prev_edge_data_1[0] - m_edge_data_1[0]) > 10) && abs(m_prev_edge_data_1[1] - m_edge_data_1[1]) <= 3)
 					^
-					(((m_edge_data_1[1] - m_prev_edge_data_1[1]) > 13) && abs(m_prev_edge_data_1[0] - m_edge_data_1[0]) <= 1)
+					(((m_edge_data_1[1] - m_prev_edge_data_1[1]) > 10) && abs(m_prev_edge_data_1[0] - m_edge_data_1[0]) <= 3)
 				)
 		){
 			m_triggered_90 = true;

@@ -111,8 +111,8 @@ void Car::Sw2Down(int id){
 }
 
 void Car::Sw3Down(int id){
-	if(id==2 && (System::Time() - m_prev_pressed_time > 1000)){
-		m_prev_pressed_time = System::Time();
+	if(id==2/* && (System::Time() - m_prev_pressed_time > 1000)*/){
+//		m_prev_pressed_time = System::Time();
 		if(m_car_move_motor){
 			m_car_move_forward = !m_car_move_forward;
 //			m_buzzer.SetBeep(true);

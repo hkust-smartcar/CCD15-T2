@@ -142,12 +142,17 @@ void Car::SelectDown(int){
 }
 
 void Car::SelectRight(int){
-	m_shift_balance_angle += 0.5f;
+	if(!m_car_move_forward){
+		m_shift_balance_angle += 0.5f;
+	}
+
 }
 
 
 void Car::SelectLeft(int){
-	m_shift_balance_angle -= 0.5f;
+	if(!m_car_move_forward){
+		m_shift_balance_angle -= 0.5f;
+	}
 }
 
 

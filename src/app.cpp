@@ -100,7 +100,7 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
 	edge_data[0] = 10;
 	edge_data[1] = libsc::Tsl1401cl::kSensorW-11;
-	int16_t max=-1, minRight=-1;
+	int16_t maxLeft=-1, maxRight=-1;
 
 	int16_t sum = 0;
 	int numberOfSamples = 15;
@@ -108,13 +108,13 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
 		sum += (int16_t)(m_ccd_data[i]);
 	}
 	for (int i=numberOfSamples; i<libsc::Tsl1401cl::kSensorW-1; i++){
-		if(((int16_t)m_ccd_data[i] - sum/numberOfSamples) > max){
+		if(((int16_t)m_ccd_data[i] - sum/numberOfSamples) > maxLeft){
 			edge_data[0] = i;
-			max = ((int16_t)m_ccd_data[i] - sum/numberOfSamples);
+			maxLeft = ((int16_t)m_ccd_data[i] - sum/numberOfSamples);
 		}
-		if(((int16_t)m_ccd_data[i-numberOfSamples] - (sum - m_ccd_data[i-numberOfSamples] + m_ccd_data[i+1])/numberOfSamples) > minRight){
+		if(((int16_t)m_ccd_data[i-numberOfSamples] - (sum - m_ccd_data[i-numberOfSamples] + m_ccd_data[i+1])/numberOfSamples) > maxRight){
 			edge_data[1] = i;
-			minRight = ((int16_t)m_ccd_data[i-numberOfSamples] - (sum - m_ccd_data[i-numberOfSamples] + m_ccd_data[i+1])/numberOfSamples);
+			maxRight = ((int16_t)m_ccd_data[i-numberOfSamples] - (sum - m_ccd_data[i-numberOfSamples] + m_ccd_data[i+1])/numberOfSamples);
 		}
 		sum = sum - (int16_t)m_ccd_data[i-numberOfSamples] + (int16_t)m_ccd_data[i];
 
@@ -392,12 +392,13 @@ void App::PitBalance(Pit*){
 				// If left edge is on right of right edge, then this maybe a cross road
 //				(m_edge_data_2[0]>m_edge_data_2[1] && (m_edge_data_2[0] - m_edge_data_2[1])>10) ||
 				// If sudden change in width, then this maybe a cross road
-				((abs(m_edge_data_2[1] - m_edge_data_2[0]) - abs(m_prev_edge_data_2[1] - m_prev_edge_data_2[0])) > 10 &&
-				abs(m_edge_data_2[1] - m_edge_data_2[0]) > 60
+				((abs(m_edge_data_1[1] - m_edge_data_1[0]) - abs(m_prev_edge_data_1[1] - m_prev_edge_data_1[0])) > 10 &&
+				abs(m_edge_data_1[1] - m_edge_data_1[0]) >= 118 &&
+				total_white_1 >= 118
 				)
 		)
 		{
-//			m_car.m_buzzer.SetBeep(true);
+			m_car.m_buzzer.SetBeep(true);
 //			m_hold_error = m_prev_edge_data_2[1] - m_prev_edge_data_2[0];
 //			m_hold_error = 10;
 //			m_hold_count = 20;
@@ -563,8 +564,13 @@ void App::PitBalance(Pit*){
 				printf("%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle());
 				break;
 			case 3:
-//				printf("E%f,%f,%f\n",m_speed_setpoint,m_balcon[6],m_speedInMetrePerSecond);
 				printf("%d,%d,%d,%d,%f,%f\n",m_power_r_pwm,m_power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl,m_balcon[6],m_speedInMetrePerSecond);
+				break;
+			case 4:
+				printf("%d,%d\n",m_edge_data_2[1] - m_edge_data_2[0],m_edge_data_1[1] - m_edge_data_1[0]);
+				break;
+			case 5:
+				printf("E%d,%d\n",m_edge_data_2[1] - m_edge_data_2[0],m_edge_data_1[1] - m_edge_data_1[0]);
 				break;
 			case 0:
 			default:

@@ -152,9 +152,9 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 490.0f/*m_bkp->GetReal()*/;
+		m_balpid[0] = 400.0f/*m_bkp->GetReal()*/;
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
-		m_balpid[2] = 6.0f/*m_bkd->GetReal()*/;
+		m_balpid[2] = 20.0f/*m_bkd->GetReal()*/;
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
@@ -393,26 +393,29 @@ void App::PitBalance(Pit*){
 //				(m_edge_data_2[0]>m_edge_data_2[1] && (m_edge_data_2[0] - m_edge_data_2[1])>10) ||
 				// If sudden change in width, then this maybe a cross road
 				((abs(m_edge_data_1[1] - m_edge_data_1[0]) - abs(m_prev_edge_data_1[1] - m_prev_edge_data_1[0])) > 10 &&
-				abs(m_edge_data_1[1] - m_edge_data_1[0]) >= 118 &&
-				total_white_1 >= 118
+				abs(m_edge_data_1[1] - m_edge_data_1[0]) == 111/* &&
+				abs(m_edge_data_2[1] - m_edge_data_2[0]) == 107*/
 				)
 		)
 		{
 			m_car.m_buzzer.SetBeep(true);
-//			m_hold_error = m_prev_edge_data_2[1] - m_prev_edge_data_2[0];
+			m_hold_error = 0;
 //			m_hold_error = 10;
-//			m_hold_count = 20;
+			m_hold_count = 20;
 		}
 
 		if(m_hold_count > 0){
 			m_hold_count--;
-//			error = m_hold_error;
+			if(m_hold_count==1){
+				m_car.m_buzzer.SetBeep(true);
+			}
+			error = m_hold_error;
 		}
 
 //		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((24.0f+m_speedInMetrePerSecond*0.5f)*error + (1.4f+m_speedInMetrePerSecond*2.0f)*(error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((21.0f+m_speedInMetrePerSecond*0.5f)*error + (1.6f+m_speedInMetrePerSecond*1.6f)*(error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((24.0f+m_speedInMetrePerSecond*0.5f)*error + (1.4f+m_speedInMetrePerSecond*2.0f)*(error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((21.0f+m_speedInMetrePerSecond*0.5f)*error + (1.6f+m_speedInMetrePerSecond*1.6f)*(error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = error;
 //		}else{
@@ -481,11 +484,11 @@ void App::PitBalance(Pit*){
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
 //			Avoid acceleration over 2ms-2
-			float maxAcceleration = 1.3f;
+			float maxAcceleration = 2.4f;
 			m_acceleration = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02f;
 			m_total_speed += m_acceleration * 0.02f;
-			m_total_speed = libutil::Clamp<float>(-100.0f,m_total_speed,100.0f);
-			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.005f * m_acceleration + /*0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + */0.002f * m_total_speed /* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+			m_total_speed = libutil::Clamp<float>(-300.0f,m_total_speed,300.0f);
+			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0058f * m_acceleration + /*0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + */0.0043f * m_total_speed /* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
 //			m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //			m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 			//			m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
@@ -622,7 +625,7 @@ App::App():
 	m_prev_speed(0),
 	m_acceleration(0),
 	m_total_speed(0),
-	m_speed_setpoint(2.0f),
+	m_speed_setpoint(2.2f),
 	m_turn_prev_error(0),
 	m_triggered_90(false),
 	m_hold_error(0),

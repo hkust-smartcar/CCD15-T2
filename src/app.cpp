@@ -19,8 +19,8 @@
 //#include "Quaternion.h"
 #include "upstand.h"
 #include "medianFilter.h"
-#include "Eigen/Eigen"
-using Eigen::Vector3f;
+//#include "Eigen/Eigen"
+//using Eigen::Vector3f;
 
 
 using namespace libsc::kl26;
@@ -39,7 +39,7 @@ uint16_t App::RpmToPwm_R(uint16_t count){
 
 uint16_t App::RpmToPwm_L(uint16_t count){
 //	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.3168f*count + 82.325f);
+	uint16_t val = (uint16_t)(0.35f*count + 75.325f);
 	//Flat section before straight line
 //	val = count <= 216 ? 150 : val;
 //	val = val <= 150 ? 150 : val;
@@ -73,7 +73,8 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 
 	period=System::Time()-prev_time;
 	time[2]=System::Time();
-	balcon[0]=(balcon[4]+balcon[5]+balcon[6]+m_car.m_shift_balance_angle)-real_angle;	// 512*104/44=13312/11
+	balcon[0] = (balcon[4]+balcon[5]+balcon[6]+m_car.m_shift_balance_angle)-real_angle;	// 512*104/44=13312/11
+	balcon[0] = tan(balcon[0]*1.05f/RAD2ANGLE)*70;
 	total_output += balcon[0] * period;
 
 	float error = omega;
@@ -103,7 +104,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data){
 	int16_t maxLeft=-1, maxRight=-1;
 
 	int16_t sum = 0;
-	int numberOfSamples = 15;
+	int numberOfSamples = 10;
 	for(int i=0; i<numberOfSamples; i++){
 		sum += (int16_t)(m_ccd_data[i]);
 	}
@@ -143,7 +144,9 @@ Pit::Config GetPitConfig2(const uint8_t pit_channel,
 }
 
 void App::PitBalance(Pit*){
-	m_car.m_buzzer.SetBeep(false);
+	if(m_hold_count <= 0){
+		m_car.m_buzzer.SetBeep(false);
+	}
 	if(m_pit_count%2==0){
 		m_car.m_mpu6050.Update();
 		m_car.m_mma8451q.Update();
@@ -152,17 +155,25 @@ void App::PitBalance(Pit*){
 		m_upstand->KalmanFilter();
 		m_real_angle = (float) m_upstand->GetAngle();
 
-		m_balpid[0] = 380.0f/*m_bkp->GetReal()*/;
+
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.5f){
-			m_balpid[2] = 50.0f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 170.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 30.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[2] = 10.0f;
+			m_balpid[0] = 170.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 30.0f;
 		}
 
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
 //		m_balance_pid_output = 0;
+		if(m_turn_powerr < 0){
+			m_turn_powerr = 0;
+		}
+		if(m_turn_powerl < 0){
+			m_turn_powerl = 0;
+		}
 		m_power_r = m_balance_pid_output + m_turn_powerr;
 		m_power_l = m_balance_pid_output + m_turn_powerl;
 
@@ -315,7 +326,7 @@ void App::PitBalance(Pit*){
 		 * Clamp trust so that must sum up to 1
 		 */
 		trust = libutil::Clamp<float>(0.0f,trust,1.0f);
-		int error = (int)(trust * (m_mid - m_route_mid_1) + (1.0f-trust) * (m_mid - m_route_mid_2));
+		int m_turn_error = (int)(trust * (m_mid - m_route_mid_1) + (1.0f-trust) * (m_mid - m_route_mid_2));
 
 		/*
 		 * 90 degree detection
@@ -356,7 +367,7 @@ void App::PitBalance(Pit*){
 				)*/
 		){
 			m_triggered_90 = true;
-			m_car.m_buzzer.SetBeep(true);
+//			m_car.m_buzzer.SetBeep(true);
 //			m_hold_error = (int)(m_prev_edge_data_2[1] - m_prev_edge_data_2[0]);
 //			m_hold_count = 20;
 		}
@@ -405,29 +416,29 @@ void App::PitBalance(Pit*){
 				)
 		)
 		{
-//			m_car.m_buzzer.SetBeep(true);
+			m_car.m_buzzer.SetBeep(true);
 			m_hold_error = 0;
 //			m_hold_error = 10;
-			m_hold_count = 20;
+			m_hold_count = 10;
 		}
 
 		if(m_hold_count > 0){
 			m_hold_count--;
 			if(m_hold_count==1){
-				m_car.m_buzzer.SetBeep(true);
+				m_car.m_buzzer.SetBeep(false);
 			}
-			error = m_hold_error;
+			m_turn_error = m_hold_error;
 		}
 
-//		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((23.0f+m_speedInMetrePerSecond*1.5f)*error + (1.45f+m_speedInMetrePerSecond*0.8f)*(error - m_turn_prev_error)/0.02f));
+		if(m_car.m_car_move_forward){
+			m_turn_powerl = (int16_t)(-((60.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (3.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((23.0f+m_speedInMetrePerSecond*1.5f)*error + (1.45f+m_speedInMetrePerSecond*0.8f)*(error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((60.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (3.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
-			m_turn_prev_error = error;
-//		}else{
-//			m_turn_powerl = m_turn_powerr = 0;
-//		}
+			m_turn_prev_error = m_turn_error;
+		}else{
+			m_turn_powerl = m_turn_powerr = 0;
+		}
 
 		if(m_car.m_lcdupdate){
 //			m_pin->Set();
@@ -491,11 +502,16 @@ void App::PitBalance(Pit*){
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
 //			Avoid acceleration over 2ms-2
-			float maxAcceleration = 2.7f;
+			float maxAcceleration = 0.0f;
+			if(m_speedInMetrePerSecond <= m_speed_setpoint*0.6f){
+				maxAcceleration = 1.5f;
+			}else{
+				maxAcceleration = 1.5f;
+			}
 			m_acceleration = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02f;
 			m_total_speed += m_acceleration * 0.02f;
 			m_total_speed = libutil::Clamp<float>(-300.0f,m_total_speed,300.0f);
-			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0068f * m_acceleration + /*0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + */0.0033f * m_total_speed /* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0065f * m_acceleration + /*0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + */0.005f * m_total_speed /* - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
 //			m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //			m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 			//			m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
@@ -632,7 +648,8 @@ App::App():
 	m_prev_speed(0),
 	m_acceleration(0),
 	m_total_speed(0),
-	m_speed_setpoint(2.3f),
+	m_speed_setpoint(2.0f),
+	m_turn_error(0),
 	m_turn_prev_error(0),
 	m_triggered_90(false),
 	m_hold_error(0),

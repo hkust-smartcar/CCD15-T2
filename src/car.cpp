@@ -344,7 +344,7 @@ Car::Car():
 				m_lcd(GetSt7735RConfig()),
 				m_buzzer(GetBuzzerConfig()),
 				m_infrared(GetInfraredConfig()),
-				m_car_move_motor(true),
+				m_car_move_motor(false),
 				m_car_move_forward(false),
 				m_lcdupdate(false),
 				m_shift_balance_angle(0.0f),

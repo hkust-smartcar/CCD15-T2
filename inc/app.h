@@ -51,6 +51,7 @@ private:
 	Upstand* m_upstand;
 
 	int16_t m_power_l=0, m_power_r=0, m_u_s0=0, m_u_s1=0, m_u_b=0, m_turn_powerl=0, m_turn_powerr=0;
+	int16_t m_speed_output;
 	int16_t m_power_l_pwm=0, m_power_r_pwm=0;
 	int16_t m_turn_powerb=0,m_turn_powerf=0;
 	float m_turn_coeff_b,m_turn_coeff_f;

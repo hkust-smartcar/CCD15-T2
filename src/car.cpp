@@ -363,7 +363,7 @@ Car::Car():
 	m_led4.SetEnable(false);
 
 	m_buzzer.SetBeep(true);
-	System::DelayMs(200);
+	System::DelayMs(50);
 	m_buzzer.SetBeep(false);
 
 	JyMcuBt106::Config uartconfig;

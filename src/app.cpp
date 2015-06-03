@@ -74,7 +74,7 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 	period=System::Time()-prev_time;
 	time[2]=System::Time();
 	balcon[0] = (balcon[4]+balcon[5]+balcon[6]+m_car.m_shift_balance_angle)-real_angle;	// 512*104/44=13312/11
-	balcon[0] = tan(balcon[0]*1.05f/RAD2ANGLE)*80;
+	balcon[0] = tan(balcon[0]*2.2f/RAD2ANGLE)*80;
 	total_output += balcon[0] * period;
 
 	float error = omega;
@@ -158,11 +158,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.5f){
-			m_balpid[0] = 900.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 250.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 20.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 900.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 10.0f;
+			m_balpid[0] = 250.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 20.0f;
 		}
 
 
@@ -367,7 +367,7 @@ void App::PitBalance(Pit*){
 			m_triggered_90 = true;
 			m_car.m_buzzer.SetBeep(true);
 //			m_hold_error = (int)(m_prev_edge_data_2[1] - m_prev_edge_data_2[0]);
-			m_hold_count = 20;
+//			m_hold_count = 20;
 		}
 
 /*		if(m_triggered_90){
@@ -414,11 +414,14 @@ void App::PitBalance(Pit*){
 
 		)
 		{
-			m_car.m_buzzer.SetBeep(true);
+			for(int i=0; i<=200; i++){
+				m_car.m_buzzer.SetBeep(false);
+				m_car.m_buzzer.SetBeep(true);
+			}
 //			m_hold_error = 2;
 //			m_hold_error = 10;
 			m_hold_error = 0;
-			m_hold_count = 6;
+			m_hold_count = 5;
 		}
 
 		if(m_hold_count > 0){
@@ -438,9 +441,9 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((70.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (8.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((60.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (6.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((70.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (8.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((60.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (6.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = m_turn_error;
 		}else{
@@ -519,14 +522,14 @@ void App::PitBalance(Pit*){
 			m_acceleration = (float)m_movavgspeed.GetAverage();
 
 			m_total_speed += m_acceleration * 0.02f;
-			m_total_speed = libutil::Clamp<float>(-4000.0f,m_total_speed,4000.0f);
-			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.01f * m_acceleration  /*+0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + 0.004f * m_total_speed  - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+			m_total_speed = libutil::Clamp<float>(-3000.0f,m_total_speed,3000.0f);
+			m_speed_output = (int16_t)(60.0f * m_acceleration + 3.0f * m_total_speed);
+			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.007f * m_acceleration  /*+0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + 0.004f * m_total_speed  - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
 //			m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //			m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 			//			m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
 			//			m_acceleration = m_acceleration + 0.001f * m_total_speed;
 			m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
-			m_speed_output = (int16_t)(3000.0f * m_acceleration + 28.0f * m_total_speed);
 		}else{
 			m_car.m_car_speed = 0.0f;
 			m_balcon[6] = 0;
@@ -598,7 +601,7 @@ void App::PitBalance(Pit*){
 				printf("E%f,%f,%f\n",m_speed_setpoint,m_balcon[6],m_speedInMetrePerSecond);
 				break;
 			case 2:
-				printf("%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle());
+				printf("%f,%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle(), m_balcon[0]);
 				break;
 			case 3:
 				printf("%d,%d,%d,%d,%f,%f\n",m_power_r_pwm,m_power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl,m_balcon[6],m_speedInMetrePerSecond);
@@ -643,8 +646,8 @@ void App::PitMoveMotor(Pit*){
 
 	m_car.m_motor_r.SetClockwise(m_power_r_pwm < 0); //Right Motor - false forward, true backward
 	m_car.m_motor_l.SetClockwise(m_power_l_pwm > 0); //Left Motor - true forward, false backward
-	m_car.m_motor_r.SetPower((uint16_t)abs(m_power_r_pwm+60));
-	m_car.m_motor_l.SetPower((uint16_t)abs(m_power_l_pwm+60));
+	m_car.m_motor_r.SetPower((uint16_t)abs(m_power_r_pwm));
+	m_car.m_motor_l.SetPower((uint16_t)abs(m_power_l_pwm));
 	m_pit_count2++;
 }
 
@@ -662,7 +665,7 @@ App::App():
 	m_prev_speed(0),
 	m_acceleration(0),
 	m_total_speed(0),
-	m_speed_setpoint(2.2f),
+	m_speed_setpoint(2.35f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_prev_error(0),

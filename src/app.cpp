@@ -74,7 +74,7 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 	period=System::Time()-prev_time;
 	time[2]=System::Time();
 	balcon[0] = (balcon[4]+balcon[5]+balcon[6]+m_car.m_shift_balance_angle)-real_angle;	// 512*104/44=13312/11
-	balcon[0] = tan(balcon[0]*2.2f/RAD2ANGLE)*80;
+	balcon[0] = tan(balcon[0]*1.7f/RAD2ANGLE)*80;
 	total_output += balcon[0] * period;
 
 	float error = omega;
@@ -158,10 +158,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.5f){
-			m_balpid[0] = 250.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 300.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 20.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 250.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 300.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 20.0f;
 		}
 
@@ -307,7 +307,7 @@ void App::PitBalance(Pit*){
 		 * Change trust based on speed
 		 */
 		float trust = 0.0f;
-		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint;
+		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint * 0.0f + abs(m_mid - m_route_mid_1)/64 * 1.0f;
 
 		/*
 		 * Change trust of closer CCD based on width of the closer CCD
@@ -421,7 +421,7 @@ void App::PitBalance(Pit*){
 //			m_hold_error = 2;
 //			m_hold_error = 10;
 			m_hold_error = 0;
-			m_hold_count = 5;
+			m_hold_count = 3;
 		}
 
 		if(m_hold_count > 0){
@@ -441,9 +441,9 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((60.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (6.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((11.0f+3.0f*m_balcon[0]+m_speedInMetrePerSecond*1.0f+abs(m_turn_error)*0.2f)*m_turn_error + (1.1f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((60.0f+m_speedInMetrePerSecond*1.0f)*m_turn_error + (6.0f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((11.0f+3.0f*m_balcon[0]+m_speedInMetrePerSecond*1.0f+abs(m_turn_error)*0.2f)*m_turn_error + (1.1f+m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = m_turn_error;
 		}else{
@@ -511,25 +511,35 @@ void App::PitBalance(Pit*){
 //			m_car.m_car_speed = 2;
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
-//			Avoid acceleration over 2ms-2
-			float maxAcceleration = 0.0f;
-			if(m_speedInMetrePerSecond <= m_speed_setpoint*0.6f){
-				maxAcceleration = 1.0f;
-			}else{
-				maxAcceleration = 1.0f;
-			}
 			m_movavgspeed.Add((int16_t)(m_speed_setpoint-m_speedInMetrePerSecond)/0.02f);
 			m_acceleration = (float)m_movavgspeed.GetAverage();
 
+
 			m_total_speed += m_acceleration * 0.02f;
-			m_total_speed = libutil::Clamp<float>(-3000.0f,m_total_speed,3000.0f);
-			m_speed_output = (int16_t)(60.0f * m_acceleration + 3.0f * m_total_speed);
-			m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.007f * m_acceleration  /*+0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + 0.004f * m_total_speed  - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
-//			m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
-//			m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
-			//			m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
-			//			m_acceleration = m_acceleration + 0.001f * m_total_speed;
-			m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
+			m_total_speed = libutil::Clamp<float>(-1000.0f,m_total_speed,1000.0f);
+
+//			Affect balance only when speed is > setpoint * 60%
+			if(m_speedInMetrePerSecond > m_speed_setpoint*0.6f){
+				m_speed_output = (int16_t)(12.0f * m_acceleration + 1.0f * m_total_speed);
+				m_balcon[6] = 0;
+//			Otherwise, use angle to do acceleration for maximum acceleration
+			}else{
+				// Avoid acceleration over 3ms-2
+				float maxAcceleration = 0.0f;
+				if(m_speedInMetrePerSecond <= m_speed_setpoint*0.6f){
+					maxAcceleration = 3.0f;
+				}else{
+					maxAcceleration = 3.0f;
+				}
+					m_speed_output = 0;
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.04f * m_acceleration  /*+0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed) + 0.004f * m_total_speed  - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+//					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
+//					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
+//					m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
+//					m_acceleration = m_acceleration + 0.001f * m_total_speed;
+					m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
+			}
+
 		}else{
 			m_car.m_car_speed = 0.0f;
 			m_balcon[6] = 0;
@@ -665,7 +675,7 @@ App::App():
 	m_prev_speed(0),
 	m_acceleration(0),
 	m_total_speed(0),
-	m_speed_setpoint(2.35f),
+	m_speed_setpoint(2.2f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_prev_error(0),

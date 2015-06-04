@@ -298,7 +298,7 @@ void App::PitBalance(Pit*){
 		 * Change trust based on speed
 		 */
 		float trust = 0.0f;
-		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint * 0.0f + abs(m_mid - m_route_mid_1)/64 * 1.0f;
+		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint * 0.0f + abs(m_mid - m_route_mid_1)/64 * 0.6f - m_balcon[0] / 5.0f * 0.4f;
 
 		/*
 		 * Change trust of closer CCD based on width of the closer CCD

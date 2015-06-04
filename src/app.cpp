@@ -138,7 +138,7 @@ Pit::Config GetPitConfig2(const uint8_t pit_channel,
 {
 	Pit::Config config;
 	config.channel = pit_channel;
-	config.count = ClockUtils::GetBusTickPerUs() * 1000 * 5;
+	config.count = ClockUtils::GetBusTickPerUs() * 1000 * 1;
 	config.isr = isr;
 	return config;
 }
@@ -168,15 +168,6 @@ void App::PitBalance(Pit*){
 
 		m_balance_pid_output = -Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
 //		m_balance_pid_output = 0;
-		if(m_turn_powerr < 0){
-			m_turn_powerr = 0;
-		}
-		if(m_turn_powerl < 0){
-			m_turn_powerl = 0;
-		}
-		m_power_r = m_balance_pid_output - m_speed_output + m_turn_powerr;
-		m_power_l = m_balance_pid_output - m_speed_output + m_turn_powerl;
-
 	}
 //	Every 20ms for the two ccds to finish sampling
 	if(m_pit_count%4==3){
@@ -641,6 +632,15 @@ void App::PitMoveMotor(Pit*){
 
 //	if(abs(power_l) >= 1000) power_l = 0;
 //	if(abs(power_r) >= 1000) power_r = 0;
+
+	if(m_turn_powerr < 0){
+		m_turn_powerr = 0;
+	}
+	if(m_turn_powerl < 0){
+		m_turn_powerl = 0;
+	}
+	m_power_r = m_balance_pid_output - m_speed_output + m_turn_powerr;
+	m_power_l = m_balance_pid_output - m_speed_output + m_turn_powerl;
 
 	if(m_stop->GetInt()!=0){
 		m_car.m_car_move_motor = false;

@@ -298,7 +298,7 @@ void App::PitBalance(Pit*){
 		 * Change trust based on speed
 		 */
 		float trust = 0.0f;
-		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint * 0.0f + abs(m_mid - m_route_mid_1)/64 * 0.6f - m_balcon[0] / 5.0f * 0.4f;
+		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint * 0.0f + abs(m_mid - m_route_mid_1)/32 * 0.6f - m_balcon[0] / 5.0f * 0.4f;
 
 		/*
 		 * Change trust of closer CCD based on width of the closer CCD
@@ -326,7 +326,8 @@ void App::PitBalance(Pit*){
 		int total_white_1 = 0;
 		int right_white = 0;
 		int left_white = 0;
-		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+
+		for(int i=10; i<libsc::Tsl1401cl::kSensorW-10; i++){
 			if(m_ccd_data_1[i] > m_threshold_1){
 				total_white_1++;
 			}
@@ -345,14 +346,20 @@ void App::PitBalance(Pit*){
 			}
 		}
 
-		if(
-				(m_prev_edge_data_1[0] >= 30 && m_edge_data_1[0] == 10 &&
+		if(total_white_1 == 0){
+			m_90_entering = !m_90_entering;
+			m_car.m_buzzer.SetBeep(true);
+		}
+
+		if(m_90_entering && (
+				(m_prev_edge_data_1[0] >= 30 && m_edge_data_1[0] <= 10 &&
 				m_prev_edge_data_1[1] >= 116 && m_prev_edge_data_1[1] <= 124 &&
 				m_edge_data_1[1] >= 116 && m_edge_data_1[1] <= 124)
 				||
 				(m_prev_edge_data_1[1] <= 114 && m_prev_edge_data_1[1] >= 123 &&
 				m_prev_edge_data_1[0] >= 15 && m_prev_edge_data_1[0] <= 29 &&
 				m_edge_data_1[0] >= 15 && m_edge_data_1[0] <= 29)
+			)
 
 		){
 			m_triggered_90 = true;
@@ -683,7 +690,8 @@ App::App():
 	m_hold_error(0),
 	m_hold_count(0),
 	m_threshold_1(0),
-	m_threshold_2(0)
+	m_threshold_2(0),
+	m_90_entering(false)
 {
 	St7735r::Rect rect_;
 	rect_.x = 88;

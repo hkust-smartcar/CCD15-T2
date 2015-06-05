@@ -184,6 +184,8 @@ private:
 		return config;
 	}
 
+	bool m_90_entering;
+
 
 
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;

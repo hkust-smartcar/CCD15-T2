@@ -364,40 +364,10 @@ void App::PitBalance(Pit*){
 		){
 			m_triggered_90 = true;
 			m_car.m_buzzer.SetBeep(true);
-//			m_hold_error = (int)(m_prev_edge_data_2[1] - m_prev_edge_data_2[0]);
-//			m_hold_count = 20;
+			m_hold_error = (int)(m_mid - m_route_mid_1);
+			m_hold_count = 10;
 		}
 
-/*		if(m_triggered_90){
-			if(
-					(m_edge_data_1[0] < 10 && m_edge_data_1[1] > 110) ||
-					(m_edge_data_1[0] > 18 && m_edge_data_1[1] > 118)
-			){
-
-			}
-		}*/
-
-
-
-/*		int sum_if_diff_is_positive = 0;
-		for (int i=0; i<libsc::Tsl1401cl::kSensorW-1; i++){
-			if((m_ccd_data_1[i] - m_ccd_data_2[i]) > 0){
-				sum_if_diff_is_positive++;
-			}
-		}
-		if(sum_if_diff_is_positive>100 && m_hold_count == 0){
-//				m_car.m_buzzer.SetBeep(true);
-//			if(m_pit_count - m_prev_pit_count){
-//					m_car.m_buzzer.SetBeep(true);
-//			}
-//			m_prev_pit_count = m_pit_count;
-			m_hold_count = 1;
-			m_hold_error = (int)(2.0f*error);
-		}
-		if(sum_if_diff_is_positive>100 || m_hold_count > 0){
-			m_hold_count--;
-			error = m_hold_error;
-		}*/
 
 		/*
 		 * Cross road detection
@@ -412,12 +382,12 @@ void App::PitBalance(Pit*){
 
 		)
 		{
-			for(int i=0; i<=200; i++){
+			for(int i=0; i<=50; i++){
+				m_car.m_buzzer.SetBeep(false);
+				m_car.m_buzzer.SetBeep(false);
 				m_car.m_buzzer.SetBeep(false);
 				m_car.m_buzzer.SetBeep(true);
 			}
-//			m_hold_error = 2;
-//			m_hold_error = 10;
 			m_hold_error = 0;
 			m_hold_count = 3;
 		}

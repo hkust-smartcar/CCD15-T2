@@ -81,7 +81,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,14.6f,0,0};
+	float m_balcon[7]={0,0,0,0,15.1f,0,0};
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;

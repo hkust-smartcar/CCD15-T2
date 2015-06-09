@@ -117,7 +117,7 @@ private:
 	*/
 	float m_carspeedpidl[3]={0.1f,0.0f,0.0f};
 
-	float m_prevSpeedInMetrePerSecond,m_speedInMetrePerSecond,m_prev_speed;
+	float m_prevSpeedInMetrePerSecond,m_speedInMetrePerSecond,m_prev_speed,m_prev_speed_2;
 
 	float m_acceleration;
 

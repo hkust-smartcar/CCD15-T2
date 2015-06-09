@@ -120,6 +120,8 @@ private:
 	float m_prevSpeedInMetrePerSecond,m_speedInMetrePerSecond,m_prev_speed,m_prev_speed_2;
 
 	float m_acceleration;
+	
+	float m_speed_error;
 
 	float m_total_speed;
 

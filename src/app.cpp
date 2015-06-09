@@ -520,22 +520,22 @@ void App::PitBalance(Pit*){
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
 			m_movavgspeed.Add((int16_t)(m_speed_setpoint-m_speedInMetrePerSecond)/0.02f);
-			m_acceleration = (float)m_movavgspeed.GetAverage();
+			m_speed_error = (float)m_movavgspeed.GetAverage();
 
 			float speedKp = 5.0f;
 			float speedKd = 0.0f;
 			float speedKi = 1.5f;
 			float speedDt = 0.02f;
 
-			m_total_speed += m_acceleration * 0.02f;
+			m_total_speed += m_speed_error * 0.02f;
 			m_total_speed = libutil::Clamp<float>(-50.0f,m_total_speed,50.0f);
 
-			//m_speed_output = (int16_t)(speedKp * m_acceleration + speedKi * m_total_speed);
+			//m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
 			float b = -speedKp - 2*speedKd / speedDt;
 			float c = speedKd / speedDt;
 			
-			m_speed_output += (int16_t)(a * m_acceleration + b * m_prev_speed + c * m_prev_speed_2); 
+			m_speed_output += (int16_t)(a * m_speed_error + b * m_prev_speed + c * m_prev_speed_2); 
 
 			// Avoid acceleration over 3ms-2
 			float maxAcceleration = 0.0f;
@@ -551,9 +551,9 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0015f * m_acceleration + 0.0002f * (m_acceleration-m_prev_speed)/0.02f + 0.5f * m_total_speed * 0.02f  /*+0.3f * 0.5f * (m_acceleration) + 0.5f * (m_prev_speed)  - 0.0001f * 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed + 0.0f * m_total_speed*/),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0015f * m_speed_error + 0.0002f * (m_speed_error-m_prev_speed)/0.02f + 0.5f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
-					m_prev_speed = m_acceleration;
+					m_prev_speed = m_speed_error;
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 //					m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
@@ -706,6 +706,7 @@ App::App():
 	m_prev_speed(0),
 	m_prev_speed_2(0),
 	m_acceleration(0),
+	m_speed_error(0),
 	m_total_speed(0),
 	m_speed_setpoint(2.2f),
 	m_speed_output(0),

@@ -39,7 +39,7 @@ uint16_t App::RpmToPwm_R(uint16_t count){
 
 uint16_t App::RpmToPwm_L(uint16_t count){
 //	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.33f*count + 80.325f);
+	uint16_t val = (uint16_t)(0.32f*count + 70.325f);
 	//Flat section before straight line
 //	val = count <= 216 ? 150 : val;
 //	val = val <= 150 ? 150 : val;
@@ -171,10 +171,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 600.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 500.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 20.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 600.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 500.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 9.0f;
 		}
 
@@ -449,9 +449,9 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((11.0f-0.1f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*5.0f+abs(m_turn_error)*0.0f)*m_turn_error + (2.0f+0.0f*abs(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*1.0f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((20.5f-0.1f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*2.6f+abs(m_turn_error)*0.0f)*m_turn_error + (0.95f+0.0f*abs(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.8f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((11.0f-0.1f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*5.0f+abs(m_turn_error)*0.0f)*m_turn_error + (2.0f+0.0f*(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*1.0f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((20.5f-0.1f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*2.6f+abs(m_turn_error)*0.0f)*m_turn_error + (0.95f+0.0f*(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.8f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = m_turn_error;
 		}else{
@@ -522,20 +522,20 @@ void App::PitBalance(Pit*){
 			m_movavgspeed.Add((int16_t)(m_speed_setpoint-m_speedInMetrePerSecond)/0.02f);
 			m_speed_error = (float)m_movavgspeed.GetAverage();
 
-			float speedKp = 5.0f;
+			float speedKp = 31.0f;
 			float speedKd = 0.0f;
-			float speedKi = 1.5f;
+			float speedKi = 17.5f;
 			float speedDt = 0.02f;
 
-			m_total_speed += m_speed_error * 0.02f;
-			m_total_speed = libutil::Clamp<float>(-50.0f,m_total_speed,50.0f);
+			m_total_speed += m_speed_error * speedDt;
+			m_total_speed = libutil::Clamp<float>(-56.0f,m_total_speed,56.0f);
 
-			//m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
+			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
 			float b = -speedKp - 2*speedKd / speedDt;
 			float c = speedKd / speedDt;
 			
-			m_speed_output += (int16_t)(a * m_speed_error + b * m_prev_speed + c * m_prev_speed_2); 
+//			m_speed_output += (int16_t)(a * m_speed_error + b * m_prev_speed + c * m_prev_speed_2);
 
 			// Avoid acceleration over 3ms-2
 			float maxAcceleration = 0.0f;
@@ -551,7 +551,7 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0015f * m_speed_error + 0.0002f * (m_speed_error-m_prev_speed)/0.02f + 0.5f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0013f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.44f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
 					m_prev_speed = m_speed_error;
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
@@ -696,7 +696,7 @@ App::App():
 	m_car(),
 	m_lcd_typewriter(GetLcdTypewriterConfig()),
 	m_balance_pid_output(0),
-	m_movavgspeed(10),
+	m_movavgspeed(5),
 	m_movavgr(3),
 	m_movavgl(3),
 	m_movavgturn(5),

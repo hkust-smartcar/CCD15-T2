@@ -704,6 +704,7 @@ App::App():
 	m_prevSpeedInMetrePerSecond(0),
 	m_speedInMetrePerSecond(0),
 	m_prev_speed(0),
+	m_prev_speed_2(0),
 	m_acceleration(0),
 	m_total_speed(0),
 	m_speed_setpoint(2.2f),

@@ -171,11 +171,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 500.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 20.0f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 400.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 10.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 500.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 9.0f;
+			m_balpid[0] = 400.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 10.0f;
 		}
 
 
@@ -449,9 +449,9 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_car.m_car_move_forward){
-			m_turn_powerl = (int16_t)(-((20.5f-0.1f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*2.6f+abs(m_turn_error)*0.0f)*m_turn_error + (0.95f+0.0f*abs(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.8f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((20.5f-0.0f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*8.6f+abs(m_turn_error)*0.0f)*m_turn_error + (2.0f+0.0f*abs(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*1.4f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((20.5f-0.1f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*2.6f+abs(m_turn_error)*0.0f)*m_turn_error + (0.95f+0.0f*(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.8f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((20.5f-0.0f*abs(m_balcon[0])*m_balcon[0]+m_speedInMetrePerSecond*8.6f+abs(m_turn_error)*0.0f)*m_turn_error + (2.0f+0.0f*(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*1.4f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = m_turn_error;
 		}else{
@@ -530,7 +530,7 @@ void App::PitBalance(Pit*){
 			m_total_speed += m_speed_error * speedDt;
 			m_total_speed = libutil::Clamp<float>(-56.0f,m_total_speed,56.0f);
 
-			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
+//			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
 			float b = -speedKp - 2*speedKd / speedDt;
 			float c = speedKd / speedDt;
@@ -551,9 +551,9 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.0013f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.44f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.02f * (0.2f*m_speed_error + 0.8f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.3f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
-					m_prev_speed = m_speed_error;
+					m_prev_speed = (0.2f*m_speed_error + 0.8f * m_prev_speed);
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 //					m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;

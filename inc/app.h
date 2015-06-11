@@ -41,6 +41,7 @@ private:
 	RemoteVarManager::Var* m_bkp = m_car.m_varmanager->Register("bkp",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_bkd = m_car.m_varmanager->Register("bkd",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_stop = m_car.m_varmanager->Register("stop",RemoteVarManager::Var::Type::kInt);
+	RemoteVarManager::Var* m_start = m_car.m_varmanager->Register("start",RemoteVarManager::Var::Type::kInt);
 
 
 	Gpo* m_pin;

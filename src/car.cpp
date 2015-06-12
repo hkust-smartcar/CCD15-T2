@@ -317,7 +317,7 @@ void Car::GetInfrared(Gpi *){
 }
 
 Car::Car():
-				m_varmanager(new RemoteVarManager(3)),
+				m_varmanager(new RemoteVarManager(4)),
 				m_encoder_countr(0),
 				m_encoder_countl(0),
 				m_encoder_countr_t(0),

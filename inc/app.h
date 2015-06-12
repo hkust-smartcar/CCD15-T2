@@ -23,7 +23,7 @@ public:
 	int sign(int x){
 		return (x>0) -  (x<0);
 	}
-	void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data);
+	void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber);
 	uint16_t RpmToPwm_R(uint16_t count);
 	uint16_t RpmToPwm_L(uint16_t count);
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
@@ -41,6 +41,7 @@ private:
 	RemoteVarManager::Var* m_bkp = m_car.m_varmanager->Register("bkp",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_bkd = m_car.m_varmanager->Register("bkd",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_stop = m_car.m_varmanager->Register("stop",RemoteVarManager::Var::Type::kInt);
+	RemoteVarManager::Var* m_start = m_car.m_varmanager->Register("start",RemoteVarManager::Var::Type::kInt);
 
 
 	Gpo* m_pin;
@@ -69,7 +70,7 @@ private:
 	uint32_t m_sum = 0;
 	uint16_t m_threshold_1, m_threshold_2;
 
-	int16_t m_mid = 64;
+	int16_t m_mid = 63;
 	int16_t m_encoder_count_t;
 
 	uint32_t m_pit_count = 0, m_pit_count2 = 0;
@@ -186,9 +187,11 @@ private:
 		return config;
 	}
 
-	bool m_90_entering;
+	bool m_ccd_1_entered_black, m_ccd_2_entered_black, m_ccd_2_entered_90_black;
+	int m_last_error_not_full_width;
 
-
+	int m_last_left_maxed, m_last_right_maxed;
+	bool m_ccd_2_dropped_edge, m_ccd_1_dropped_edge;
 
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };

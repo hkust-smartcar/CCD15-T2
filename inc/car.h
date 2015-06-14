@@ -77,7 +77,7 @@ public:
 	bool m_car_move_forward;
 	bool m_lcdupdate;
 	int m_print_state = 0;
-	int m_num_print_states = 7;
+	int m_num_print_states = 9;
 
 	float m_shift_balance_angle;
 private:

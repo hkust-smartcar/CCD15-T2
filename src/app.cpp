@@ -39,7 +39,7 @@ uint16_t App::RpmToPwm_R(uint16_t count){
 
 uint16_t App::RpmToPwm_L(uint16_t count){
 //	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.36f*count + 80.325f);
+	uint16_t val = (uint16_t)(0.345f*count + 80.325f);
 	//Flat section before straight line
 //	val = count <= 216 ? 150 : val;
 //	val = val <= 150 ? 150 : val;
@@ -74,6 +74,7 @@ int16_t App::Output_b(float* balcon, float* balpid, uint16_t* time, float real_a
 	period=System::Time()-prev_time;
 	time[2]=System::Time();
 	balcon[0] = (balcon[4]+balcon[5]+balcon[6]+m_car.m_shift_balance_angle)-real_angle;	// 512*104/44=13312/11
+	m_actual_bal_error = (balcon[4]+balcon[5])-real_angle;
 	balcon[0] = tan(balcon[0]*1.0f/RAD2ANGLE)*90;
 	total_output += balcon[0] * period;
 
@@ -98,10 +99,14 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	carspeedcon[1] = carspeedcon[0];
 	return output;
 }
-void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber){
+void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos){
 	int deadzone = 0;
+	int leftShift = 0;
+	int rightShift = 0;
 	if(ccdNumber == 1){
 		deadzone = 15;
+		leftShift = 0;
+		rightShift = 0;
 	}
 	if(ccdNumber == 2){
 		deadzone = 20;
@@ -112,7 +117,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber){
 
 	int16_t sum = 0;
 	int numberOfSamples = 1;
-	for(int i=m_mid-1; i>=m_mid-numberOfSamples; i--){
+	for(int i=startPos-1+rightShift; i>=startPos-numberOfSamples; i--){
 		sum += (int16_t)(m_ccd_data[i]);
 	}
 	/*for(int i=m_mid; i>numberOfSamples+deadzone; i--){
@@ -122,7 +127,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber){
 			sum = sum + (int16_t)m_ccd_data[i-numberOfSamples-1] - (int16_t)m_ccd_data[i-1];
 		}
 	}*/
-	for(int i=m_mid; i>deadzone+1; i--){
+	for(int i=startPos+rightShift; i>deadzone+1; i--){
 		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > maxLeft){
 			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 10){
 				edge_data[0] = i;
@@ -132,7 +137,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber){
 		}
 	}
 	sum = 0;
-	for(int i=m_mid+1; i<=m_mid+1+numberOfSamples; i++){
+	for(int i=startPos+1-leftShift; i<=startPos+1+numberOfSamples; i++){
 		sum += (int16_t)(m_ccd_data[i]);
 	}
 /*	for(int i=m_mid; i<=libsc::Tsl1401cl::kSensorW-deadzone-numberOfSamples; i++){
@@ -142,7 +147,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber){
 			sum = sum + (int16_t)m_ccd_data[i+numberOfSamples] - (int16_t)m_ccd_data[i];
 		}
 	}*/
-	for(int i=m_mid; i<libsc::Tsl1401cl::kSensorW-deadzone-1; i++){
+	for(int i=startPos-leftShift; i<libsc::Tsl1401cl::kSensorW-deadzone-1; i++){
 		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxRight){
 
 			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 10){
@@ -224,11 +229,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 400.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 10.0f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 300.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 6.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 400.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 10.0f;
+			m_balpid[0] = 300.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 6.0f;
 		}
 
 
@@ -251,7 +256,7 @@ void App::PitBalance(Pit*){
 			m_ccd_data_2[i] = s[i];
 		}*/
 
-		int shiftCcd2 = 4;
+		int shiftCcd2 = 3;
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<shiftCcd2){
 				m_ccd_data_2[i] = 0;
@@ -261,14 +266,15 @@ void App::PitBalance(Pit*){
 
 		}
 
-/*		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<20 || i>libsc::Tsl1401cl::kSensorW-20-1){
 				m_ccd_data_2[i] = 0;
 			}
-		}*/
+		}
 
-
-		Update_edge(m_ccd_data_2.data(), m_edge_data_2, 2);
+//		if(m_actual_bal_error<0){
+			Update_edge(m_ccd_data_2.data(), m_edge_data_2, 2, (int)m_route_mid_1);
+//		}
 		m_route_mid_2 = (m_edge_data_2[0] + m_edge_data_2[1])/2;
 
 		if(m_car.m_lcdupdate){
@@ -346,7 +352,7 @@ void App::PitBalance(Pit*){
 
 		m_ccd_data_raw = m_car.m_ccd_1.GetData();
 
-		int shiftCcd1 = 4;
+		int shiftCcd1 = 0;
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i > libsc::Tsl1401cl::kSensorW - shiftCcd1){
 				m_ccd_data_1[i] = 0;
@@ -389,14 +395,17 @@ void App::PitBalance(Pit*){
 
 		m_prev_edge_data_1[0] = m_edge_data_1[0];
 		m_prev_edge_data_1[1] = m_edge_data_1[1];
-		Update_edge(m_ccd_data_1.data(), m_edge_data_1,1);
+
+//		if(m_actual_bal_error<0){
+			Update_edge(m_ccd_data_1.data(), m_edge_data_1,1, (int)m_route_mid_1);
+//		}
 		m_route_mid_1 = (m_edge_data_1[0] + m_edge_data_1[1])/2;
 
 		/*
 		 * Change trust based on error
 		 */
 		float trust = 0.0f;
-		trust = (m_speed_setpoint - m_speedInMetrePerSecond)/m_speed_setpoint * 0.0f + abs(m_turn_error)/30 * 1.0f/* + m_balcon[0] / 5.0f * 0.4f*/;
+		trust = abs(((int)m_mid - (int)m_route_mid_1))/5 * 1.0f/* + m_actual_bal_error / 5.0f * 0.6f*/;
 
 		/*
 		 * Change trust of closer CCD based on width of the closer CCD
@@ -430,8 +439,8 @@ void App::PitBalance(Pit*){
 		 * Middle black detection
 		 */
 		if(abs(m_edge_data_1[1]-m_edge_data_1[0])<15 || abs(m_edge_data_2[1]-m_edge_data_2[0])<15){
-			m_hold_error = (int)m_turn_prev_error;
-			m_hold_count = 5;
+			m_turn_error = (int)m_turn_prev_error;
+//			m_hold_count = 1;
 //			m_car.m_buzzer.SetBeep(true);
 		}
 
@@ -462,7 +471,7 @@ void App::PitBalance(Pit*){
 			}
 		}
 
-		if(total_white_2 == 0 && m_ccd_1_entered_black && m_ccd_1_dropped_edge && m_ccd_2_dropped_edge){
+		if(total_white_2 == 0 && m_ccd_1_entered_black && m_ccd_1_dropped_edge && m_ccd_2_dropped_edge && m_actual_bal_error <= m_entered_black_angle){
 			m_turn_error = 0;
 			m_ccd_2_entered_black=true;
 		}
@@ -470,6 +479,7 @@ void App::PitBalance(Pit*){
 		if(total_white_1 == 0){
 			m_turn_error = 0;
 			m_ccd_1_entered_black=true;
+			m_entered_black_angle = m_actual_bal_error;
 		}
 
 
@@ -485,11 +495,11 @@ void App::PitBalance(Pit*){
 			m_ccd_2_dropped_edge = true;
 		}
 
-		if(m_edge_data_1[0] == 15 && m_edge_data_1[1] != 112 && total_white_1 != 0){
+		if(m_edge_data_1[0] == 15 && m_edge_data_1[1] != 112 && total_white_1 != 0 && m_ccd_2_dropped_edge){
 			m_ccd_1_dropped_edge = true;
 		}
 
-		if(m_edge_data_1[1] == 112 && m_edge_data_1[0] != 15 && total_white_1 != 0){
+		if(m_edge_data_1[1] == 112 && m_edge_data_1[0] != 15 && total_white_1 != 0 && m_ccd_2_dropped_edge){
 			m_ccd_1_dropped_edge = true;
 		}
 
@@ -511,15 +521,19 @@ void App::PitBalance(Pit*){
 //			m_speed_setpoint = 1.0f;
 			if(m_last_left_maxed == 20){
 //				m_hold_error = (int)8.0f*((int)m_mid - m_last_left_maxed);
-				m_power_l_pwm = -400;
-				m_power_r_pwm = 400;
+//				m_hold_turn_l = -800;
+//				m_hold_turn_r = 800;
+				m_turn_powerl = -700;
+				m_turn_powerr = 700;
 				printf("turn left %d %d %d %d %d %d %d\n",m_turn_powerl,m_turn_powerr, m_power_l, m_power_r, m_balance_pid_output, m_power_l_pwm, m_power_r_pwm);
 			}
 
 			if(m_last_right_maxed == 107){
 //				m_hold_error = (int)8.0f*((int)m_mid - m_last_right_maxed);
-				m_power_l_pwm = 400;
-				m_power_r_pwm = -400;
+//				m_hold_turn_l = 800;
+//				m_hold_turn_r = -800;
+				m_turn_powerl = 700;
+				m_turn_powerr = -700;
 				printf("turn right %d %d %d %d %d %d %d\n",m_turn_powerl,m_turn_powerr, m_power_l, m_power_r, m_balance_pid_output, m_power_l_pwm, m_power_r_pwm);
 			}
 
@@ -546,7 +560,7 @@ void App::PitBalance(Pit*){
 		{
 //			m_car.m_buzzer.SetBeep(true);
 			m_hold_error = 0;
-//			m_hold_count = 10;
+			m_hold_count = 1;
 		}
 
 		if(m_hold_count > 0){
@@ -555,10 +569,14 @@ void App::PitBalance(Pit*){
 				m_speed_setpoint = 2.2f;
 				m_triggered_90 = false;
 				m_car.m_buzzer.SetBeep(false);
+				m_hold_turn_l = m_hold_turn_r = 0;
+
 			}
 //			m_turn_error = m_hold_error;
-//			m_turn_powerl = -20;
-//			m_turn_powerr = 20;
+			if(m_triggered_90){
+				m_turn_powerl = m_hold_turn_l;
+				m_turn_powerr = m_hold_turn_r;
+			}
 		}
 
 /*		if(abs(m_turn_error)>10){
@@ -568,9 +586,9 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_car.m_car_move_forward && !m_triggered_90){
-			m_turn_powerl = (int16_t)(-((40.5f+m_speedInMetrePerSecond*6.0f+abs(m_turn_error)*0.0f)*m_turn_error + (8.0f+0.0f*abs(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((25.5f+m_speedInMetrePerSecond*0.0f+abs(m_turn_error)*0.0f)*m_turn_error + (4.0f+0.0f*abs(m_actual_bal_error)+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((40.5f+m_speedInMetrePerSecond*6.0f+abs(m_turn_error)*0.0f)*m_turn_error + (8.0f+0.0f*(m_balcon[0])+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((25.5f+m_speedInMetrePerSecond*0.0f+abs(m_turn_error)*0.0f)*m_turn_error + (4.0f+0.0f*(m_actual_bal_error)+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = m_turn_error;
 		}else{
@@ -670,9 +688,9 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.035f * (0.2f*m_speed_error + 0.8f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.93f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.01f * (0.05f*m_speed_error + 0.95f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.92f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
-					m_prev_speed = (0.2f*m_speed_error + 0.8f * m_prev_speed);
+					m_prev_speed = (0.05f*m_speed_error + 0.95f * m_prev_speed);
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 //					m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
@@ -752,7 +770,7 @@ void App::PitBalance(Pit*){
 				printf("%f,%f\n",m_speed_setpoint,m_speedInMetrePerSecond);
 				break;
 			case 2:
-				printf("%f,%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle(), m_balcon[0]);
+				printf("%f,%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle(), m_actual_bal_error);
 				break;
 			case 3:
 				printf("%d,%d,%d,%d,%f,%f\n",m_power_r_pwm,m_power_l_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl,m_balcon[6],m_speedInMetrePerSecond);
@@ -765,6 +783,12 @@ void App::PitBalance(Pit*){
 				break;
 			case 6:
 				printf("%d,%d,%d,%d\n",m_edge_data_2[0], m_edge_data_2[1],m_edge_data_1[0], m_edge_data_1[1]);
+				break;
+			case 7:
+				printf("%d %d\n",(m_edge_data_2[1] + m_edge_data_2[0])/2,(m_edge_data_1[1] + m_edge_data_1[0])/2);
+				break;
+			case 8:
+				printf("%d %d\n", (m_mid - m_route_mid_1), (m_mid - m_route_mid_2));
 				break;
 			case 0:
 			default:
@@ -784,8 +808,8 @@ void App::PitBalance(Pit*){
 	m_power_l = m_balance_pid_output /*- m_speed_output */+ m_turn_powerl;
 
 	if(!m_triggered_90){
-		m_power_r_pwm = sign((int)m_power_r)*(int16_t)RpmToPwm_R((uint16_t)abs(m_power_r));
-		m_power_l_pwm = sign((int)m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs(m_power_l));
+		m_power_r_pwm = sign((int)m_power_r)*(int16_t)RpmToPwm_R((uint16_t)abs((int)m_power_r));
+		m_power_l_pwm = sign((int)m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs((int)m_power_l));
 	}
 
 	if(m_stop->GetInt()!=0){
@@ -821,6 +845,8 @@ App::App():
 	m_car(),
 	m_lcd_typewriter(GetLcdTypewriterConfig()),
 	m_balance_pid_output(0),
+	m_hold_turn_l(0),
+	m_hold_turn_r(0),
 	m_movavgspeed(5),
 	m_movavgr(3),
 	m_movavgl(3),
@@ -833,7 +859,7 @@ App::App():
 	m_acceleration(0),
 	m_speed_error(0),
 	m_total_speed(0),
-	m_speed_setpoint(2.2f),
+	m_speed_setpoint(2.0f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_prev_error(0),
@@ -848,7 +874,8 @@ App::App():
 	m_last_left_maxed(0),
 	m_last_right_maxed(0),
 	m_ccd_2_dropped_edge(false),
-	m_ccd_1_dropped_edge(false)
+	m_ccd_1_dropped_edge(false),
+	m_entered_black_angle(0.0f)
 {
 	float totalVoltage = 0.0f;
 	for(int i=0;  i<=1000; i++){

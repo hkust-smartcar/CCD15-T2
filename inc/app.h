@@ -23,7 +23,7 @@ public:
 	int sign(int x){
 		return (x>0) -  (x<0);
 	}
-	void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber);
+	void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos = 63);
 	uint16_t RpmToPwm_R(uint16_t count);
 	uint16_t RpmToPwm_L(uint16_t count);
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
@@ -52,6 +52,7 @@ private:
 	Upstand* m_upstand;
 
 	int16_t m_power_l=0, m_power_r=0, m_u_s0=0, m_u_s1=0, m_u_b=0, m_turn_powerl=0, m_turn_powerr=0;
+	int16_t m_hold_turn_l, m_hold_turn_r;
 	int16_t m_speed_output;
 	int16_t m_power_l_pwm=0, m_power_r_pwm=0;
 	int16_t m_turn_powerb=0,m_turn_powerf=0;
@@ -62,7 +63,7 @@ private:
 	 */
 	uint16_t m_prev_edge_data_1[2] = {0,127};
 	uint16_t m_edge_data_1[2] = {0,127};
-	uint16_t m_route_mid_1;
+	uint16_t m_route_mid_1 = 63;
 	uint16_t m_prev_edge_data_2[2] = {0,127};
 	uint16_t m_edge_data_2[2] = {0,127};
 	uint16_t m_route_mid_2;
@@ -83,6 +84,7 @@ private:
 	 *  balcon[5]=setpoint offset
 	*/
 	float m_balcon[7]={0,0,0,0,25.1f,0,0};
+	float m_actual_bal_error;
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -192,6 +194,8 @@ private:
 
 	int m_last_left_maxed, m_last_right_maxed;
 	bool m_ccd_2_dropped_edge, m_ccd_1_dropped_edge;
+
+	float m_entered_black_angle;
 
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };

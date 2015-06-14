@@ -174,7 +174,7 @@ private:
 	};
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_1, m_ccd_data_raw;
 
-	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_2;
+	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_2, m_ccd_data_raw_2;
 
 
 	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> m_color;

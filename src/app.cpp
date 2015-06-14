@@ -239,21 +239,33 @@ void App::PitBalance(Pit*){
 	if(m_pit_count%4==3){
 		m_car.m_ccd_2.StartSample();
 		while(!m_car.m_ccd_2.SampleProcess()){}
-		m_ccd_data_raw = m_car.m_ccd_2.GetData();
-		uint16_t c[libsc::Tsl1401cl::kSensorW];
+		m_ccd_data_raw_2 = m_car.m_ccd_2.GetData();
+
+/*		uint16_t c[libsc::Tsl1401cl::kSensorW];
 		uint16_t s[libsc::Tsl1401cl::kSensorW];
 		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
-			c[i] = m_ccd_data_raw[i];
+			c[i] = m_ccd_data_raw_2[i];
 		}
 		medianFilter(c, s , libsc::Tsl1401cl::kSensorW);
 		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
 			m_ccd_data_2[i] = s[i];
-		}
+		}*/
+
+		int shiftCcd2 = 4;
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+			if(i<shiftCcd2){
+				m_ccd_data_2[i] = 0;
+			}else{
+				m_ccd_data_2[i] = m_ccd_data_raw_2[i-shiftCcd2];
+			}
+
+		}
+
+/*		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<20 || i>libsc::Tsl1401cl::kSensorW-20-1){
 				m_ccd_data_2[i] = 0;
 			}
-		}
+		}*/
 
 
 		Update_edge(m_ccd_data_2.data(), m_edge_data_2, 2);
@@ -332,7 +344,18 @@ void App::PitBalance(Pit*){
 		m_car.m_ccd_1.StartSample();
 		while(!m_car.m_ccd_1.SampleProcess()){}
 
-		m_ccd_data_1 = m_car.m_ccd_1.GetData();
+		m_ccd_data_raw = m_car.m_ccd_1.GetData();
+
+		int shiftCcd1 = 4;
+		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+			if(i > libsc::Tsl1401cl::kSensorW - shiftCcd1){
+				m_ccd_data_1[i] = 0;
+			}else{
+				m_ccd_data_1[i] = m_ccd_data_raw[i+shiftCcd1];
+			}
+
+		}
+
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<15 || i>libsc::Tsl1401cl::kSensorW-15-1){
 				m_ccd_data_1[i] = 0;
@@ -647,7 +670,7 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.05f * (0.2f*m_speed_error + 0.8f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.93f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.035f * (0.2f*m_speed_error + 0.8f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.93f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
 					m_prev_speed = (0.2f*m_speed_error + 0.8f * m_prev_speed);
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;

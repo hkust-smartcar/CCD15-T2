@@ -67,14 +67,16 @@ private:
 	uint16_t m_prev_edge_data_2[2] = {0,127};
 	uint16_t m_edge_data_2[2] = {0,127};
 	uint16_t m_route_mid_2;
-	uint16_t m_avg = 0;
-	uint32_t m_sum = 0;
+	uint16_t m_avg = 0, m_avg_2 = 0;
+	uint32_t m_sum = 0, m_sum_2 = 0;
 	uint16_t m_threshold_1, m_threshold_2;
 
 	int16_t m_mid = 63;
 	int16_t m_encoder_count_t;
 
 	uint32_t m_pit_count = 0, m_pit_count2 = 0;
+
+	uint32_t m_prev_dropped_line_time;
 
 	/*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
@@ -179,7 +181,7 @@ private:
 	std::array<uint16_t,libsc::Tsl1401cl::kSensorW> m_ccd_data_2, m_ccd_data_raw_2;
 
 
-	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> m_color;
+	std::array<CCD_COLOR,libsc::Tsl1401cl::kSensorW> m_color, m_color_2;
 	int m_y = 0;
 
 	LcdTypewriter::Config GetLcdTypewriterConfig(){

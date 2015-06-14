@@ -39,7 +39,7 @@ uint16_t App::RpmToPwm_R(uint16_t count){
 
 uint16_t App::RpmToPwm_L(uint16_t count){
 //	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.345f*count + 80.325f);
+	uint16_t val = (uint16_t)(0.31f*count + 70.325f);
 	//Flat section before straight line
 //	val = count <= 216 ? 150 : val;
 //	val = val <= 150 ? 150 : val;
@@ -129,7 +129,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 	}*/
 	for(int i=startPos+rightShift; i>deadzone+1; i--){
 		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > maxLeft){
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 10){
+			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 6){
 				edge_data[0] = i;
 				maxLeft = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
 //				break;
@@ -150,7 +150,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 	for(int i=startPos-leftShift; i<libsc::Tsl1401cl::kSensorW-deadzone-1; i++){
 		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxRight){
 
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 10){
+			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 6){
 				edge_data[1] = i;
 				maxRight = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]);
 //				break;
@@ -229,10 +229,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 300.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 200.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 6.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 300.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 200.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 6.0f;
 		}
 
@@ -269,6 +269,20 @@ void App::PitBalance(Pit*){
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<20 || i>libsc::Tsl1401cl::kSensorW-20-1){
 				m_ccd_data_2[i] = 0;
+			}
+		}
+
+		m_avg_2 = 0;
+		m_sum_2 = 0;
+		for(int i=20; i<libsc::Tsl1401cl::kSensorW-20; i++){
+			m_sum_2 += (uint32_t)m_ccd_data_2[i];
+		}
+		m_avg_2 = (uint16_t) (m_sum_2 / libsc::Tsl1401cl::kSensorW);
+		for(int i=20; i<libsc::Tsl1401cl::kSensorW-20; i++){
+			if(m_ccd_data_2[i] >= m_avg_2){
+				m_color_2[i] = CCD_WHITE;
+			}else{
+				m_color_2[i] = CCD_BLACK;
 			}
 		}
 
@@ -381,17 +395,17 @@ void App::PitBalance(Pit*){
 
 		m_avg = 0;
 		m_sum = 0;
-		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
+		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
 			m_sum += (uint32_t)m_ccd_data_1[i];
 		}
 		m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
-//		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
-//			if(m_ccd_data_[i] >= m_avg-5){
-//					m_color[i] = CCD_WHITE;
-//			}else{
-//				m_color[i] = CCD_BLACK;
-//			}
-//		}
+		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
+			if(m_ccd_data_1[i] >= m_avg){
+				m_color[i] = CCD_WHITE;
+			}else{
+				m_color[i] = CCD_BLACK;
+			}
+		}
 
 		m_prev_edge_data_1[0] = m_edge_data_1[0];
 		m_prev_edge_data_1[1] = m_edge_data_1[1];
@@ -483,29 +497,58 @@ void App::PitBalance(Pit*){
 		}
 
 
-		if(m_edge_data_2[0] == 20 && m_prev_edge_data_2[0] >= 20 && m_edge_data_2[1] != 107 && total_white_2 != 0){
+		if(m_edge_data_2[0] == 20 && m_prev_edge_data_2[0] >= 20 && m_edge_data_2[1] != 107 && abs(m_edge_data_2[1] - m_prev_edge_data_2[1]) <= 1 && total_white_2 != 0){
 			m_last_left_maxed = (int)m_edge_data_2[0];
 			m_last_right_maxed = 0;
 			m_ccd_2_dropped_edge = true;
 		}
 
-		if(m_edge_data_2[1] == 107 && m_edge_data_2[0] != 20 && total_white_2 != 0){
+		if(m_edge_data_2[1] == 107 && m_edge_data_2[0] != 20 && abs(m_edge_data_2[0] - m_prev_edge_data_2[0]) <= 1  && total_white_2 != 0){
 			m_last_left_maxed = 0;
 			m_last_right_maxed = (int)m_edge_data_2[1];
 			m_ccd_2_dropped_edge = true;
 		}
 
-		if(m_edge_data_1[0] == 15 && m_edge_data_1[1] != 112 && total_white_1 != 0 && m_ccd_2_dropped_edge){
+//		int totalLeftWhite2 = 0;
+//		for(int i=m_route_mid_1; i>=20; i--){
+//			if(m_color_2[i] > m_avg_2){
+//				totalLeftWhite2++;
+//			}
+//		}
+//		if(totalLeftWhite2==(m_route_mid_1-20)+1){
+//			m_ccd_2_dropped_edge = true;
+//		}
+
+		if(		(
+				(m_edge_data_1[0] == 15 && m_edge_data_1[1] != 112) ||
+				(m_edge_data_1[1] == 112 && m_edge_data_1[0] != 15)
+				) && total_white_1 != 0){
 			m_ccd_1_dropped_edge = true;
+			m_prev_dropped_line_time = m_pit_count;
 		}
 
-		if(m_edge_data_1[1] == 112 && m_edge_data_1[0] != 15 && total_white_1 != 0 && m_ccd_2_dropped_edge){
-			m_ccd_1_dropped_edge = true;
-		}
+//		bool totalRightWhite1 = true;
+//		for(int i=m_route_mid_1; i<=libsc::Tsl1401cl::kSensorW-1-15; i++){
+//			if(m_color[i] > m_avg){
+//				totalRightWhite1 &= true;
+//			}else{
+//				totalRightWhite1 &= false;
+//			}
+//		}
+//
+//		if(totalRightWhite1){
+//			m_ccd_2_dropped_edge = true;
+//		}
 
+		if((m_pit_count - m_prev_dropped_line_time) > 100){
+			m_ccd_2_dropped_edge = m_ccd_1_dropped_edge = false;
+		}
 
 		if(
-				m_ccd_2_entered_black &&
+				(m_pit_count - m_prev_dropped_line_time) <= 100 &&
+				total_white_1 == 0 &&
+				total_white_2 == 0 &&
+//				m_ccd_2_entered_black &&
 				m_ccd_2_dropped_edge &&
 				m_ccd_1_dropped_edge &&
 				m_hold_count == 0 &&
@@ -523,8 +566,8 @@ void App::PitBalance(Pit*){
 //				m_hold_error = (int)8.0f*((int)m_mid - m_last_left_maxed);
 //				m_hold_turn_l = -800;
 //				m_hold_turn_r = 800;
-				m_turn_powerl = -700;
-				m_turn_powerr = 700;
+				m_power_l_pwm = -200 * m_speedInMetrePerSecond;
+				m_power_r_pwm = 200 * m_speedInMetrePerSecond;
 				printf("turn left %d %d %d %d %d %d %d\n",m_turn_powerl,m_turn_powerr, m_power_l, m_power_r, m_balance_pid_output, m_power_l_pwm, m_power_r_pwm);
 			}
 
@@ -532,8 +575,8 @@ void App::PitBalance(Pit*){
 //				m_hold_error = (int)8.0f*((int)m_mid - m_last_right_maxed);
 //				m_hold_turn_l = 800;
 //				m_hold_turn_r = -800;
-				m_turn_powerl = 700;
-				m_turn_powerr = -700;
+				m_power_l_pwm = 200 * m_speedInMetrePerSecond;
+				m_power_r_pwm = -200 * m_speedInMetrePerSecond;
 				printf("turn right %d %d %d %d %d %d %d\n",m_turn_powerl,m_turn_powerr, m_power_l, m_power_r, m_balance_pid_output, m_power_l_pwm, m_power_r_pwm);
 			}
 
@@ -566,7 +609,6 @@ void App::PitBalance(Pit*){
 		if(m_hold_count > 0){
 			m_hold_count--;
 			if(m_hold_count==1){
-				m_speed_setpoint = 2.2f;
 				m_triggered_90 = false;
 				m_car.m_buzzer.SetBeep(false);
 				m_hold_turn_l = m_hold_turn_r = 0;
@@ -586,9 +628,9 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_car.m_car_move_forward && !m_triggered_90){
-			m_turn_powerl = (int16_t)(-((25.5f+m_speedInMetrePerSecond*0.0f+abs(m_turn_error)*0.0f)*m_turn_error + (4.0f+0.0f*abs(m_actual_bal_error)+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerl = (int16_t)(-((30.5f+m_speedInMetrePerSecond*3.0f+abs(m_turn_error)*0.0f)*m_turn_error + (5.0f+0.0f*abs(m_actual_bal_error)+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.7f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerl = libutil::Clamp<int16_t>(-800,m_turn_powerl, 800);
-			m_turn_powerr = (int16_t)(((25.5f+m_speedInMetrePerSecond*0.0f+abs(m_turn_error)*0.0f)*m_turn_error + (4.0f+0.0f*(m_actual_bal_error)+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.5f)*(m_turn_error - m_turn_prev_error)/0.02f));
+			m_turn_powerr = (int16_t)(((30.5f+m_speedInMetrePerSecond*3.0f+abs(m_turn_error)*0.0f)*m_turn_error + (5.0f+0.0f*(m_actual_bal_error)+m_speedInMetrePerSecond*m_speedInMetrePerSecond*0.7f)*(m_turn_error - m_turn_prev_error)/0.02f));
 //				m_turn_powerr = libutil::Clamp<int16_t>(-800,m_turn_powerr, 800);
 			m_turn_prev_error = m_turn_error;
 		}else{
@@ -665,7 +707,7 @@ void App::PitBalance(Pit*){
 			float speedDt = 0.02f;
 
 			m_total_speed += (0.05f*m_speed_error + 0.95f * m_prev_speed) * speedDt;
-			m_total_speed = libutil::Clamp<float>(-60.0f,m_total_speed,60.0f);
+			m_total_speed = libutil::Clamp<float>(-50.0f,m_total_speed,50.0f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -688,14 +730,17 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.01f * (0.05f*m_speed_error + 0.95f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.92f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.09f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.99f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
-					m_prev_speed = (0.05f*m_speed_error + 0.95f * m_prev_speed);
+//					m_prev_speed = (0.4f*m_speed_error + 0.6f * m_prev_speed);
+
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 //					m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
-					m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
+//					m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
+					m_balcon[6] = atan((0.05f*m_acceleration + 0.95f * m_prev_speed)/9.81f)*RAD2ANGLE;
+					m_prev_speed = (0.05f*m_acceleration + 0.95f * m_prev_speed);
 //					m_speed_output = 0;
 //			}
 
@@ -796,7 +841,7 @@ void App::PitBalance(Pit*){
 		}
 	}
 
-	m_pit_count++;
+
 
 	if(m_turn_powerr < 0 && !m_triggered_90){
 		m_turn_powerr = 0;
@@ -827,6 +872,8 @@ void App::PitBalance(Pit*){
 	m_car.m_motor_l.SetClockwise(m_power_l_pwm > 0); //Left Motor - true forward, false backward
 	m_car.m_motor_r.SetPower((uint16_t)abs(m_power_r_pwm));
 	m_car.m_motor_l.SetPower((uint16_t)abs(m_power_l_pwm));
+
+	m_pit_count++;
 }
 
 void App::PitMoveMotor(Pit*){

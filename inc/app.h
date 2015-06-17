@@ -62,11 +62,11 @@ private:
 	 * edge_data[1] = right_edge;
 	 */
 	uint16_t m_prev_edge_data_1[2] = {0,127};
-	uint16_t m_edge_data_1[2] = {0,127};
+	uint16_t m_edge_data_1[3] = {0,127,63};
 	uint16_t m_route_mid_1 = 63;
 	uint16_t m_prev_edge_data_2[2] = {0,127};
-	uint16_t m_edge_data_2[2] = {0,127};
-	uint16_t m_route_mid_2;
+	uint16_t m_edge_data_2[3] = {0,127,63};
+	uint16_t m_route_mid_2 = 63;
 	uint16_t m_avg = 0, m_avg_2 = 0;
 	uint32_t m_sum = 0, m_sum_2 = 0;
 	uint16_t m_threshold_1, m_threshold_2;
@@ -76,7 +76,7 @@ private:
 
 	uint32_t m_pit_count = 0, m_pit_count2 = 0;
 
-	uint32_t m_prev_dropped_line_time;
+	uint32_t m_prev_dropped_line_time, m_entered_black_line_time = 0;
 
 	/*balcon[0]=error(k);
 	 * balcon[1]=error(k-1);
@@ -86,7 +86,7 @@ private:
 	 *  balcon[5]=setpoint offset
 	*/
 	float m_balcon[7]={0,0,0,0,25.1f,0,0};
-	float m_actual_bal_error;
+	float m_actual_bal_error = 0;
 
 	/*pid[0]=kp;
 	 * pid[1]=ki;
@@ -198,6 +198,10 @@ private:
 	bool m_ccd_2_dropped_edge, m_ccd_1_dropped_edge;
 
 	float m_entered_black_angle;
+
+	float m_next_multiplier, m_next_multiplier_2;
+
+	float m_turn_kp,m_turn_kd;
 
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };

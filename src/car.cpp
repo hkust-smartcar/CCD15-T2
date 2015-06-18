@@ -56,6 +56,7 @@ libbase::kl26::Adc::Config GetGyroConfig(){
 Led::Config GetLedConfig(int id){
 	Led::Config ledconfig;
 	ledconfig.id = id;
+	ledconfig.is_active_low = true;
 	return ledconfig;
 }
 
@@ -358,6 +359,11 @@ Car::Car():
 	NVIC_SetPriority(PIT_IRQn, 2);
 
 	m_led.SetEnable(true);
+	m_led2.SetEnable(true);
+	m_led3.SetEnable(true);
+	m_led4.SetEnable(true);
+
+	m_led.SetEnable(true);
 	m_led2.SetEnable(false);
 	m_led3.SetEnable(true);
 	m_led4.SetEnable(false);
@@ -365,6 +371,11 @@ Car::Car():
 	m_buzzer.SetBeep(true);
 	System::DelayMs(50);
 	m_buzzer.SetBeep(false);
+
+	m_led.SetEnable(false);
+	m_led2.SetEnable(false);
+	m_led3.SetEnable(false);
+	m_led4.SetEnable(false);
 
 	JyMcuBt106::Config uartconfig;
 	uartconfig.baud_rate = libbase::kl26::Uart::Config::BaudRate::k115200;

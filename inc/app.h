@@ -61,11 +61,11 @@ private:
 	/* edge_data[0] = left_edge;
 	 * edge_data[1] = right_edge;
 	 */
-	uint16_t m_prev_edge_data_1[2] = {0,127};
-	uint16_t m_edge_data_1[3] = {0,127,63};
+	uint16_t m_prev_edge_data_1[4] = {0,127,63,63};
+	uint16_t m_edge_data_1[4] = {0,127,63,64};
 	uint16_t m_route_mid_1 = 63;
-	uint16_t m_prev_edge_data_2[2] = {0,127};
-	uint16_t m_edge_data_2[3] = {0,127,63};
+	uint16_t m_prev_edge_data_2[4] = {0,127,63,63};
+	uint16_t m_edge_data_2[4] = {0,127,63,63};
 	uint16_t m_route_mid_2 = 63;
 	uint16_t m_avg = 0, m_avg_2 = 0;
 	uint32_t m_sum = 0, m_sum_2 = 0;
@@ -204,6 +204,8 @@ private:
 	float m_turn_kp,m_turn_kd;
 
 	bool m_found_middle_line;
+	bool m_found_obstacle;
+	bool m_found_edges;
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

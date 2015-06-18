@@ -142,16 +142,39 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 		}
 	}
 
+	if(ccdNumber==1){
+		if(edge_data[1] != m_prev_edge_data_1[1] ||edge_data[0] != m_prev_edge_data_1[0]){
+			m_found_edges = true;
+		}
+	}
+
 //	if(abs(edge_data[0]-m_prev_edge_data_1[0]) <= 3 && abs(edge_data[1]-m_prev_edge_data_1[1]) <= 3){
-		int maxMid = -1;
-		for(int i=libutil::Clamp<int>(edge_data[0]+2,startPos-5,edge_data[1]-2); i<=libutil::Clamp<int>(edge_data[0]+2,startPos+5,edge_data[1]-2); i++){
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > maxMid){
-				if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 8){
+		int maxMidLeft = -1, maxMidRight = -1;
+		bool foundInnerLeft = false, foundInnerRight = false;
+		for(int i=/*libutil::Clamp<int>(edge_data[0]+2,startPos-5,edge_data[1]-2)*/edge_data[0]+4; i<=/*libutil::Clamp<int>(edge_data[0]+2,startPos+5,edge_data[1]-2)*/edge_data[1]-4; i++){
+			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxMidLeft){
+				if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 8){
 					edge_data[2] = i;
-					maxMid = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
-					m_found_middle_line = true;
-					break;
+					maxMidLeft = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]);
+					foundInnerLeft = true;
+//					break;
 				}
+			}
+			if(((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]) > maxMidRight){
+				if(((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]) >= 8){
+					edge_data[3] = i;
+					maxMidRight = ((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]);
+					foundInnerRight = true;
+//					break;
+				}
+			}
+			if(foundInnerLeft && foundInnerRight && (edge_data[3] - edge_data[2])>=3 && (edge_data[3] - edge_data[2])<=6 && !m_found_edges){
+				m_found_middle_line = true;
+				m_found_obstacle = false;
+			}
+			if(foundInnerLeft && foundInnerRight && (edge_data[3] - edge_data[2])>6 && m_found_edges){
+				m_found_middle_line = false;
+				m_found_obstacle = true;
 			}
 		}
 //	}
@@ -246,6 +269,8 @@ Pit::Config GetPitConfig2(const uint8_t pit_channel,
 
 void App::PitBalance(Pit*){
 	m_found_middle_line = false;
+	m_found_obstacle = false;
+	m_found_edges = false;
 
 	if(m_hold_count <= 0){
 		m_car.m_buzzer.SetBeep(false);
@@ -348,6 +373,9 @@ void App::PitBalance(Pit*){
 				if(i<m_edge_data_2[0] || i>m_edge_data_2[1]){
 					color2 = 0;
 				}
+				if(i>=m_edge_data_1[2] && i<=m_edge_data_1[3]){
+					color2 = 0b0000011111111111;
+				}
 				m_car.m_lcd.FillColor(color2);
 			}
 
@@ -445,18 +473,36 @@ void App::PitBalance(Pit*){
 			}
 		}
 
-		m_prev_edge_data_1[0] = m_edge_data_1[0];
-		m_prev_edge_data_1[1] = m_edge_data_1[1];
-
 //		if(m_actual_bal_error<0){
 			Update_edge(m_ccd_data_1.data(), m_edge_data_1,1, (int)m_route_mid_1);
 //		}
 
+
+
 		m_route_mid_1 = (m_edge_data_1[0] + m_edge_data_1[1])/2;
+		if(m_found_edges){
+			printf("Edges\n");
+			m_car.m_led.SetEnable(true);
+			m_car.m_led2.SetEnable(false);
+			m_car.m_led3.SetEnable(false);
+			m_car.m_led4.SetEnable(true);
+		}
 		if(m_found_middle_line){
 			m_route_mid_1 = m_edge_data_1[2];
-			m_car.m_buzzer.SetBeep(true);
+			printf("Middle Line\n");
+			m_car.m_led.SetEnable(false);
+			m_car.m_led2.SetEnable(true);
+			m_car.m_led3.SetEnable(false);
+			m_car.m_led4.SetEnable(false);
 		}
+		if(m_found_obstacle){
+			printf("Obstacle\n");
+//			m_car.m_led.SetEnable(false);
+			m_car.m_led2.SetEnable(true);
+			m_car.m_led3.SetEnable(true);
+//			m_car.m_led4.SetEnable(false);
+		}
+
 
 		/*
 		 * Change trust based on error
@@ -678,8 +724,15 @@ void App::PitBalance(Pit*){
 			m_turn_powerl = m_turn_powerr = 0;
 		}
 
+		m_prev_edge_data_1[0] = m_edge_data_1[0];
+		m_prev_edge_data_1[1] = m_edge_data_1[1];
+		m_prev_edge_data_1[2] = m_edge_data_1[2];
+		m_prev_edge_data_1[3] = m_edge_data_1[3];
+
 		m_prev_edge_data_2[0] = m_edge_data_2[0];
 		m_prev_edge_data_2[1] = m_edge_data_2[1];
+		m_prev_edge_data_2[2] = m_edge_data_2[2];
+		m_prev_edge_data_2[3] = m_edge_data_2[3];
 
 		if(m_car.m_lcdupdate){
 //			m_pin->Set();
@@ -706,7 +759,7 @@ void App::PitBalance(Pit*){
 				if(i<m_edge_data_1[0] || i>m_edge_data_1[1]){
 					color = 0;
 				}
-				if(i>=m_edge_data_1[2]-6 && i<=m_edge_data_1[2]){
+				if(i>=m_edge_data_1[2] && i<=m_edge_data_1[3]){
 					color = 0b0000011111111111;
 				}
 				m_car.m_lcd.FillColor(color);
@@ -772,9 +825,9 @@ void App::PitBalance(Pit*){
 			// Avoid acceleration over 3ms-2
 			float maxAcceleration = 0.0f;
 			if(m_speedInMetrePerSecond <= m_speed_setpoint*0.6f){
-				maxAcceleration = 2.0f;
+				maxAcceleration = 1.2f;
 			}else{
-				maxAcceleration = 2.0f;
+				maxAcceleration = 1.2f;
 			}
 
 //			Affect balance only when speed is > setpoint * 80%
@@ -783,7 +836,7 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(0.012f * (0.1f*m_speed_error + 0.9f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.5f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration*2,(0.012f * (0.1f*m_speed_error + 0.9f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.5f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
 					m_prev_speed = (0.1f*m_speed_error + 0.9f * m_prev_speed);
 
@@ -962,7 +1015,7 @@ App::App():
 	m_acceleration(0),
 	m_speed_error(0),
 	m_total_speed(0),
-	m_speed_setpoint(2.2f),
+	m_speed_setpoint(1.8f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_prev_error(0),
@@ -981,7 +1034,9 @@ App::App():
 	m_entered_black_angle(0.0f),
 	m_turn_kp(15.0f),
 	m_turn_kd(3.0f),
-	m_found_middle_line(false)
+	m_found_middle_line(false),
+	m_found_obstacle(false),
+	m_found_edges(false)
 {
 	float totalVoltage = 0.0f;
 	for(int i=0;  i<=1000; i++){

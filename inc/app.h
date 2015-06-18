@@ -203,6 +203,7 @@ private:
 
 	float m_turn_kp,m_turn_kd;
 
+	bool m_found_middle_line;
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

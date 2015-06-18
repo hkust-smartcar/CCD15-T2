@@ -123,7 +123,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 
 	for(int i=routeLeftStart+10; i>deadzone+1; i--){
 		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > maxLeft){
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 3){
+			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 6){
 				edge_data[0] = i;
 				maxLeft = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
 				break;
@@ -134,7 +134,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 	for(int i=routeRightStart-10; i<libsc::Tsl1401cl::kSensorW-deadzone-1; i++){
 		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxRight){
 
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 3){
+			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 6){
 				edge_data[1] = i;
 				maxRight = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]);
 				break;
@@ -142,18 +142,19 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 		}
 	}
 
-	if(edge_data[0] <= 17 && edge_data[1] >= 90){
+//	if(abs(edge_data[0]-m_prev_edge_data_1[0]) <= 3 && abs(edge_data[1]-m_prev_edge_data_1[1]) <= 3){
 		int maxMid = -1;
-		for(int i=startPos-25; i<=startPos+25; i++){
+		for(int i=libutil::Clamp<int>(edge_data[0]+2,startPos-5,edge_data[1]-2); i<=libutil::Clamp<int>(edge_data[0]+2,startPos+5,edge_data[1]-2); i++){
 			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > maxMid){
-				if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 3){
+				if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 8){
 					edge_data[2] = i;
 					maxMid = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
+					m_found_middle_line = true;
 					break;
 				}
 			}
 		}
-	}
+//	}
 
 	/*int twolineleft = edge_data[0];
 	int twolineright = edge_data[1];
@@ -244,6 +245,7 @@ Pit::Config GetPitConfig2(const uint8_t pit_channel,
 }
 
 void App::PitBalance(Pit*){
+	m_found_middle_line = false;
 
 	if(m_hold_count <= 0){
 		m_car.m_buzzer.SetBeep(false);
@@ -449,7 +451,12 @@ void App::PitBalance(Pit*){
 //		if(m_actual_bal_error<0){
 			Update_edge(m_ccd_data_1.data(), m_edge_data_1,1, (int)m_route_mid_1);
 //		}
+
 		m_route_mid_1 = (m_edge_data_1[0] + m_edge_data_1[1])/2;
+		if(m_found_middle_line){
+			m_route_mid_1 = m_edge_data_1[2];
+			m_car.m_buzzer.SetBeep(true);
+		}
 
 		/*
 		 * Change trust based on error
@@ -973,7 +980,8 @@ App::App():
 	m_ccd_1_dropped_edge(false),
 	m_entered_black_angle(0.0f),
 	m_turn_kp(15.0f),
-	m_turn_kd(3.0f)
+	m_turn_kd(3.0f),
+	m_found_middle_line(false)
 {
 	float totalVoltage = 0.0f;
 	for(int i=0;  i<=1000; i++){

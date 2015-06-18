@@ -68,6 +68,7 @@ private:
 	uint16_t m_edge_data_2[4] = {0,127,63,63};
 	uint16_t m_route_mid_2 = 63;
 	uint16_t m_avg = 0, m_avg_2 = 0;
+	uint16_t m_prev_avg = 0;
 	uint32_t m_sum = 0, m_sum_2 = 0;
 	uint16_t m_threshold_1, m_threshold_2;
 
@@ -206,6 +207,22 @@ private:
 	bool m_found_middle_line;
 	bool m_found_obstacle;
 	bool m_found_edges;
+
+	enum STATES{
+		STRAIGHT = 0,
+		EDGES,
+		TURN,
+		MIDDLELINE,
+		OBSTACLE,
+		DROPPEDLINE,
+		BLACK,
+		WHITE,
+		UNKNOWN
+	};
+
+	STATES m_state;
+	STATES m_prev_state;
+	STATES m_last_print_state;
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

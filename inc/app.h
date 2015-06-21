@@ -205,7 +205,7 @@ private:
 	float m_turn_kp,m_turn_kd;
 
 	bool m_found_middle_line;
-	bool m_found_obstacle;
+	bool m_found_obstacle_1, m_found_obstacle_2;
 	bool m_found_edges;
 
 	enum STATES{
@@ -223,6 +223,15 @@ private:
 	STATES m_state;
 	STATES m_prev_state;
 	STATES m_last_print_state;
+
+	float m_trust;
+
+	int m_total_white_2;
+	int m_total_white_1;
+	int m_left_white;
+	int m_right_white;
+
+	int m_total_black_1;
 //	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

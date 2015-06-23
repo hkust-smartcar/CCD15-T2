@@ -97,6 +97,39 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	carspeedcon[1] = carspeedcon[0];
 	return output;
 }
+uint16_t App::Update_mid(uint16_t* m_ccd_data, int ccdNumber, int pre_mid){
+	uint16_t deadzone = 0;
+	uint16_t region = 1;
+	uint16_t region_edge[20] = 0;
+	uint16_t mid_data[10] = 0;
+	uint16_t delta_mid[2] = 0;
+	if(ccdNumber == 1)
+		deadzone = 15;
+	else if(ccdNumber == 2)
+		deadzone = 20;
+	region_edge[0] = deadzone;
+	for (uint16_t i = deadzone, i<=128-deadzone, i++){
+		if (abs(m_ccd_data[i+1]-m_ccd_data[i])>5){
+			region_edge[region] = i+1;
+			mid_data[region] = (region_edge[region] - region_edge[region-1])/2;
+			region++;
+		}
+	}
+	region_edge[region] = 128-deadzone;
+	mid_data[region] = (region_edge[region] - region_edge[region-1])/2;
+	for (uint16_t j = 1, mid_data[j] != 0, j++){
+		if(mid_data[j] < pre_mid && mid_data[j+1] > pre_mid){
+			delta_mid[0] = pre_mid - mid_data[j];
+			delta_mid[1] = mid_data[j+1] - premid;
+			if (delta_mid[0] == delta_mid[1] || delta_mid[0] > 20 || delta_mid[1] > 20)
+				return pre_mid;
+			else if (delta_mid[0] < delta_mid[1])
+				return mid_data[j];
+			else return mid_data[j+1];
+			}
+		}
+	}
+}
 void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos){
 	int deadzone = 0;
 

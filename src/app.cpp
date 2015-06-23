@@ -97,12 +97,11 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	carspeedcon[1] = carspeedcon[0];
 	return output;
 }
-uint16_t App::Update_mid(uint16_t* m_ccd_data, int ccdNumber, int pre_mid){
+float App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float* mid_data, float* prev_mid){
 	uint16_t deadzone = 0;
-	uint16_t region = 1;
+	uint16_t region_No = 1;
 	uint16_t region_edge[20] = 0;
-	uint16_t mid_data[10] = 0;
-	uint16_t delta_mid[2] = 0;
+	float delta_mid[2] = 0;
 	if(ccdNumber == 1)
 		deadzone = 15;
 	else if(ccdNumber == 2)
@@ -110,27 +109,82 @@ uint16_t App::Update_mid(uint16_t* m_ccd_data, int ccdNumber, int pre_mid){
 	region_edge[0] = deadzone;
 	for (uint16_t i = deadzone, i<=128-deadzone, i++){
 		if (abs(m_ccd_data[i+1]-m_ccd_data[i])>5){
-			region_edge[region] = i+1;
-			mid_data[region] = (region_edge[region] - region_edge[region-1])/2;
-			region++;
+			region_edge[region_No] = i+1;
+			mid_data[region_No] = (region_edge[region_No] - region_edge[region_No-1])/2;
+			region_No++;
 		}
 	}
-	region_edge[region] = 128-deadzone;
-	mid_data[region] = (region_edge[region] - region_edge[region-1])/2;
-	for (uint16_t j = 1, mid_data[j] != 0, j++){
-		if(mid_data[j] < pre_mid && mid_data[j+1] > pre_mid){
-			delta_mid[0] = pre_mid - mid_data[j];
-			delta_mid[1] = mid_data[j+1] - premid;
-			if (delta_mid[0] == delta_mid[1] || delta_mid[0] > 20 || delta_mid[1] > 20)
-				return pre_mid;
+	region_edge[region_No] = 128-deadzone;
+	mid_data[region_No] = (region_edge[region_No] - region_edge[region_No-1])/2;
+	region[ccdNumber] = region_No;
+	for (uint16_t j = 1, j <= region_No, j++){
+		if(mid_data[j] < prev_mid[ccdNumber] && mid_data[j+1] > prev_mid[ccdNumber]){
+			delta_mid[0] = prev_mid[ccdNumber] - mid_data[j];
+			delta_mid[1] = mid_data[j+1] - prev_mid[ccdNumber];
+			if (delta_mid[0] == delta_mid[1] || (delta_mid[0] > 20 && delta_mid[1] > 20))
+				return prev_mid[ccdNumber];
 			else if (delta_mid[0] < delta_mid[1])
 				return mid_data[j];
-			else return mid_data[j+1];
+			else if (delta_mid[0] > delta_mid[1])
+				return mid_data[j+1];
 			}
-		}
 	}
 }
-void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos){
+void App::Analysis(uint16_t* region, float* now_mid){
+	uint16_t state_count1 = 0;
+	uint16_t state_count2 = 0;
+	m_prev_state = m_state;
+	if (region[1] == 5){
+		if (abs(now_mid[1] - 64) < 10)
+			m_state = MIDDLELINE;
+		else if (abs(now_mid[1] - 64) >= 10)
+			m_state = OBSTACLE;
+		break;
+	}
+	else if (region[1] == 1 && region[2] == 1){
+		m_state = SLOPE;
+		break;
+	}
+	else if (region[1] == 1 || (region[1] == 3 && region[2] == 3)){
+		if (abs(now_mid[2] - 64) < 5)
+			m_state = STRAIGHT;
+		else if (abs(now_mid[2] - 64) >= 5)
+			m_state = TURN2;
+		break;
+	}
+	else if (region[2] == 1){
+		state_count2++;
+		if (abs(now_mid[1] - 64) < 10)
+			m_state = STRAIGHT;
+		else if (abs(now_mid[1] - 64) >= 10)
+			m_state = TURN1;
+		break;
+	}
+	if (state_count2 > 15){
+		m_found_cross = true;
+		break;
+	}
+	else if (state_count2 > 0){
+		m_found_blackline = true;
+		break;
+	}
+	if (state_count1 > 15 && m_found_cross = true){
+		m_found_cross = false;
+		m_state = CROSS;
+		state_count1 = 0;
+		state_count2 = 0;
+		break;
+	}
+	else if (state_count1 > 0 && m_found_blackline = true){
+		m_found_blackline = false;
+		m_state = 90DEG;
+		state_count1 = 0;
+		state_count2 = 0;
+		break;
+	}
+	m_state = UNKNOWN;
+}
+/*void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos){
 	int deadzone = 0;
 
 	if(ccdNumber == 1){
@@ -139,8 +193,8 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 	if(ccdNumber == 2){
 		deadzone = 20;
 	}
-/*	edge_data[0] = deadzone;
-	edge_data[1] = libsc::Tsl1401cl::kSensorW-deadzone-1;*/
+	edge_data[0] = deadzone;
+	edge_data[1] = libsc::Tsl1401cl::kSensorW-deadzone-1;
 
 	int16_t maxLeft=-1, maxRight=-1;
 	int routeLeftStart = edge_data[0];
@@ -187,10 +241,10 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 				m_state = STRAIGHT;
 			}
 		}else{
-/*			if(edge_data[1] <= 75 && edge_data[0] >= 47){
+			if(edge_data[1] <= 75 && edge_data[0] >= 47){
 				m_prev_state = m_state;
 				m_state = STRAIGHT;
-			}*/
+			}
 		}
 	}else{
 		m_prev_state = m_state;
@@ -230,7 +284,7 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 
 			}
 		}
-		/*if(ccdNumber == 2 && abs(m_mid-(int16_t)m_route_mid_1)<6 || ccdNumber == 1 && !m_found_obstacle_2){
+		if(ccdNumber == 2 && abs(m_mid-(int16_t)m_route_mid_1)<6 || ccdNumber == 1 && !m_found_obstacle_2){
 
 
 			maxMidLeft = -1;
@@ -268,9 +322,9 @@ void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, 
 				}
 
 			}
-		}*/
+		}
 
-}
+}*/
 
 Pit::Config GetPitConfig(const uint8_t pit_channel,
 		const Pit::OnPitTriggerListener &isr)

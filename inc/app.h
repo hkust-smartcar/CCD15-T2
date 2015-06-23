@@ -33,6 +33,10 @@ public:
 	int16_t Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t encoder);
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
+
+	float App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float* mid_data, float* prev_mid);
+	void App::Analysis(uint16_t* region, float* now_mid);
+
 private:
 	Car m_car;
 	LcdTypewriter m_lcd_typewriter;
@@ -71,6 +75,15 @@ private:
 	uint16_t m_prev_avg = 0;
 	uint32_t m_sum = 0, m_sum_2 = 0;
 	uint16_t m_threshold_1, m_threshold_2;
+
+	uint16_t* region[3] = {0,1,1};
+	float* prev_mid_data1[10] = 0;
+	float* mid_data1[10] = 0;
+	float* prev_mid_data2[10] = 0;
+	float* mid_data2[10] = 0;
+	float* prev_mid[3] = {0,64,64};
+	float* now_mid[3] = {0,64,64};
+
 
 	int16_t m_mid = 63;
 	int16_t m_encoder_count_t;
@@ -211,7 +224,10 @@ private:
 	enum STATES{
 		STRAIGHT = 0,
 		EDGES,
-		TURN,
+		TURN1,
+		TURN2,
+		90DEG,
+		CROSS,
 		MIDDLELINE,
 		OBSTACLE,
 		DROPPEDLINE,

@@ -160,7 +160,7 @@ private:
 
 	bool m_triggered_90;
 
-	int m_turn_error;
+	int m_turn_error, m_turn_error_1, m_turn_error_2;
 	int m_turn_prev_error;
 	int m_hold_error;
 	int m_hold_count;

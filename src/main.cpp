@@ -6,6 +6,7 @@
 #include <libsc/mpu6050.h>
 #include <libsc/kl26/jy_mcu_bt_106.h>
 #include <functional>
+#include "OLED.h"
 
 using namespace libsc;
 using namespace libsc::kl26;
@@ -14,6 +15,59 @@ using namespace libutil;
 
 int main(){
 	System::Init();
+
+
+//	OLED_Init();
+	/*const char* str = "OLED_test";
+//
+//
+	while(true){
+//		OLED_6x8Str(30,7,(unsigned char*)str);
+//		OLED_6x8Char(30, 7, 'a');
+		OLED_image();
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+		asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+				asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+						asm("nop");
+	}*/
 	App m_app;
 
 /*	JyMcuBt106::Config uartconfig;

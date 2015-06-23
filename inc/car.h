@@ -28,6 +28,7 @@
 #include <libsc/joystick.h>
 #include <libsc/button.h>
 #include <libsc/simple_buzzer.h>
+#include "OLED.h"
 
 
 #define RAD2ANGLE 57.296f

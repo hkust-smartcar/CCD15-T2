@@ -3,6 +3,7 @@
 #include <libutil/misc.h>
 #include <libbase/kl26/adc.h>
 #include <libbase/kl26/soft_pwm.h>
+#include <libutil/string.h>
 
 
 using namespace libbase;
@@ -386,4 +387,13 @@ Car::Car():
 	libutil::InitDefaultFwriteHandler(m_com);
 
 	m_lcd.Clear(0);
+
+
+//	float totalVoltage = 0.0f;
+//	for(int i=0;  i<=1000; i++){
+//		totalVoltage += m_bat.GetVoltage();
+//	}
+//	OLED_Init();
+//	OLED_6x8Str(0,0,(unsigned char*)(String::Format("%.2fV",totalVoltage/1000).c_str()));
+//	OLED_image();
 }

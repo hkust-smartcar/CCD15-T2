@@ -250,6 +250,5 @@ private:
 	int m_total_black_1;
 
 	bool m_found_cross, m_found_blackline;
-//	Kalman m_encoder_r_filter, m_encoder_l_filter;
 };
 

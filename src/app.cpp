@@ -80,7 +80,7 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 }
 
 float App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float* mid_data, float* prev_mid){
-	uint16_t deadzone = 0;
+	/*uint16_t deadzone = 0;
 	uint16_t region_No = 1;
 	uint16_t region_edge[20] = {0};
 	float delta_mid[2] = {0.0f};
@@ -110,7 +110,8 @@ float App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float*
 			else if (delta_mid[0] > delta_mid[1])
 				return mid_data[j+1];
 			}
-	}
+	}*/
+	return 0.0f;
 }
 void App::Analysis(uint16_t* region, float* now_mid){
 	uint16_t state_count1 = 0;
@@ -194,11 +195,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 100.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 1.5f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 90.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 9.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 100.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 1.5f;
+			m_balpid[0] = 90.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 9.5f;
 		}
 
 
@@ -372,8 +373,8 @@ void App::PitBalance(Pit*){
 		 * Change trust based on error
 		 */
 
-		m_route_mid_1 = Get_mid(m_ccd_data_1, 1, region1, mid_data1, now_mid);
-		m_route_mid_2 = Get_mid(m_ccd_data_2, 2, region2, mid_data2, now_mid);
+		m_route_mid_1 = Get_mid(m_ccd_data_1.data(), 1, region, mid_data1, now_mid);
+		m_route_mid_2 = Get_mid(m_ccd_data_2.data(), 2, region, mid_data2, now_mid);
 
 		m_turn_error_1 = ((int)m_mid - (int)m_route_mid_1);
 		m_turn_error_2 = ((int)m_mid - (int)m_route_mid_2);

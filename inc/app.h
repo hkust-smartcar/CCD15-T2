@@ -81,8 +81,7 @@ private:
 	float* mid_data1[10] = 0;
 	float* prev_mid_data2[10] = 0;
 	float* mid_data2[10] = 0;
-	float* prev_mid[3] = {0,64,64};
-	float* now_mid[3] = {0,64,64};
+	float* now_mid[3] = {0,63.5,63.5};
 
 
 	int16_t m_mid = 63;

@@ -139,18 +139,19 @@ void App::Analysis(uint16_t* region, float* now_mid){
 			m_state = MIDDLELINE;
 		else if (abs(now_mid[1] - 64) >= 10)
 			m_state = OBSTACLE;
-		break;
+		return;
 	}
 	else if (region[1] == 1 && region[2] == 1){
 		m_state = SLOPE;
-		break;
+		return;
 	}
-	else if (region[1] == 1 || (region[1] == 3 && region[2] == 3)){
+	else if (region[1] == 1){
+		state_count1++;
 		if (abs(now_mid[2] - 64) < 5)
 			m_state = STRAIGHT;
 		else if (abs(now_mid[2] - 64) >= 5)
 			m_state = TURN2;
-		break;
+		return;
 	}
 	else if (region[2] == 1){
 		state_count2++;
@@ -158,31 +159,30 @@ void App::Analysis(uint16_t* region, float* now_mid){
 			m_state = STRAIGHT;
 		else if (abs(now_mid[1] - 64) >= 10)
 			m_state = TURN1;
-		break;
+		return;
 	}
 	if (state_count2 > 15){
 		m_found_cross = true;
-		break;
 	}
 	else if (state_count2 > 0){
 		m_found_blackline = true;
-		break;
 	}
 	if (state_count1 > 15 && m_found_cross = true){
 		m_found_cross = false;
 		m_state = CROSS;
 		state_count1 = 0;
 		state_count2 = 0;
-		break;
+		return;
 	}
 	else if (state_count1 > 0 && m_found_blackline = true){
 		m_found_blackline = false;
 		m_state = 90DEG;
 		state_count1 = 0;
 		state_count2 = 0;
-		break;
+		return;
 	}
 	m_state = UNKNOWN;
+	return;
 }
 /*void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos){
 	int deadzone = 0;
@@ -579,7 +579,10 @@ void App::PitBalance(Pit*){
 			static char * enumStrings[] = {
 					"STRAIGHT",
 					"EDGES",
-					"TURN",
+					"TURN1",
+					"TURN2",
+					"90DEG",
+					"CROSS",
 					"MIDDLELINE",
 					"OBSTACLE",
 					"DROPPEDLINE",
@@ -587,13 +590,17 @@ void App::PitBalance(Pit*){
 					"WHITE",
 					"UNKNOWN"
 			};
-//			printf("%s\n",enumStrings[m_state]);
+			printf("%s\n",enumStrings[m_state]);
 		}
 
 
 		/*
 		 * Change trust based on error
 		 */
+
+		m_route_mid_1 = Get_mid(m_ccd_data_1, 1, region1, mid_data1, now_mid);
+		m_route_mid_2 = Get_mid(m_ccd_data_2, 2, region2, mid_data2, now_mid);
+
 		m_turn_error_1 = ((int)m_mid - (int)m_route_mid_1);
 		m_turn_error_2 = ((int)m_mid - (int)m_route_mid_2);
 		m_trust = abs(m_turn_error_1)/5 * 1.0f/* + m_actual_bal_error / 5.0f * 0.6f*/;
@@ -611,6 +618,10 @@ void App::PitBalance(Pit*){
 		 * Clamp trust so that must sum up to 1
 		 */
 		m_trust = libutil::Clamp<float>(0.0f,m_trust,1.0f);
+		if (m_state == TURN1 || m_state == OBSTACLE)
+			m_trust = 1.0f;
+		else if (m_state == TURN2)
+			m_trust = 0.0f;
 		m_turn_error = (int)(m_trust * m_turn_error_1 + (1.0f-m_trust) * m_turn_error_2);
 
 		/*
@@ -627,38 +638,38 @@ void App::PitBalance(Pit*){
 //			m_car.m_buzzer.SetBeep(true);
 		}*/
 
-		m_total_white_2 = 0;
-		m_total_white_1 = 0;
-		m_right_white = 0;
-		m_left_white = 0;
-		m_total_black_1 = 0;
-
-		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
-			if(m_ccd_data_1[i] > libutil::Clamp<uint16_t>(0,m_avg,255-255/4)){
-				m_total_white_1++;
-			}
-			if(m_ccd_data_1[i] < libutil::Clamp<uint16_t>(255/4,m_avg,255)){
-				m_total_black_1++;
-			}
-			if(m_ccd_data_1[i] > m_threshold_1){
-				if(i>=(127-35)){
-					m_right_white++;
-				}
-				if(i<=35){
-					m_left_white++;
-				}
-			}
-		}
-		for(int i=20; i<libsc::Tsl1401cl::kSensorW-20; i++){
-			if(m_ccd_data_2[i] > m_threshold_2){
-				m_total_white_2++;
-			}
-		}
-
-		if(m_total_white_1 == 98 && m_state != MIDDLELINE){
-			m_prev_state = m_state;
-			m_state = WHITE;
-		}
+//		m_total_white_2 = 0;
+//		m_total_white_1 = 0;
+//		m_right_white = 0;
+//		m_left_white = 0;
+//		m_total_black_1 = 0;
+//
+//		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
+//			if(m_ccd_data_1[i] > libutil::Clamp<uint16_t>(0,m_avg,255-255/4)){
+//				m_total_white_1++;
+//			}
+//			if(m_ccd_data_1[i] < libutil::Clamp<uint16_t>(255/4,m_avg,255)){
+//				m_total_black_1++;
+//			}
+//			if(m_ccd_data_1[i] > m_threshold_1){
+//				if(i>=(127-35)){
+//					m_right_white++;
+//				}
+//				if(i<=35){
+//					m_left_white++;
+//				}
+//			}
+//		}
+//		for(int i=20; i<libsc::Tsl1401cl::kSensorW-20; i++){
+//			if(m_ccd_data_2[i] > m_threshold_2){
+//				m_total_white_2++;
+//			}
+//		}
+//
+//		if(m_total_white_1 == 98 && m_state != MIDDLELINE){
+//			m_prev_state = m_state;
+//			m_state = WHITE;
+//		}
 
 //		if(m_total_black_1 == 98 || m_total_white_2 == 0){
 //			if(m_total_black_1 == 98){

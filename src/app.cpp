@@ -79,39 +79,40 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	return output;
 }
 
-float App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float* mid_data, float* prev_mid){
-	/*uint16_t deadzone = 0;
-	uint16_t region_No = 1;
-	uint16_t region_edge[20] = {0};
-	float delta_mid[2] = {0.0f};
+uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
+	uint16_t deadzone = 0;
+	uint16_t regionCount = 0;
+	uint16_t regionEdge[20] = {0};
+	uint16_t deltaMid[2] = {0};
 	if(ccdNumber == 1)
 		deadzone = 15;
 	else if(ccdNumber == 2)
 		deadzone = 20;
-	region_edge[0] = deadzone;
-	for (uint16_t i = deadzone; i<=128-deadzone; i++){
+	regionEdge[0] = deadzone;
+	for (uint16_t i = deadzone; i<126-deadzone; i++){
 		if (abs(m_ccd_data[i+1]-m_ccd_data[i])>5){
-			region_edge[region_No] = i+1;
-			mid_data[region_No] = (region_edge[region_No] + region_edge[region_No-1])/2;
-			region_No++;
+			regionEdge[regionCount] = i+1;
+			midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
+			regionCount++;
 		}
 	}
-	region_edge[region_No] = 128-deadzone;
-	mid_data[region_No] = (region_edge[region_No] + region_edge[region_No-1])/2.0f;
-	region[ccdNumber] = region_No;
-	for (uint16_t j = 1; j <= region_No; j++){
-		if(mid_data[j] < prev_mid[ccdNumber] && mid_data[j+1] > prev_mid[ccdNumber]){
-			delta_mid[0] = prev_mid[ccdNumber] - mid_data[j];
-			delta_mid[1] = mid_data[j+1] - prev_mid[ccdNumber];
-			if (delta_mid[0] == delta_mid[1] || (delta_mid[0] > 20 && delta_mid[1] > 20))
-				return prev_mid[ccdNumber];
-			else if (delta_mid[0] < delta_mid[1])
-				return mid_data[j];
-			else if (delta_mid[0] > delta_mid[1])
-				return mid_data[j+1];
-			}
-	}*/
-	return 0.0f;
+	regionEdge[regionCount] = 127-deadzone;
+	midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
+	m_regionTotalNumber[ccdNumber] = regionCount;
+//	for (uint16_t j = 1; j <= regionCount; j++){
+//		if(midData[j] < m_nowMid[ccdNumber] && midData[j+1] > m_nowMid[ccdNumber]){
+//			deltaMid[0] = m_nowMid[ccdNumber] - midData[j];
+//			deltaMid[1] = midData[j+1] - m_nowMid[ccdNumber];
+//			if (deltaMid[0] == deltaMid[1] || (deltaMid[0] > 20 && deltaMid[1] > 20))
+//				return m_nowMid[ccdNumber];
+//			else if (deltaMid[0] < deltaMid[1])
+//				return midData[j];
+//			else if (deltaMid[0] > deltaMid[1])
+//				return midData[j+1];
+//		}
+//	}
+//	return m_nowMid[ccdNumber];
+	return 63;
 }
 void App::Analysis(uint16_t* region, float* now_mid){
 	uint16_t state_count1 = 0;
@@ -195,11 +196,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 90.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 9.5f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 120.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 14.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 90.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 9.5f;
+			m_balpid[0] = 120.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 14.5f;
 		}
 
 
@@ -227,6 +228,9 @@ void App::PitBalance(Pit*){
 				m_ccd_data_2[i] = 0;
 			}
 		}
+
+//		m_nowMid[2] = m_route_mid_1;
+//		m_route_mid_2 = Get_mid(m_ccd_data_2.data(), 2, mid_data2);
 
 		m_avg_2 = 0;
 		m_sum_2 = 0;
@@ -372,9 +376,9 @@ void App::PitBalance(Pit*){
 		/*
 		 * Change trust based on error
 		 */
+//		m_nowMid[1] = m_route_mid_1;
+//		m_route_mid_1 = Get_mid(m_ccd_data_1.data(), 1, mid_data1);
 
-		m_route_mid_1 = Get_mid(m_ccd_data_1.data(), 1, region, mid_data1, now_mid);
-		m_route_mid_2 = Get_mid(m_ccd_data_2.data(), 2, region, mid_data2, now_mid);
 
 		m_turn_error_1 = ((int)m_mid - (int)m_route_mid_1);
 		m_turn_error_2 = ((int)m_mid - (int)m_route_mid_2);
@@ -480,8 +484,6 @@ void App::PitBalance(Pit*){
 			m_car.m_led2.SetEnable(false);
 			m_car.m_led3.SetEnable(false);
 			m_car.m_led4.SetEnable(false);
-		}else{
-			m_turn_kp = 25.0f;
 		}
 
 		/*

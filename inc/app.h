@@ -24,8 +24,6 @@ public:
 		return (x>0) -  (x<0);
 	}
 	void Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos = 63);
-	uint16_t RpmToPwm_R(uint16_t count);
-	uint16_t RpmToPwm_L(uint16_t count);
 	int16_t Output_s0(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_s1(int16_t spdcon[5], uint8_t pid[3], uint16_t time[2]);
 	int16_t Output_b(float* balcon, float* balpid, uint16_t* time, float real_angle, float  omega);
@@ -34,7 +32,7 @@ public:
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
 
-	float Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float* mid_data, float* prev_mid);
+	uint16_t Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* mid_data);
 	void Analysis(uint16_t* region, float* now_mid);
 
 private:
@@ -76,12 +74,12 @@ private:
 	uint32_t m_sum = 0, m_sum_2 = 0;
 	uint16_t m_threshold_1, m_threshold_2;
 
-	uint16_t region[3] = {0,1,1};
-	float prev_mid_data1[10] = {0};
-	float mid_data1[10] = {0};
-	float prev_mid_data2[10] = {0};
-	float mid_data2[10] = {0};
-	float now_mid[3] = {0,63.5f,63.5f};
+	uint16_t m_regionTotalNumber[3] = {0,0,0};
+	uint16_t prev_mid_data1[10] = {0};
+	uint16_t mid_data1[10] = {0};
+	uint16_t prev_mid_data2[10] = {0};
+	uint16_t mid_data2[10] = {0};
+	uint16_t m_nowMid[3] = {63,63,63};
 
 
 	int16_t m_mid = 63;
@@ -98,7 +96,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,70.0f,0,0};
+	float m_balcon[7]={0,0,0,0,65.0f,0,0};
 	float m_actual_bal_error = 0;
 
 	/*pid[0]=kp;

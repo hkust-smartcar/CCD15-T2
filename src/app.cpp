@@ -590,7 +590,7 @@ void App::PitBalance(Pit*){
 					"WHITE",
 					"UNKNOWN"
 			};
-			printf("%s\n",enumStrings[m_state]);
+//			printf("%s\n",enumStrings[m_state]);
 		}
 
 
@@ -1042,6 +1042,8 @@ void App::PitBalance(Pit*){
 					m_car.m_com->SendBuffer(buf, sizeof(buf));
 				}
 				break;
+			case 13:
+				printf("%s\n",enumStrings[m_state]);
 			case 0:
 			default:
 				break;

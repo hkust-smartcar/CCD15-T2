@@ -25,25 +25,6 @@ using namespace libsc::kl26;
 using namespace libbase::kl26;
 using namespace libsc;
 
-/*For KL26_2015_CCD*/
-uint16_t App::RpmToPwm_R(uint16_t count){
-//	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.3459f*count + 33.589f);
-	//Flat section before straight line
-//	val = count <= 108 ? 70 : val;
-//	val = val <= 70 ? 70 : val;
-	return val;
-}
-
-uint16_t App::RpmToPwm_L(uint16_t count){
-//	if(count==0) return 0;
-	uint16_t val = (uint16_t)(0.32f*count + 69.325f);
-	//Flat section before straight line
-//	val = count <= 216 ? 150 : val;
-//	val = val <= 150 ? 150 : val;
-	return val;
-}
-
 float App::Output_turning(int16_t* turncon, float* turnpid, uint16_t* time){
     uint16_t period;
     int16_t outputcoeff;
@@ -97,147 +78,6 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	carspeedcon[1] = carspeedcon[0];
 	return output;
 }
-void App::Update_edge(uint16_t* m_ccd_data, uint16_t* edge_data, int ccdNumber, int startPos){
-	int deadzone = 0;
-
-	if(ccdNumber == 1){
-		deadzone = 15;
-	}
-	if(ccdNumber == 2){
-		deadzone = 20;
-	}
-/*	edge_data[0] = deadzone;
-	edge_data[1] = libsc::Tsl1401cl::kSensorW-deadzone-1;*/
-
-	int16_t maxLeft=-1, maxRight=-1;
-	int routeLeftStart = edge_data[0];
-	if(edge_data[0] <= deadzone){
-		routeLeftStart = startPos;
-	}
-	int routeRightStart = edge_data[1];
-	if(edge_data[1] >= libsc::Tsl1401cl::kSensorW-deadzone-1){
-		routeRightStart = startPos;
-	}
-	bool foundOuterLeft = false, foundOuterRight = false;
-
-	for(int i=libutil::Clamp<int>(0,routeLeftStart+5,127); i>deadzone+1; i--){
-		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) > maxLeft){
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]) >= 3){
-				edge_data[0] = i;
-				maxLeft = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i-1]);
-				foundOuterLeft = true;
-				break;
-			}
-		}
-	}
-
-	for(int i=libutil::Clamp<int>(0,routeRightStart-5,127); i<libsc::Tsl1401cl::kSensorW-deadzone-2; i++){
-		if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxRight){
-
-			if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 3){
-				edge_data[1] = i;
-				maxRight = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]);
-				foundOuterRight = true;
-				break;
-			}
-		}
-	}
-
-	if(foundOuterLeft || foundOuterRight){
-		m_found_edges = true;
-		m_prev_state = m_state;
-		m_state = EDGES;
-		edge_data[2] = edge_data[3] = (edge_data[0]+edge_data[1])/2;
-		if(ccdNumber==1){
-			if(edge_data[1] <= 100 && edge_data[0] >= 30){
-				m_prev_state = m_state;
-				m_state = STRAIGHT;
-			}
-		}else{
-/*			if(edge_data[1] <= 75 && edge_data[0] >= 47){
-				m_prev_state = m_state;
-				m_state = STRAIGHT;
-			}*/
-		}
-	}else{
-		m_prev_state = m_state;
-		m_state = UNKNOWN;
-	}
-
-
-		int maxMidLeft = -1, maxMidRight = -1;
-		bool foundInnerLeft = false, foundInnerRight = false;
-		if(ccdNumber == 1){
-			for(int i=libutil::Clamp<int>(edge_data[0],startPos-8,edge_data[1]); i<=libutil::Clamp<int>(edge_data[0],startPos+8,edge_data[1]); i++){
-				if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxMidLeft){
-					if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 10){
-						edge_data[2] = i;
-						maxMidLeft = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]);
-						foundInnerLeft = true;
-	//					break;
-					}
-				}
-				if(((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]) > maxMidRight){
-					if(((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]) >= 10){
-						edge_data[3] = i;
-						maxMidRight = ((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]);
-						foundInnerRight = true;
-	//					break;
-					}
-				}
-				if(foundInnerLeft && foundInnerRight && (edge_data[3] - edge_data[2])>=0 && (edge_data[3] - edge_data[2])<=6){
-					m_found_middle_line = true;
-//					m_found_obstacle = false;
-					m_prev_state = m_state;
-					m_state = MIDDLELINE;
-					edge_data[0] = deadzone;
-					edge_data[1] = libsc::Tsl1401cl::kSensorW-1-deadzone;
-					return;
-				}
-
-			}
-		}
-		/*if(ccdNumber == 2 && abs(m_mid-(int16_t)m_route_mid_1)<6 || ccdNumber == 1 && !m_found_obstacle_2){
-
-
-			maxMidLeft = -1;
-			maxMidRight = -1;
-			foundInnerLeft = foundInnerRight = false;
-			for(int i=edge_data[0]; i<edge_data[1]-1; i++){
-				if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) > maxMidLeft){
-					if(((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]) >= 10){
-						edge_data[2] = i;
-						maxMidLeft = ((int16_t)m_ccd_data[i] - (int16_t)m_ccd_data[i+1]);
-						foundInnerLeft = true;
-	//					break;
-					}
-				}
-				if(((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]) > maxMidRight){
-					if(((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]) >= 10){
-						edge_data[3] = i;
-						maxMidRight = ((int16_t)m_ccd_data[i+1] - (int16_t)m_ccd_data[i]);
-						foundInnerRight = true;
-	//					break;
-					}
-				}
-
-				if(foundInnerLeft && foundInnerRight && (edge_data[3] - edge_data[2]) > 6 && (edge_data[3] - edge_data[2]) < 63&& (edge_data[3] - edge_data[2]) < (edge_data[1] - edge_data[0])){
-//					m_found_middle_line = false;
-					if(ccdNumber == 2){
-						m_found_obstacle_2 = true;
-					}
-					if(ccdNumber == 1){
-						m_found_obstacle_1 = true;
-					}
-					m_prev_state = m_state;
-					m_state = OBSTACLE;
-					return;
-				}
-
-			}
-		}*/
-
-}
 
 Pit::Config GetPitConfig(const uint8_t pit_channel,
 		const Pit::OnPitTriggerListener &isr)
@@ -245,16 +85,6 @@ Pit::Config GetPitConfig(const uint8_t pit_channel,
 	Pit::Config config;
 	config.channel = pit_channel;
 	config.count = ClockUtils::GetBusTickPerMs() * 5;
-	config.isr = isr;
-	return config;
-}
-
-Pit::Config GetPitConfig2(const uint8_t pit_channel,
-		const Pit::OnPitTriggerListener &isr)
-{
-	Pit::Config config;
-	config.channel = pit_channel;
-	config.count = ClockUtils::GetBusTickPerUs() * 1000 * 1;
 	config.isr = isr;
 	return config;
 }
@@ -276,10 +106,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 650.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 100.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 1.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 650.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 100.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 1.5f;
 		}
 
@@ -827,7 +657,7 @@ void App::PitBalance(Pit*){
 //					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
 //					m_prev_speed = - 0.8f*m_speedInMetrePerSecond/0.02f + 0.2f * m_prev_speed;
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
-					m_balcon[6] = atan(m_acceleration/9.81f)*RAD2ANGLE;
+					m_balcon[6] = -atan(m_acceleration/9.81f)*RAD2ANGLE;
 //					m_balcon[6] = atan((0.15f*m_acceleration + 0.85f * m_prev_speed)/9.81f)*RAD2ANGLE;
 //					m_prev_speed = (0.15f*m_acceleration + 0.85f * m_prev_speed);
 //					m_speed_output = 0;
@@ -962,8 +792,10 @@ void App::PitBalance(Pit*){
 	m_power_l = m_balance_pid_output /*- m_speed_output */+ m_turn_powerl;
 
 //	if(!m_triggered_90){
-		m_power_r_pwm = sign((int)m_power_r)*(int16_t)RpmToPwm_R((uint16_t)abs((int)m_power_r));
-		m_power_l_pwm = sign((int)m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs((int)m_power_l));
+//		m_power_r_pwm = sign((int)m_power_r)*(int16_t)RpmToPwm_R((uint16_t)abs((int)m_power_r));
+//		m_power_l_pwm = sign((int)m_power_l)*(int16_t)RpmToPwm_L((uint16_t)abs((int)m_power_l));
+	m_power_r_pwm = m_power_r;
+	m_power_l_pwm = m_power_l;
 //	}
 
 	if(m_stop->GetInt()!=0){
@@ -1140,7 +972,6 @@ App::App():
 
 
 	Pit m_pit(GetPitConfig(0, std::bind(&App::PitBalance, this, std::placeholders::_1)));
-	Pit m_pit2(GetPitConfig2(1, std::bind(&App::PitMoveMotor, this, std::placeholders::_1)));
 
 	while(true)
 	{

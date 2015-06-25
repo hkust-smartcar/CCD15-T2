@@ -79,6 +79,94 @@ int16_t App::Output_speed(int16_t* carspeedcon, float* carspeedpid, int16_t enco
 	return output;
 }
 
+float App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* region, float* mid_data, float* prev_mid){
+	uint16_t deadzone = 0;
+	uint16_t region_No = 1;
+	uint16_t region_edge[20] = {0};
+	float delta_mid[2] = {0.0f};
+	if(ccdNumber == 1)
+		deadzone = 15;
+	else if(ccdNumber == 2)
+		deadzone = 20;
+	region_edge[0] = deadzone;
+	for (uint16_t i = deadzone; i<=128-deadzone; i++){
+		if (abs(m_ccd_data[i+1]-m_ccd_data[i])>5){
+			region_edge[region_No] = i+1;
+			mid_data[region_No] = (region_edge[region_No] + region_edge[region_No-1])/2;
+			region_No++;
+		}
+	}
+	region_edge[region_No] = 128-deadzone;
+	mid_data[region_No] = (region_edge[region_No] + region_edge[region_No-1])/2.0f;
+	region[ccdNumber] = region_No;
+	for (uint16_t j = 1; j <= region_No; j++){
+		if(mid_data[j] < prev_mid[ccdNumber] && mid_data[j+1] > prev_mid[ccdNumber]){
+			delta_mid[0] = prev_mid[ccdNumber] - mid_data[j];
+			delta_mid[1] = mid_data[j+1] - prev_mid[ccdNumber];
+			if (delta_mid[0] == delta_mid[1] || (delta_mid[0] > 20 && delta_mid[1] > 20))
+				return prev_mid[ccdNumber];
+			else if (delta_mid[0] < delta_mid[1])
+				return mid_data[j];
+			else if (delta_mid[0] > delta_mid[1])
+				return mid_data[j+1];
+			}
+	}
+}
+void App::Analysis(uint16_t* region, float* now_mid){
+	uint16_t state_count1 = 0;
+	uint16_t state_count2 = 0;
+	m_prev_state = m_state;
+	if (region[1] == 5){
+		if (abs(now_mid[1] - 64) < 10)
+			m_state = MIDDLELINE;
+		else if (abs(now_mid[1] - 64) >= 10)
+			m_state = OBSTACLE;
+		return;
+	}
+	else if (region[1] == 1 && region[2] == 1){
+		m_state = SLOPE;
+		return;
+	}
+	else if (region[1] == 1){
+		state_count1++;
+		if (abs(now_mid[2] - 64) < 5)
+			m_state = STRAIGHT;
+		else if (abs(now_mid[2] - 64) >= 5)
+			m_state = TURN2;
+		return;
+	}
+	else if (region[2] == 1){
+		state_count2++;
+		if (abs(now_mid[1] - 64) < 10)
+			m_state = STRAIGHT;
+		else if (abs(now_mid[1] - 64) >= 10)
+			m_state = TURN1;
+		return;
+	}
+	if (state_count2 > 15){
+		m_found_cross = true;
+	}
+	else if (state_count2 > 0){
+		m_found_blackline = true;
+	}
+	if (state_count1 > 15 && m_found_cross == true){
+		m_found_cross = false;
+		m_state = CROSS;
+		state_count1 = 0;
+		state_count2 = 0;
+		return;
+	}
+	else if (state_count1 > 0 && m_found_blackline == true){
+		m_found_blackline = false;
+		m_state = NINETYDEG;
+		state_count1 = 0;
+		state_count2 = 0;
+		return;
+	}
+	m_state = UNKNOWN;
+	return;
+}
+
 Pit::Config GetPitConfig(const uint8_t pit_channel,
 		const Pit::OnPitTriggerListener &isr)
 {
@@ -123,16 +211,6 @@ void App::PitBalance(Pit*){
 		while(!m_car.m_ccd_2.SampleProcess()){}
 		m_ccd_data_raw_2 = m_car.m_ccd_2.GetData();
 
-/*		uint16_t c[libsc::Tsl1401cl::kSensorW];
-		uint16_t s[libsc::Tsl1401cl::kSensorW];
-		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
-			c[i] = m_ccd_data_raw_2[i];
-		}
-		medianFilter(c, s , libsc::Tsl1401cl::kSensorW);
-		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
-			m_ccd_data_2[i] = s[i];
-		}*/
-
 		int shiftCcd2 = 2;
 		for(int i=0; i<libsc::Tsl1401cl::kSensorW; i++){
 			if(i<shiftCcd2){
@@ -164,10 +242,7 @@ void App::PitBalance(Pit*){
 //		}
 
 //		m_found_obstacle = false;
-//		if(m_actual_bal_error<0){
-			Update_edge(m_ccd_data_2.data(), m_edge_data_2, 2, (int)m_route_mid_2);
-//		}
-		m_route_mid_2 = (m_edge_data_2[0] + m_edge_data_2[1])/2;
+
 
 		if(m_car.m_lcdupdate){
 			St7735r::Rect rect_;
@@ -203,17 +278,7 @@ void App::PitBalance(Pit*){
 				}
 				m_car.m_lcd.FillColor(color2);
 			}
-//			for(int i=0; i<128; i++){
-//				unsigned char page = (unsigned char)(3 - m_last_y2[i]/32/2);
-//				SetColumnAddress((unsigned char)i, (unsigned char)(i));
-//				SetPageAddres((unsigned char)(page), (unsigned char)(page));
-//				OLED_WrDat((unsigned char)(0));
-//				m_last_y2[i] = m_ccd_data_2[i];
-//				page = (unsigned char)(3 - m_last_y2[i]/32/2);
-//				SetColumnAddress((unsigned char)i, (unsigned char)(i));
-//				SetPageAddres((unsigned char)(page), (unsigned char)(page));
-//				OLED_WrDat((unsigned char)(1<<((128-m_last_y2[i]/2)%8)));
-//			}
+
 		}
 
 
@@ -242,16 +307,6 @@ void App::PitBalance(Pit*){
 			}
 		}*/
 
-/*		m_ccd_data_raw = m_car.m_ccd_1.GetData();
-		uint16_t c[libsc::Tsl1401cl::kSensorW];
-		uint16_t s[libsc::Tsl1401cl::kSensorW];
-		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
-			c[i] = m_ccd_data_raw[i];
-		}
-		medianFilter(c, s , libsc::Tsl1401cl::kSensorW);
-		for(int i = 0; i < libsc::Tsl1401cl::kSensorW; i++ ){
-			m_ccd_data_1[i] = s[i];
-		}*/
 
 		m_avg = 0;
 		m_sum = 0;
@@ -259,20 +314,9 @@ void App::PitBalance(Pit*){
 			m_sum += (uint32_t)m_ccd_data_1[i];
 		}
 		m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
-//		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
-//			if(m_ccd_data_1[i] >= m_prev_avg){
-//				m_color[i] = CCD_WHITE;
-//			}else{
-//				m_color[i] = CCD_BLACK;
-//			}
-//		}
 
 		m_found_middle_line = false;
-//		if(m_actual_bal_error<0){
-			Update_edge(m_ccd_data_1.data(), m_edge_data_1,1, (int)m_route_mid_1);
-//		}
 
-		m_route_mid_1 = (m_edge_data_1[0] + m_edge_data_1[1])/2;
 		if(m_found_edges){
 //			printf("Edges\n");
 			m_car.m_led.SetEnable(true);
@@ -287,7 +331,7 @@ void App::PitBalance(Pit*){
 			m_car.m_led4.SetEnable(true);
 		}
 		if(m_found_middle_line){
-			m_route_mid_1 = m_edge_data_1[2];
+//			m_route_mid_1 = m_edge_data_1[2];
 //			printf("Middle Line\n");
 			m_car.m_led.SetEnable(false);
 			m_car.m_led2.SetEnable(true);
@@ -317,26 +361,20 @@ void App::PitBalance(Pit*){
 //			m_car.m_led4.SetEnable(false);
 		}*/
 
-		if(m_state!=m_last_print_state){
-			m_last_print_state = m_state;
-			static char * enumStrings[] = {
-					"STRAIGHT",
-					"EDGES",
-					"TURN",
-					"MIDDLELINE",
-					"OBSTACLE",
-					"DROPPEDLINE",
-					"BLACK",
-					"WHITE",
-					"UNKNOWN"
-			};
+//		if(m_state!=m_last_print_state){
+//			m_last_print_state = m_state;
+//			static char * enumStrings[] = {};
 //			printf("%s\n",enumStrings[m_state]);
-		}
+//		}
 
 
 		/*
 		 * Change trust based on error
 		 */
+
+		m_route_mid_1 = Get_mid(m_ccd_data_1, 1, region1, mid_data1, now_mid);
+		m_route_mid_2 = Get_mid(m_ccd_data_2, 2, region2, mid_data2, now_mid);
+
 		m_turn_error_1 = ((int)m_mid - (int)m_route_mid_1);
 		m_turn_error_2 = ((int)m_mid - (int)m_route_mid_2);
 		m_trust = abs(m_turn_error_1)/5 * 1.0f/* + m_actual_bal_error / 5.0f * 0.6f*/;
@@ -354,6 +392,10 @@ void App::PitBalance(Pit*){
 		 * Clamp trust so that must sum up to 1
 		 */
 		m_trust = libutil::Clamp<float>(0.0f,m_trust,1.0f);
+		if (m_state == TURN1 || m_state == OBSTACLE)
+			m_trust = 1.0f;
+		else if (m_state == TURN2)
+			m_trust = 0.0f;
 		m_turn_error = (int)(m_trust * m_turn_error_1 + (1.0f-m_trust) * m_turn_error_2);
 
 		/*
@@ -370,38 +412,38 @@ void App::PitBalance(Pit*){
 //			m_car.m_buzzer.SetBeep(true);
 		}*/
 
-		m_total_white_2 = 0;
-		m_total_white_1 = 0;
-		m_right_white = 0;
-		m_left_white = 0;
-		m_total_black_1 = 0;
-
-		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
-			if(m_ccd_data_1[i] > libutil::Clamp<uint16_t>(0,m_avg,255-255/4)){
-				m_total_white_1++;
-			}
-			if(m_ccd_data_1[i] < libutil::Clamp<uint16_t>(255/4,m_avg,255)){
-				m_total_black_1++;
-			}
-			if(m_ccd_data_1[i] > m_threshold_1){
-				if(i>=(127-35)){
-					m_right_white++;
-				}
-				if(i<=35){
-					m_left_white++;
-				}
-			}
-		}
-		for(int i=20; i<libsc::Tsl1401cl::kSensorW-20; i++){
-			if(m_ccd_data_2[i] > m_threshold_2){
-				m_total_white_2++;
-			}
-		}
-
-		if(m_total_white_1 == 98 && m_state != MIDDLELINE){
-			m_prev_state = m_state;
-			m_state = WHITE;
-		}
+//		m_total_white_2 = 0;
+//		m_total_white_1 = 0;
+//		m_right_white = 0;
+//		m_left_white = 0;
+//		m_total_black_1 = 0;
+//
+//		for(int i=15; i<libsc::Tsl1401cl::kSensorW-15; i++){
+//			if(m_ccd_data_1[i] > libutil::Clamp<uint16_t>(0,m_avg,255-255/4)){
+//				m_total_white_1++;
+//			}
+//			if(m_ccd_data_1[i] < libutil::Clamp<uint16_t>(255/4,m_avg,255)){
+//				m_total_black_1++;
+//			}
+//			if(m_ccd_data_1[i] > m_threshold_1){
+//				if(i>=(127-35)){
+//					m_right_white++;
+//				}
+//				if(i<=35){
+//					m_left_white++;
+//				}
+//			}
+//		}
+//		for(int i=20; i<libsc::Tsl1401cl::kSensorW-20; i++){
+//			if(m_ccd_data_2[i] > m_threshold_2){
+//				m_total_white_2++;
+//			}
+//		}
+//
+//		if(m_total_white_1 == 98 && m_state != MIDDLELINE){
+//			m_prev_state = m_state;
+//			m_state = WHITE;
+//		}
 
 //		if(m_total_black_1 == 98 || m_total_white_2 == 0){
 //			if(m_total_black_1 == 98){
@@ -534,7 +576,6 @@ void App::PitBalance(Pit*){
 		m_prev_edge_data_2[3] = m_edge_data_2[3];
 
 		if(m_car.m_lcdupdate){
-//			m_pin->Set();
 			St7735r::Rect rect_;
 			uint16_t color = 0;
 
@@ -567,18 +608,7 @@ void App::PitBalance(Pit*){
 				m_car.m_lcd.FillColor(color);
 				m_last_y[i] = 159-m_ccd_data_1[i]/4;
 			}
-//			m_pin->Clear();
-			/*for(int i=0; i<128; i++){
-				unsigned char page = (unsigned char)(3 - m_last_y[i]/32/2 + 4);
-				SetColumnAddress((unsigned char)i, (unsigned char)(i));
-				SetPageAddres((unsigned char)(page), (unsigned char)(page));
-				OLED_WrDat((unsigned char)(0));
-				m_last_y[i] = m_ccd_data_1[i];
-				page = (unsigned char)(3 - m_last_y[i]/32/2 + 4);
-				SetColumnAddress((unsigned char)i, (unsigned char)(i));
-				SetPageAddres((unsigned char)(page), (unsigned char)(page));
-				OLED_WrDat((unsigned char)(1<<((128-m_last_y[i]/2)%8)));
-			}*/
+
 		}
 
 	}
@@ -687,48 +717,7 @@ void App::PitBalance(Pit*){
 //		carspeedconl[4] = 0;
 	}
 	if(m_pit_count%4==1){
-		if(m_car.m_lcdupdate){
-//			St7735r::Rect rect_;
-//
-//			rect_.x = 0;
-//			rect_.y = 16;
-//			rect_.w = 128;
-//			rect_.h = 16;
-//			m_car.m_lcd.SetRegion(rect_);
-//
-//			m_lcd_typewriter.WriteString(String::Format("%d %d %d %d %d\n",
-//					m_car.m_joy.GetState() == Joystick::State::kUp,
-//					m_car.m_joy.GetState() == Joystick::State::kDown,
-//					m_car.m_joy.GetState() == Joystick::State::kLeft,
-//					m_car.m_joy.GetState() == Joystick::State::kRight,
-//					m_car.m_joy.GetState() == Joystick::State::kSelect
-//					).c_str());
-//
-//			rect_.x = 0;
-//			rect_.y = 31;
-//			rect_.w = 128;
-//			rect_.h = 16;
-//			m_car.m_lcd.SetRegion(rect_);
 
-//			m_lcd_typewriter.WriteString(String::Format("%d %d\n",
-//					m_car.m_encoder_countr_t,
-//					m_car.m_encoder_countl_t
-//					).c_str());
-
-//			St7735r::Rect rect_;
-//
-//			rect_.x = 0;
-//			rect_.y = 16;
-//			rect_.w = 128;
-//			rect_.h = 16;
-//			m_car.m_lcd.SetRegion(rect_);
-//
-//			m_lcd_typewriter.WriteString(String::Format("%4d %4d\n",
-//					turn_powerl,
-//					turn_powerr
-//					).c_str());
-
-		}
 		switch(m_car.m_print_state){
 			case 1:
 				printf("%f,%f\n",m_speed_setpoint,m_speedInMetrePerSecond);

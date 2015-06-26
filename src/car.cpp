@@ -83,7 +83,7 @@ BatteryMeter::Config GetBatteryConfig(){
 
 St7735r::Config GetSt7735RConfig(){
 	St7735r::Config config;
-	config.is_revert = true;
+	config.is_revert = false;
 	return config;
 }
 

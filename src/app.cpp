@@ -96,7 +96,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 	uint16_t regionCount = 0;
 	uint16_t regionEdge[20] = {0};
 	uint16_t deltaMid[2] = {0};
-	int8_t RorF = 0;
+	uint8_t RorF = 0;
 	for(int i = 0; i< 10; i++){
 		midData[i] = 0;
 	}
@@ -105,23 +105,31 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 	else if(ccdNumber == 2)
 		deadzone = 20;
 	regionEdge[0] = deadzone;
-	for (uint16_t i = deadzone; i<126-deadzone; i++){
+	/*for (uint16_t i = deadzone; i<126-deadzone; i++){
 		if(regionCount == 20){
 			break;
 		}
-		if (regionCount == 0 && abs(m_ccd_data[i+1]-m_ccd_data[i])>9){
+		if (regionCount == 0 && abs((int)m_ccd_data[i+1]-(int)m_ccd_data[i])>15){
 			regionEdge[regionCount] = i+1;
 			midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
 			regionCount++;
-			if (m_ccd_data[i+1] - m_ccd_data[i] > 9)
-				RorF = -1;
-			else RorF = 1;
+			if (((int)m_ccd_data[i+1] - (int)m_ccd_data[i]) > 15) //rise
+				RorF = 1;
+			else RorF = 0;
 		}
-		if (regionCount != 0 && m_ccd_data[i+1] - m_ccd_data > (RorF*9){
-			regionEdge[regionCount] = i+1;
-			midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
-			regionCount++;
-			RorF *= -1;
+		if (regionCount != 0){
+			if (RorF == 1 && ((int)m_ccd_data[i+1] - (int)m_ccd_data[i] < 15)){ //1->need fall
+				regionEdge[regionCount] = i+1;
+				midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
+				regionCount++;
+				RorF = 0;
+			}
+			else if (RorF == 0 && ((int)m_ccd_data[i+1] - (int)m_ccd_data[i] > 15)){ //0->need rise
+				regionEdge[regionCount] = i+1;
+				midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
+				regionCount++;
+				RorF = 1;
+			}
 		}
 	}
 	regionEdge[regionCount] = 127-deadzone;
@@ -159,9 +167,10 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 		}
 	}
 
-//	if(abs((int)midData[closestMid] - (int)m_nowMid[ccdNumber]) < 3){
+//	if(abs((int)midData[closestMid] - (int)m_nowMid[ccdNumber]) < 10){
 		return midData[closestMid];
-//	}else{
+//	}
+//	else{
 //		return m_nowMid[ccdNumber];
 //	}
 }
@@ -247,10 +256,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 78.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 68.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 1.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 78.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 68.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 1.5f;
 		}
 
@@ -648,10 +657,11 @@ void App::PitBalance(Pit*){
 				color = 0;
 				m_car.m_lcd.FillColor(color);
 				rect_.x = i;
-//				rect_.y = 159-m_ccd_data_1[i]/4;
-				rect_.y = 156;
+				rect_.y = 159-m_ccd_data_1[i]/4;
+//				rect_.y = 156;
 				rect_.w = 1;
-				rect_.h = 4;
+				rect_.h = 1;
+//				rect_.h = 4;
 				m_car.m_lcd.SetRegion(rect_);
 				color = ~0;
 				if(m_color[i]==CCD_BLACK){
@@ -739,9 +749,9 @@ void App::PitBalance(Pit*){
 //			Otherwise, use angle to do acceleration for maximum acceleration
 //			}else{
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration*2,(0.01f * (0.35f*m_speed_error + 0.65f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.3f * m_total_speed * 0.02f),maxAcceleration);
+					m_acceleration = libutil::Clamp<float>(-maxAcceleration*2,(0.009f * (0.005f*m_speed_error + 0.995f * m_prev_speed) + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.02f * m_total_speed * 0.02f),maxAcceleration);
 					m_prev_speed_2 = m_prev_speed;
-					m_prev_speed = (0.35f*m_speed_error + 0.65f * m_prev_speed);
+					m_prev_speed = (0.005f*m_speed_error + 0.995f * m_prev_speed);
 
 //					m_prev_speed = (m_speed_setpoint-m_speedInMetrePerSecond)/0.02;
 //					m_prev_speed = 0.3f * 0.5f * (m_acceleration - m_prev_speed) + 0.5f * (m_prev_speed);
@@ -840,7 +850,7 @@ void App::PitBalance(Pit*){
 	m_power_l = m_balance_pid_output /*- m_speed_output */+ m_turn_powerr;
 	m_power_r = m_balance_pid_output /*- m_speed_output */+ m_turn_powerl;
 
-	m_power_l_pwm = (int16_t)(1.25f * m_power_l);
+	m_power_l_pwm = (int16_t)(1.0f * m_power_l);
 	m_power_r_pwm = (int16_t)(1.0f * m_power_r);
 
 	if(m_stop->GetInt()!=0){
@@ -911,7 +921,7 @@ App::App():
 	m_ccd_2_dropped_edge(false),
 	m_ccd_1_dropped_edge(false),
 	m_entered_black_angle(0.0f),
-	m_turn_kp(5.0f),
+	m_turn_kp(2.0f),
 	m_turn_kd(0.05f),
 	m_found_middle_line(false),
 	m_found_obstacle_1(false),

@@ -32,6 +32,7 @@ public:
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
 
+	void GetBlocks(uint16_t* m_ccd_data, int ccdNumber);
 	uint16_t Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* mid_data);
 	void Analysis(uint16_t* region, float* now_mid);
 
@@ -53,10 +54,10 @@ private:
 
 	Upstand* m_upstand;
 
-	int16_t m_power_l=0, m_power_r=0, m_u_s0=0, m_u_s1=0, m_u_b=0, m_turn_powerl=0, m_turn_powerr=0;
+	int16_t m_power_r=0, m_power_l=0, m_u_s0=0, m_u_s1=0, m_u_b=0, m_turn_powerl=0, m_turn_powerr=0;
 	int16_t m_hold_turn_l, m_hold_turn_r;
 	int16_t m_speed_output;
-	int16_t m_power_l_pwm=0, m_power_r_pwm=0;
+	int16_t m_power_r_pwm=0, m_power_l_pwm=0;
 	int16_t m_turn_powerb=0,m_turn_powerf=0;
 	float m_turn_coeff_b,m_turn_coeff_f;
 	int16_t m_speedsp = 0;
@@ -75,10 +76,10 @@ private:
 	uint16_t m_threshold_1, m_threshold_2;
 
 	uint16_t m_regionTotalNumber[3] = {0,0,0};
-	uint16_t prev_mid_data1[10] = {0};
-	uint16_t mid_data1[10] = {0};
-	uint16_t prev_mid_data2[10] = {0};
-	uint16_t mid_data2[10] = {0};
+	uint16_t prev_mid_data1[20] = {0};
+	uint16_t mid_data1[20] = {0};
+	uint16_t prev_mid_data2[20] = {0};
+	uint16_t mid_data2[20] = {0};
 	uint16_t m_nowMid[3] = {63,63,63};
 
 

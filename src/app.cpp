@@ -135,7 +135,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 
 	m_regionTotalNumber[ccdNumber] = regionCount;
 
-	if(regionCount <= 1){
+	if(regionCount <= 0){
 		return m_nowMid[ccdNumber];
 	}
 
@@ -149,11 +149,11 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 		}
 	}
 
-	if(abs((int)midData[closestMid] - (int)m_nowMid[ccdNumber]) < 3){
+//	if(abs((int)midData[closestMid] - (int)m_nowMid[ccdNumber]) < 3){
 		return midData[closestMid];
-	}else{
-		return m_nowMid[ccdNumber];
-	}
+//	}else{
+//		return m_nowMid[ccdNumber];
+//	}
 }
 void App::Analysis(uint16_t* region, float* now_mid){
 	uint16_t state_count1 = 0;
@@ -237,11 +237,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 85.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 5.5f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 78.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 1.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 85.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 5.5f;
+			m_balpid[0] = 78.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 1.5f;
 		}
 
 
@@ -644,15 +644,6 @@ void App::PitBalance(Pit*){
 				rect_.h = 4;
 				m_car.m_lcd.SetRegion(rect_);
 				color = ~0;
-//				if(i<=m_edge_data_1[0]){
-//					color = 0b0000000000011111;
-//				}
-//				if(i>=m_edge_data_1[1]){
-//					color = 0b0000011111100000;
-//				}
-/*				if(i<m_edge_data_1[0] || i>m_edge_data_1[1]){
-					color = 0;
-				}*/
 				if(m_color[i]==CCD_BLACK){
 					color = 0;
 				}
@@ -660,9 +651,9 @@ void App::PitBalance(Pit*){
 					if(i==mid_data1[j]){
 						color = 0b1111100000000000;
 					}
-					if(i==m_route_mid_1){
-						color = 0b0000000000011111;
-					}
+				}
+				if(i==m_route_mid_1){
+					color = 0b0000000000011111;
 				}
 				m_car.m_lcd.FillColor(color);
 				m_last_y[i] = 159-m_ccd_data_1[i]/4;
@@ -839,8 +830,8 @@ void App::PitBalance(Pit*){
 	m_power_l = m_balance_pid_output /*- m_speed_output */+ m_turn_powerr;
 	m_power_r = m_balance_pid_output /*- m_speed_output */+ m_turn_powerl;
 
-	m_power_l_pwm = (int16_t)(1.1f * m_power_l);
-	m_power_r_pwm = (int16_t)(0.94f * m_power_r);
+	m_power_l_pwm = (int16_t)(1.25f * m_power_l);
+	m_power_r_pwm = (int16_t)(1.0f * m_power_r);
 
 	if(m_stop->GetInt()!=0){
 		m_car.m_car_move_motor = false;
@@ -910,8 +901,8 @@ App::App():
 	m_ccd_2_dropped_edge(false),
 	m_ccd_1_dropped_edge(false),
 	m_entered_black_angle(0.0f),
-	m_turn_kp(6.0f),
-	m_turn_kd(0.2f),
+	m_turn_kp(5.0f),
+	m_turn_kd(0.05f),
 	m_found_middle_line(false),
 	m_found_obstacle_1(false),
 	m_found_obstacle_2(false),

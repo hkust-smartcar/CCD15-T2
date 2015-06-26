@@ -96,6 +96,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 	uint16_t regionCount = 0;
 	uint16_t regionEdge[20] = {0};
 	uint16_t deltaMid[2] = {0};
+	int8_t RorF = 0;
 	for(int i = 0; i< 10; i++){
 		midData[i] = 0;
 	}
@@ -104,14 +105,23 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* midData){
 	else if(ccdNumber == 2)
 		deadzone = 20;
 	regionEdge[0] = deadzone;
-	/*for (uint16_t i = deadzone; i<126-deadzone; i++){
+	for (uint16_t i = deadzone; i<126-deadzone; i++){
 		if(regionCount == 20){
 			break;
 		}
-		if (abs(m_ccd_data[i+1]-m_ccd_data[i])>9){
+		if (regionCount == 0 && abs(m_ccd_data[i+1]-m_ccd_data[i])>9){
 			regionEdge[regionCount] = i+1;
 			midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
 			regionCount++;
+			if (m_ccd_data[i+1] - m_ccd_data[i] > 9)
+				RorF = -1;
+			else RorF = 1;
+		}
+		if (regionCount != 0 && m_ccd_data[i+1] - m_ccd_data > (RorF*9){
+			regionEdge[regionCount] = i+1;
+			midData[regionCount] = (regionEdge[regionCount] + regionEdge[regionCount-1])/2;
+			regionCount++;
+			RorF *= -1;
 		}
 	}
 	regionEdge[regionCount] = 127-deadzone;

@@ -45,7 +45,9 @@ private:
 	RemoteVarManager::Var* m_bkd = m_car.m_varmanager->Register("bkd",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_stop = m_car.m_varmanager->Register("stop",RemoteVarManager::Var::Type::kInt);
 	RemoteVarManager::Var* m_start = m_car.m_varmanager->Register("start",RemoteVarManager::Var::Type::kInt);
-
+	RemoteVarManager::Var* m_skp = m_car.m_varmanager->Register("skp",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_skd = m_car.m_varmanager->Register("skd",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_ski = m_car.m_varmanager->Register("ski",RemoteVarManager::Var::Type::kReal);
 
 	Gpo* m_pin;
 
@@ -64,11 +66,11 @@ private:
 	/* edge_data[0] = left_edge;
 	 * edge_data[1] = right_edge;
 	 */
-	uint16_t m_prev_edge_data_1[4] = {0,127,63,63};
-	uint16_t m_edge_data_1[4] = {0,127,63,64};
+	uint16_t m_prev_edge_data_1[20] = {0};
+	uint16_t m_edge_data_1[20] = {0};
 	uint16_t m_route_mid_1 = 63;
-	uint16_t m_prev_edge_data_2[4] = {0,127,63,63};
-	uint16_t m_edge_data_2[4] = {0,127,63,63};
+	uint16_t m_prev_edge_data_2[20] = {0};
+	uint16_t m_edge_data_2[20] = {0};
 	uint16_t m_route_mid_2 = 63;
 	uint16_t m_avg = 0, m_avg_2 = 0;
 	uint16_t m_prev_avg = 0;
@@ -80,6 +82,7 @@ private:
 	uint16_t mid_data1[20] = {0};
 	uint16_t prev_mid_data2[20] = {0};
 	uint16_t mid_data2[20] = {0};
+
 	uint16_t m_nowMid[3] = {63,63,63};
 
 
@@ -97,7 +100,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,65.0f,0,0};
+	float m_balcon[7]={0,0,0,0,73.0f,0,0};
 	float m_actual_bal_error = 0;
 
 	/*pid[0]=kp;
@@ -181,7 +184,7 @@ private:
 	uint16_t m_last_y2[128]={0};
 
 	MovingAverage<int16_t> m_movavgspeed,m_movavgr,m_movavgl;
-	MovingAverage<int> m_movavgturn;
+	MovingAverage<int16_t> m_movavgturn;
 	MovingAverage<float> m_movavgspeed_output;
 
 	enum CCD_COLOR{
@@ -213,7 +216,7 @@ private:
 
 	float m_next_multiplier, m_next_multiplier_2;
 
-	float m_turn_kp,m_turn_kd;
+	float m_hold_turn_kp, m_hold_turn_kd, m_original_turn_kp, m_original_turn_kd, m_turn_kp, m_turn_kd;
 
 	bool m_found_middle_line;
 	bool m_found_obstacle_1, m_found_obstacle_2;

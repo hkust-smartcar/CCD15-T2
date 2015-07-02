@@ -32,9 +32,7 @@ public:
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
 
-	void GetBlocks(uint16_t* m_ccd_data, int ccdNumber);
-	uint16_t Get_mid(uint16_t* m_ccd_data, int ccdNumber, uint16_t* mid_data);
-	void Analysis(uint16_t* region, float* now_mid);
+
 
 private:
 	Car m_car;
@@ -78,10 +76,10 @@ private:
 	uint16_t m_threshold_1, m_threshold_2;
 
 	uint16_t m_regionTotalNumber[3] = {0,0,0};
-	uint16_t prev_mid_data1[20] = {0};
-	uint16_t mid_data1[20] = {0};
-	uint16_t prev_mid_data2[20] = {0};
-	uint16_t mid_data2[20] = {0};
+	uint16_t m_prev_mid_data1[20] = {0};
+	uint16_t m_mid_data1[20] = {0};
+	uint16_t m_prev_mid_data2[20] = {0};
+	uint16_t m_mid_data2[20] = {0};
 
 	uint16_t m_nowMid[3] = {63,63,63};
 
@@ -100,7 +98,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,73.0f,0,0};
+	float m_balcon[7]={0,0,0,0,63.0f,0,0};
 	float m_actual_bal_error = 0;
 
 	/*pid[0]=kp;
@@ -252,5 +250,21 @@ private:
 	int m_total_black_1;
 
 	bool m_found_cross, m_found_blackline;
+
+	float m_voltage, m_prev_voltage;
+
+	Adc m_adc;
+
+	Adc::Config GetAdcConfig(){
+		Adc::Config config;
+		config.adc = libbase::kl26::Adc::Name::kAdc0Ad4B;
+		return config;
+	}
+
+
+
+	void GetBlocks(uint16_t* m_ccd_data, int ccdNumber);
+	uint16_t Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_t* midData, CCD_COLOR* color, uint16_t* regionTotalNumber, uint16_t* nowMid);
+	void Analysis(uint16_t* region, float* now_mid);
 };
 

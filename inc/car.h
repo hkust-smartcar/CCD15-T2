@@ -81,6 +81,7 @@ public:
 	int m_num_print_states = 14;
 
 	float m_shift_balance_angle;
+	int m_ir_count;
 private:
 	Timer::TimerInt m_prev_pressed_time;
 
@@ -126,10 +127,15 @@ private:
 	Gpi::Config GetInfraredConfig(){
 		Gpi::Config config;
 		config.pin = Pin::Name::kPtd6;
-		config.interrupt = Pin::Config::Interrupt::kFalling;
+//		config.config = Pin::Config::ConfigBit::kPassiveFilter;
+		config.interrupt = Pin::Config::Interrupt::kRising;
 		config.isr = std::bind(&Car::GetInfrared, this, std::placeholders::_1);
 		return config;
 	}
+
+
+
+
 
 };
 

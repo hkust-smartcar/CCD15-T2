@@ -159,9 +159,12 @@ void Car::SelectLeft(int){
 
 
 void Car::GetInfrared(Gpi *){
-	static bool state = true;
+//	static bool state = true;
 //	m_buzzer.SetBeep(true);
-	state=!state;
+//	m_car_move_motor = false;
+//	printf("Detected\n");
+	m_ir_count++;
+//	state=!state;
 	/*struct note{
 		std::string note;
 		uint32_t period;
@@ -350,7 +353,8 @@ Car::Car():
 				m_car_move_forward(false),
 				m_lcdupdate(false),
 				m_shift_balance_angle(0.0f),
-				m_prev_pressed_time(0)
+				m_prev_pressed_time(0),
+				m_ir_count(0)
 {
 	/*
 	 * Force NVIC interrupt priority for UART higher than PIT

@@ -134,7 +134,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 	int maxWidth = -1;
 	for(int i=0; i<regionCount; i++){
 		if((int16_t)(abs((int)midData[i] - (int)nowMid[ccdNumber])) < min){
-			if( (i>0 && color[midData[i]] == CCD_WHITE  && ((int)regionEdge[i] - (int)regionEdge[i-1])>maxWidth  && ((int)regionEdge[i] - (int)regionEdge[i-1])>25 ) || (i>0 && color[midData[i]] == CCD_BLACK && ((int)regionEdge[i] - (int)regionEdge[i-1]) > 4 && ((int)regionEdge[i] - (int)regionEdge[i-1])<10)) {
+			if( (i>0 && color[midData[i]] == CCD_WHITE  && ((int)regionEdge[i] - (int)regionEdge[i-1])>maxWidth  && ((int)regionEdge[i] - (int)regionEdge[i-1])>25 ) || (i>0 && color[midData[i]] == CCD_BLACK && ((int)regionEdge[i] - (int)regionEdge[i-1]) > 2 && ((int)regionEdge[i] - (int)regionEdge[i-1])<10)) {
 				min = (int16_t)(abs((int)midData[i] - (int)nowMid[ccdNumber]));
 				maxWidth = (int)regionEdge[i] - (int)regionEdge[i-1];
 				closestMid = i;
@@ -950,8 +950,8 @@ App::App():
 	m_entered_black_angle(0.0f),
 	m_hold_turn_kp(0.0f),
 	m_hold_turn_kd(0.0f),
-	m_original_turn_kp(0.1f),
-	m_original_turn_kd(0.1f),
+	m_original_turn_kp(0.15f),
+	m_original_turn_kd(0.2f),
 	m_turn_kp(m_original_turn_kp),
 	m_turn_kd(m_original_turn_kd),
 	m_found_middle_line(false),

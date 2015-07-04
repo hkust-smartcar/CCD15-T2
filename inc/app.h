@@ -55,6 +55,7 @@ private:
 	Upstand* m_upstand;
 
 	int16_t m_power_r=0, m_power_l=0, m_u_s0=0, m_u_s1=0, m_u_b=0, m_turn_powerl=0, m_turn_powerr=0;
+	int16_t m_turn_pid = 0;
 	int16_t m_hold_turn_l, m_hold_turn_r;
 	int16_t m_speed_output;
 	int16_t m_power_r_pwm=0, m_power_l_pwm=0;
@@ -70,6 +71,7 @@ private:
 	uint16_t m_prev_edge_data_2[20] = {0};
 	uint16_t m_edge_data_2[20] = {0};
 	uint16_t m_route_mid_2 = 63;
+	int m_cur_mid_i_1 = 0, m_cur_mid_i_2 = 0;
 	uint16_t m_avg = 0, m_avg_2 = 0;
 	uint16_t m_prev_avg = 0;
 	uint32_t m_sum = 0, m_sum_2 = 0;
@@ -98,7 +100,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,63.0f,0,0};
+	float m_balcon[7]={0,0,0,0,73.0f,0,0};
 	float m_actual_bal_error = 0;
 
 	/*pid[0]=kp;
@@ -251,9 +253,13 @@ private:
 
 	bool m_found_cross, m_found_blackline;
 
-	float m_voltage, m_prev_voltage;
+	int m_voltage, m_prev_voltage;
 
 	Adc m_adc;
+
+	int m_width1, m_width2;
+
+	float m_turn_ratio;
 
 	Adc::Config GetAdcConfig(){
 		Adc::Config config;

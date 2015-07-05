@@ -182,8 +182,8 @@ private:
 
 	uint16_t m_last_y[128]={0};
 	uint16_t m_last_y2[128]={0};
-
-	MovingAverage<int16_t> m_movavgspeed,m_movavgr,m_movavgl;
+	MovingAverage<float> m_movavgspeed;
+	MovingAverage<int16_t> m_movavgr,m_movavgl;
 	MovingAverage<int16_t> m_movavgturn;
 	MovingAverage<float> m_movavgspeed_output;
 

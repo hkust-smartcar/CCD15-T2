@@ -88,8 +88,9 @@ private:
 	Mma8451q::Config GetMma8451qConfig(){
 		Mma8451q::Config accel_config;
 		accel_config.id = 0;
-		accel_config.power_mode = Mma8451q::Config::PowerMode::kLowNoiseLowPower;
+		accel_config.power_mode = Mma8451q::Config::PowerMode::kHighResolution;
 		accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k200Hz;
+		accel_config.sensitivity = Mma8451q::Config::Sensitivity::kHigh;
 //		accel_config.i2c_master_ptr = m_mpu6050.GetI2cMaster();
 		return accel_config;
 	}

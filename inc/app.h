@@ -100,7 +100,7 @@ private:
 	 *  balcon[4]=setpoint
 	 *  balcon[5]=setpoint offset
 	*/
-	float m_balcon[7]={0,0,0,0,73.0f,0,0};
+	float m_balcon[7]={0,0,0,0,69.0f,0,0};
 	float m_actual_bal_error = 0;
 
 	/*pid[0]=kp;

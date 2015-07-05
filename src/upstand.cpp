@@ -81,8 +81,11 @@ void Upstand::KalmanFilter(void)
 
       /* �����ǽǶ�ת�� */
       AngleGyro = omega_[1];
+      if(AngleGyro > 0.0f && AngleGyro < 3.0f){
+    	  AngleGyro = 0.0f;
+      }
 //	  AngleGyro = m_gyro_adc->GetResultF();
-	  m_angle_gyro = AngleGyro + 1.0f;
+	  m_angle_gyro = AngleGyro;
 
 
       /* ������������ƣ�ʱ����� */

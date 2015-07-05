@@ -93,11 +93,14 @@ void App::GetBlocks(uint16_t* m_ccd_data, int ccdNumber){
 
 uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_t* midData, CCD_COLOR* color, uint16_t* regionTotalNumber, uint16_t* nowMid){
 	int regionCount = 0;
+	int deadzone = 0;
 	uint16_t* regionEdge = nullptr;
 	if(ccdNumber == 1){
 		regionEdge = m_edge_data_1;
+		deadzone = 15;
 	}else if(ccdNumber == 2){
 		regionEdge = m_edge_data_2;
+		deadzone = 15;
 	}
 	for(int i = 0; i< 20; i++){
 		regionEdge[i] = 0;
@@ -137,8 +140,8 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 
 	for(int i=1; i<=regionCount; i++){
 		width = (int)regionEdge[i] - (int)regionEdge[i-1];
-		if((int16_t)(abs((int)midData[i-1] - (int)nowMid[ccdNumber])) < min){
-			if( (color[midData[i-1]] == CCD_WHITE && width > 20 ) || (color[midData[i-1]] == CCD_BLACK && width > 1 && width < 10)) {
+		if((int16_t)(abs((int)midData[i-1] - (int)nowMid[ccdNumber])) < min && midData[i-1] > deadzone && midData[i-1] < 127-deadzone){
+			if( (color[midData[i-1]] == CCD_WHITE && width > 20 ) || (color[midData[i-1]] == CCD_BLACK && width > 1 && width < 60 && ccdNumber == 1)) {
 				min = (int16_t)(abs((int)midData[i-1] - (int)nowMid[ccdNumber]));
 				closestMid = i-1;
 			}
@@ -147,10 +150,19 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 	m_prev_state = m_state;
 	m_state = EDGES;
 
+	int prev_total_white = 0;
 	if(ccdNumber == 1){
+		prev_total_white = m_total_white_1;
 		m_total_white_1 = total_white;
 	}else if(ccdNumber == 2){
+		prev_total_white = m_total_white_2;
 		m_total_white_2 = total_white;
+	}
+
+	if(color[midData[closestMid]] == CCD_BLACK){
+		m_trust = 1.0f;
+		m_prev_state = m_state;
+		m_state = BLACK;
 	}
 
 	if(color[midData[closestMid]] == CCD_WHITE){
@@ -161,7 +173,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 //			return 63;
 		}*/
 
-		if(m_total_white_1 >= 120 && m_movavgr.GetAverage() < m_movavgl.GetAverage()){
+		/*if(m_total_white_1 >= 120 && m_movavgr.GetAverage() < m_movavgl.GetAverage()){
 			for(int i=closestMid+1; i<regionCount; i++){
 				if(i > 0 && color[midData[i]] == CCD_WHITE && ((int)regionEdge[i] - (int)regionEdge[i-1])>20 ){
 					return midData[i];
@@ -175,10 +187,10 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 					return midData[i];
 				}
 			}
-		}
+		}*/
 	}
 
-	if( abs((int)midData[closestMid] - (int)nowMid[ccdNumber]) > 40 ){
+	if( abs((int)midData[closestMid] - (int)nowMid[ccdNumber]) > 25 && prev_total_white < 100){
 //		midData[closestMid] = (uint16_t)((int16_t)midData[closestMid] + (int16_t)(((int16_t)nowMid[ccdNumber] - (int16_t)midData[closestMid])*0.5f));
 		return nowMid[ccdNumber];
 	}
@@ -274,11 +286,11 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 60.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 5.5f/*m_bkd->GetReal()*/;
+			m_balpid[0] = 140.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 6.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 60.0f/*m_bkp->GetReal()*/;
-			m_balpid[2] = 5.5f;
+			m_balpid[0] = 140.0f/*m_bkp->GetReal()*/;
+			m_balpid[2] = 6.5f;
 		}
 
 
@@ -313,7 +325,7 @@ void App::PitBalance(Pit*){
 			m_sum_2 += (uint32_t)m_ccd_data_2[i];
 		}
 		m_avg_2 = (uint16_t) (m_sum_2 / libsc::Tsl1401cl::kSensorW);
-		m_avg_2 = libutil::Clamp<uint16_t>(40, m_avg_2, 255);
+		m_avg_2 = libutil::Clamp<uint16_t>(50, m_avg_2, 255);
 
 		m_nowMid[2] = m_route_mid_2;
 		m_route_mid_2 = Get_mid(m_ccd_data_2.data(), m_avg_2, 2, m_mid_data2, m_color_2.data(), m_regionTotalNumber, m_nowMid);
@@ -390,7 +402,7 @@ void App::PitBalance(Pit*){
 			m_sum += (uint32_t)m_ccd_data_1[i];
 		}
 		m_avg = (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW);
-		m_avg = libutil::Clamp<uint16_t>(40, m_avg, 255);
+		m_avg = libutil::Clamp<uint16_t>(0, m_avg, 255);
 		m_found_middle_line = false;
 
 		m_car.m_led.SetEnable(false);
@@ -459,7 +471,12 @@ void App::PitBalance(Pit*){
 		m_turn_error_1 = ((int)m_mid - (int)m_route_mid_1);
 		m_turn_error_2 = ((int)m_mid - (int)m_route_mid_2);
 
-		m_trust = (float)(abs(m_turn_error_1)/20 * 1.0f);
+		if(m_state != BLACK){
+			m_trust = (float)(abs(m_turn_error_1)/30 * 1.0f);
+		}else{
+			m_car.m_buzzer.SetBeep(true);
+		}
+
 //		m_trust = 1.0f;
 		/*
 		 * Change trust of closer CCD based on width of the closer CCD
@@ -486,7 +503,7 @@ void App::PitBalance(Pit*){
 //			m_turn_kd = m_original_turn_kd * 0.1f;
 //		}
 		m_turn_error = (int)(m_trust * m_turn_error_1 + (1.0f-m_trust) * m_turn_error_2);
-//		m_turn_error = ((int)m_mid - (int)m_route_mid_2);
+//		m_turn_error = ((int)m_mid - (int)m_route_mid_1);
 
 		/*
 		 * Obstacle detection
@@ -662,7 +679,12 @@ void App::PitBalance(Pit*){
 //			m_movavgturn.Add((int16_t)(((m_turn_kp*abs(m_turn_error)+m_speedInMetrePerSecond*0.0f)*m_turn_error + (m_turn_kd+m_speedInMetrePerSecond*0.7f)*(m_turn_error - m_turn_prev_error)/0.02f)));
 //			m_turn_powerr = m_movavgturn.GetAverage();
 //			int16_t pwm = (m_power_l + m_power_r)/2;
-			m_turn_pid = (int16_t)(((m_turn_kp*abs(m_turn_error)+m_speedInMetrePerSecond*0.0f)*m_turn_error + (/*m_turn_kd+*/m_speedInMetrePerSecond*m_turn_kd)*(m_turn_error - m_turn_prev_error)/0.02f));
+			if(m_turn_error > 10/*abs(m_turn_error - m_turn_prev_error)>15*/){
+				m_turn_kd = m_original_turn_kd * 0.5f;
+			}else{
+				m_turn_kd = m_original_turn_kd;
+			}
+			m_turn_pid = (int16_t)(((m_turn_kp*abs(m_turn_error)+m_speedInMetrePerSecond*0.0f)*m_turn_error + (m_turn_kd/*m_speedInMetrePerSecond*m_turn_kd*/)*(m_turn_error - m_turn_prev_error)/0.02f));
 //			m_turn_pid = (int16_t)(5.0f * (m_turn_error - (int)((m_car.m_encoder_countr-m_car.m_encoder_countl) * 50 / 0.45f)));
 			m_turn_powerr = m_turn_pid;
 			m_turn_powerl = -m_turn_pid;
@@ -766,7 +788,7 @@ void App::PitBalance(Pit*){
 			float speedDt = 0.02f;
 
 			m_total_speed += m_speed_error;
-//			m_total_speed = libutil::Clamp<float>(-50.0f,m_total_speed,50.0f);
+			m_total_speed = libutil::Clamp<float>(-1000.0f,m_total_speed,1000.0f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -780,14 +802,17 @@ void App::PitBalance(Pit*){
 			maxAcceleration = 1.8;
 
 
-					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(/*m_skp->GetReal() * m_speed_error + m_skd->GetReal() * (m_speed_error-m_prev_speed)/0.02f + */1000.0f * m_total_speed),maxAcceleration);
+//					m_acceleration = libutil::Clamp<float>(-maxAcceleration,(/*m_skp->GetReal() * m_speed_error + m_skd->GetReal() * (m_speed_error-m_prev_speed)/0.02f + */1000.0f * m_total_speed),maxAcceleration);
 //					m_prev_speed = (0.1f*m_speed_error + 0.9f * m_prev_speed);
 
-					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;
+
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 //					m_balcon[6] = (atan(m_acceleration/9.81f)*RAD2ANGLE);
-					m_balcon[6] = -(10.0f * m_speed_error + 0.08f * m_total_speed);
+//					m_balcon[6] = -(22.0f * m_speed_error + 0.08f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed);
+					m_balcon[6] = -(4.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0005f * m_total_speed);
+					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;
+					m_balcon[6] = libutil::Clamp<float>(-18.0f,m_balcon[6],18.0f);
 //					m_balcon[6] = atan((0.15f*m_acceleration + 0.85f * m_prev_speed)/9.81f)*RAD2ANGLE;
 //					m_prev_speed = (0.15f*m_acceleration + 0.85f * m_prev_speed);
 //					m_speed_output = 0;
@@ -882,11 +907,11 @@ void App::PitBalance(Pit*){
 //	}
 
 
-	m_power_l = m_balance_pid_output /*- m_speed_output */+ m_turn_powerr;
-	m_power_r = m_balance_pid_output /*- m_speed_output */+ m_turn_powerl;
+	m_power_l = m_balance_pid_output + m_turn_powerl;
+	m_power_r = m_balance_pid_output + m_turn_powerr;
 
 	m_power_l_pwm = (int16_t)(1.0f * m_power_l);
-	m_power_r_pwm = (int16_t)(1.0f * m_power_r);
+	m_power_r_pwm = (int16_t)(1.2f * m_power_r);
 
 	if(m_stop->GetInt()!=0){
 		m_car.m_car_move_motor = false;
@@ -942,7 +967,7 @@ App::App():
 	m_balance_pid_output(0),
 	m_hold_turn_l(0),
 	m_hold_turn_r(0),
-	m_movavgspeed(5),
+	m_movavgspeed(15),
 	m_movavgr(200),
 	m_movavgl(200),
 	m_movavgturn(1),
@@ -954,7 +979,7 @@ App::App():
 	m_acceleration(0),
 	m_speed_error(0),
 	m_total_speed(0),
-	m_speed_setpoint(0.0f),
+	m_speed_setpoint(1.65f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_error_1(0),
@@ -975,8 +1000,8 @@ App::App():
 	m_entered_black_angle(0.0f),
 	m_hold_turn_kp(0.0f),
 	m_hold_turn_kd(0.0f),
-	m_original_turn_kp(0.18f),
-	m_original_turn_kd(0.1f),
+	m_original_turn_kp(0.11f),
+	m_original_turn_kd(0.6f),
 	m_turn_kp(m_original_turn_kp),
 	m_turn_kd(m_original_turn_kd),
 	m_found_middle_line(false),
@@ -1089,7 +1114,7 @@ App::App():
 
 	m_skp->SetReal(0.8f);
 	m_skd->SetReal(0.005f);
-	m_ski->SetReal(1500.0f);
+	m_ski->SetReal(0.0f);
 
 	Pit m_pit(GetPitConfig(0, std::bind(&App::PitBalance, this, std::placeholders::_1)));
 

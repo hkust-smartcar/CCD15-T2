@@ -32,8 +32,6 @@ public:
 	void PitBalance(Pit* pit);
 	void PitMoveMotor(Pit* pit);
 
-
-
 private:
 	Car m_car;
 	LcdTypewriter m_lcd_typewriter;

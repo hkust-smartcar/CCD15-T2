@@ -277,7 +277,7 @@ void App::PitBalance(Pit*){
 	if(m_hold_count == 0){
 		m_car.m_buzzer.SetBeep(false);
 	}
-	if(m_pit_count%2==0){
+//	if(m_pit_count%2==0){
 		m_car.m_mpu6050.Update();
 		m_car.m_mma8451q.Update();
 		m_gyro_ = m_car.m_mpu6050.GetOmega();
@@ -298,7 +298,7 @@ void App::PitBalance(Pit*){
 
 		m_balance_pid_output = Output_b(m_balcon, m_balpid, m_time, m_real_angle, -m_gyro_[1]);
 //		m_balance_pid_output = 0;
-	}
+//	}
 //	Every 20ms for the two ccds to finish sampling
 	if(m_pit_count%4==3){
 		m_car.m_ccd_2.StartSample();
@@ -697,8 +697,9 @@ void App::PitBalance(Pit*){
 			}
 			m_turn_pid = (int16_t)(((m_turn_kp*abs(m_turn_error)+m_speedInMetrePerSecond*0.3f)*m_turn_error + (m_turn_kd/*m_speedInMetrePerSecond*m_turn_kd*/)*(m_turn_error - m_turn_prev_error)/0.02f));
 //			m_turn_pid = (int16_t)(5.0f * (m_turn_error - (int)((m_car.m_encoder_countr-m_car.m_encoder_countl) * 50 / 0.45f)));
-			m_turn_powerr = m_turn_pid;
-			m_turn_powerl = -m_turn_pid;
+			m_movavgturn.Add(m_turn_pid);
+			m_turn_powerr = m_movavgturn.GetAverage();
+			m_turn_powerl = -m_movavgturn.GetAverage();
 			m_turn_prev_error = m_turn_error;
 		}else{
 			m_turn_powerl = m_turn_powerr = 0;
@@ -988,7 +989,7 @@ App::App():
 	m_movavgspeed(30),
 	m_movavgr(200),
 	m_movavgl(200),
-	m_movavgturn(1),
+	m_movavgturn(2),
 	m_movavgspeed_output(10),
 	m_prevSpeedInMetrePerSecond(0),
 	m_speedInMetrePerSecond(0),

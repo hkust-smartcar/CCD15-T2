@@ -287,11 +287,11 @@ void App::PitBalance(Pit*){
 
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
-		if(m_speedInMetrePerSecond>=m_speed_setpoint*0.8f){
-			m_balpid[0] = 80.0f/*m_bkp->GetReal()*/;
+		if(fabs(m_speed_error) < 0.4f){
+			m_balpid[0] = 130.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 6.5f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 80.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 70.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 6.5f;
 		}
 
@@ -828,7 +828,7 @@ void App::PitBalance(Pit*){
 						m_speed_output = 300.0f * m_speed_error + 0.3f * m_total_speed;
 						m_balcon[6] = -(0.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed);
 					}else{
-						m_speed_output = 200.0f * m_speed_error + 0.3f * m_total_speed;
+						m_speed_output = 300.0f * m_speed_error + 0.3f * m_total_speed;
 						m_balcon[6] = -(0.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed);
 
 					}

@@ -815,7 +815,7 @@ void App::PitBalance(Pit*){
 					m_balcon[6] = libutil::Clamp<float>(-18.0f,m_balcon[6],18.0f);
 //					m_balcon[6] = atan((0.15f*m_acceleration + 0.85f * m_prev_speed)/9.81f)*RAD2ANGLE;
 //					m_prev_speed = (0.15f*m_acceleration + 0.85f * m_prev_speed);
-//					m_speed_output = 0;
+					m_speed_output = 0.0005f * m_total_speed;
 //			}
 
 		}else{
@@ -907,8 +907,8 @@ void App::PitBalance(Pit*){
 //	}
 
 
-	m_power_l = m_balance_pid_output + m_turn_powerl;
-	m_power_r = m_balance_pid_output + m_turn_powerr;
+	m_power_l = m_balance_pid_output - m_speed_output + m_turn_powerl;
+	m_power_r = m_balance_pid_output - m_speed_output + m_turn_powerr;
 
 	m_power_l_pwm = (int16_t)(1.0f * m_power_l);
 	m_power_r_pwm = (int16_t)(1.2f * m_power_r);

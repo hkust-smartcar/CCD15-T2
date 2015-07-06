@@ -26,7 +26,7 @@ using namespace libsc;
 /**
  * 函数kalman_filter的参数定义
  */
-#define TIME_CONSTANT       (2 / 1000.0f) /**< 采样间隔时间常数（单位：ms） */
+#define TIME_CONSTANT       (10 / 1000.0f) /**< 采样间隔时间常数（单位：ms） */
 //#define TIME_CONSTANT       0.6 /**< 采样间隔时间常数（单位：ms） */
 #define  AD_INTERVAL        0.004f
 #define ACCY_CONVARIANCE    300  /**< 加速度计Y轴协方差 */

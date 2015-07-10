@@ -28,6 +28,7 @@
 #include <libsc/joystick.h>
 #include <libsc/button.h>
 #include <libsc/simple_buzzer.h>
+#include "libsc/us_100.h"
 #include "OLED.h"
 
 
@@ -71,7 +72,8 @@ public:
 
 	St7735r m_lcd;
 	SimpleBuzzer m_buzzer;
-	Gpi m_infrared;
+	Adc m_infrared;
+	Gpo m_infrared_switch;
 	uint16_t edge[2]={0,libsc::Tsl1401cl::kSensorW};
 
 	bool m_car_move_motor;
@@ -82,13 +84,15 @@ public:
 
 	float m_shift_balance_angle;
 	int m_ir_count;
+
+	Us100 m_ultrasonic;
 private:
 	Timer::TimerInt m_prev_pressed_time;
 
 	Mma8451q::Config GetMma8451qConfig(){
 		Mma8451q::Config accel_config;
 		accel_config.id = 0;
-		accel_config.power_mode = Mma8451q::Config::PowerMode::kHighResolution;
+		accel_config.power_mode = Mma8451q::Config::PowerMode::kLowNoiseLowPower;
 		accel_config.output_data_rate = Mma8451q::Config::OutputDataRate::k200Hz;
 		accel_config.sensitivity = Mma8451q::Config::Sensitivity::kLow;
 //		accel_config.i2c_master_ptr = m_mpu6050.GetI2cMaster();
@@ -125,12 +129,22 @@ private:
 		return joyconfig;
 	}
 
-	Gpi::Config GetInfraredConfig(){
-		Gpi::Config config;
+	Adc::Config GetInfraredConfig(){
+		Adc::Config config;
 		config.pin = Pin::Name::kPtd6;
+//		config.pin = Pin::Name::kPtd6;
+////		config.config = Pin::Config::ConfigBit::kPassiveFilter;
+//		config.interrupt = Pin::Config::Interrupt::kRising;
+//		config.isr = std::bind(&Car::GetInfrared, this, std::placeholders::_1);
+		return config;
+	}
+
+	Gpo::Config GetInfraredSwitchConfig(){
+		Gpo::Config config;
+		config.pin = Pin::Name::kPtc1;
 //		config.config = Pin::Config::ConfigBit::kPassiveFilter;
-		config.interrupt = Pin::Config::Interrupt::kRising;
-		config.isr = std::bind(&Car::GetInfrared, this, std::placeholders::_1);
+//		config.interrupt = Pin::Config::Interrupt::kRising;
+//		config.isr = std::bind(&Car::GetInfrared, this, std::placeholders::_1);
 		return config;
 	}
 

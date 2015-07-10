@@ -94,6 +94,13 @@ SimpleBuzzer::Config GetBuzzerConfig(){
 	return config;
 }
 
+Us100::Config GetUltrasonicConfig(){
+	Us100::Config config;
+	config.id = 0;
+	Us100 ultrasonic(config);
+	return config;
+}
+
 
 
 void Car::Sw1Down(int id){
@@ -349,12 +356,14 @@ Car::Car():
 				m_lcd(GetSt7735RConfig()),
 				m_buzzer(GetBuzzerConfig()),
 				m_infrared(GetInfraredConfig()),
+				m_infrared_switch(GetInfraredSwitchConfig()),
 				m_car_move_motor(false),
 				m_car_move_forward(false),
 				m_lcdupdate(false),
 				m_shift_balance_angle(0.0f),
 				m_prev_pressed_time(0),
-				m_ir_count(0)
+				m_ir_count(0),
+				m_ultrasonic(GetUltrasonicConfig())
 {
 	/*
 	 * Force NVIC interrupt priority for UART higher than PIT
@@ -391,6 +400,8 @@ Car::Car():
 	libutil::InitDefaultFwriteHandler(m_com);
 
 	m_lcd.Clear(0);
+
+	m_ultrasonic.Start();
 
 
 //	float totalVoltage = 0.0f;

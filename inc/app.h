@@ -175,7 +175,7 @@ private:
 	int m_turn_error, m_turn_error_1, m_turn_error_2;
 	int m_turn_prev_error;
 	int m_hold_error;
-	int m_hold_count;
+	int m_hold_count, m_hold_count2;
 	int m_prev_pit_count;
 
 	uint16_t m_last_y[128]={0};
@@ -251,7 +251,7 @@ private:
 
 	bool m_found_cross, m_found_blackline;
 
-	int m_voltage, m_prev_voltage;
+	float m_voltage, m_prev_voltage;
 
 	Adc m_adc;
 

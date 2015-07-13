@@ -219,7 +219,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 
 	int jumpThreshold = 0;
 	if(ccdNumber == 1){
-		jumpThreshold = 20;
+		jumpThreshold = 40;
 	}else if(ccdNumber == 2){
 		jumpThreshold = 20;
 	}
@@ -330,10 +330,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(fabs(m_speed_error) < 0.7f){
-			m_balpid[0] = 210.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 170.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 4.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 210.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 170.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 4.0f;
 		}
 
@@ -525,7 +525,7 @@ void App::PitBalance(Pit*){
 //			m_turn_kd = m_original_turn_kd;
 //		}
 
-		m_trust = (float)(abs(m_turn_error_1)/10 * 1.0f);
+		m_trust = (float)(abs(m_turn_error_1))/10.0f;
 
 		if(m_state == MIDDLELINE){
 			m_trust = 1.0f;
@@ -868,7 +868,7 @@ void App::PitBalance(Pit*){
 //			float speedDt = 0.02f;
 
 			m_total_speed += m_speed_error;
-			m_total_speed = libutil::Clamp<float>(-500.0f,m_total_speed,500.0f);
+			m_total_speed = libutil::Clamp<float>(-1.5f,m_total_speed, 1.5f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 //			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -887,15 +887,16 @@ void App::PitBalance(Pit*){
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 
-					m_speed_output = 80.0f * m_speed_error + 0.7f * m_total_speed;
-					m_balcon[6] = -(2.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.004f * m_total_speed);
+					m_speed_output = 80.0f * m_speed_error + 150.0f * m_total_speed;
+					m_balcon[6] = -(2.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.3f * m_total_speed);
 
-					if(m_turn_error > 10){
-						m_balcon[6] -= 2.5f;
+					if(m_turn_error > 8){
+//						m_balcon[6] -= 1.5f;
+						m_balcon[6] -= 0.14f * m_turn_error;
 					}
 
 					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;
-					m_balcon[6] = libutil::Clamp<float>(-18.0f,m_balcon[6]-5.0f,18.0f);
+					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6]-3.5f,11.0f);
 
 
 		}else{
@@ -1061,7 +1062,7 @@ App::App():
 	m_acceleration(0),
 	m_speed_error(0),
 	m_total_speed(0),
-	m_speed_setpoint(1.5f),
+	m_speed_setpoint(1.8f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_error_1(0),
@@ -1083,8 +1084,8 @@ App::App():
 	m_entered_black_angle(0.0f),
 	m_hold_turn_kp(0.0f),
 	m_hold_turn_kd(0.0f),
-	m_original_turn_kp(6.3f),
-	m_original_turn_kd(0.6f),
+	m_original_turn_kp(7.9f),
+	m_original_turn_kd(0.95f),
 	m_turn_kp(m_original_turn_kp),
 	m_turn_kd(m_original_turn_kd),
 	m_found_middle_line(false),

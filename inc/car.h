@@ -131,7 +131,7 @@ private:
 
 	Adc::Config GetInfraredConfig(){
 		Adc::Config config;
-		config.pin = Pin::Name::kPtd6;
+		config.pin = Pin::Name::kPtd5;
 //		config.pin = Pin::Name::kPtd6;
 ////		config.config = Pin::Config::ConfigBit::kPassiveFilter;
 //		config.interrupt = Pin::Config::Interrupt::kRising;

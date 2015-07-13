@@ -44,6 +44,8 @@ private:
 	RemoteVarManager::Var* m_skp = m_car.m_varmanager->Register("skp",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_skd = m_car.m_varmanager->Register("skd",RemoteVarManager::Var::Type::kReal);
 	RemoteVarManager::Var* m_ski = m_car.m_varmanager->Register("ski",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_tkp = m_car.m_varmanager->Register("tkp",RemoteVarManager::Var::Type::kReal);
+	RemoteVarManager::Var* m_tkd = m_car.m_varmanager->Register("tkd",RemoteVarManager::Var::Type::kReal);
 
 	Gpo* m_pin;
 

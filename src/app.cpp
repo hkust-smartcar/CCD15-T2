@@ -868,7 +868,7 @@ void App::PitBalance(Pit*){
 //			float speedDt = 0.02f;
 
 			m_total_speed += m_speed_error;
-			m_total_speed = libutil::Clamp<float>(-1.5f,m_total_speed, 1.5f);
+			m_total_speed = libutil::Clamp<float>(-2.0f,m_total_speed, 2.0f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 //			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -887,8 +887,8 @@ void App::PitBalance(Pit*){
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 
-					m_speed_output = 80.0f * m_speed_error + 150.0f * m_total_speed;
-					m_balcon[6] = -(2.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.3f * m_total_speed);
+					m_speed_output = 80.0f * m_speed_error + 250.0f * m_total_speed;
+					m_balcon[6] = -(2.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.5f * m_total_speed);
 
 					if(m_turn_error > 8){
 //						m_balcon[6] -= 1.5f;

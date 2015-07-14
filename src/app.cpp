@@ -330,10 +330,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(fabs(m_speed_error) < 0.7f){
-			m_balpid[0] = 190.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 50.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 190.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 50.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f;
 		}
 
@@ -720,7 +720,8 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_state == OBSTACLE){
-			m_turn_kp = m_original_turn_kp * 2.5f;
+			m_turn_kp = m_original_turn_kp * 1.8f;
+			m_turn_kd = 0.0f;
 			m_hold_count = 15;
 			m_car.m_buzzer.SetBeep(true);
 		}
@@ -864,9 +865,9 @@ void App::PitBalance(Pit*){
 //			m_car.m_car_speed = 2;
 
 			m_speedInMetrePerSecond = (m_car.m_encoder_countr + m_car.m_encoder_countl)/2.0f * 0.188f / 1210.0f / 0.02f;
-			m_movavgspeed.Add(m_speedInMetrePerSecond);
-			m_speed_error = m_speed_setpoint - m_movavgspeed.GetAverage();
-//			m_speed_error = m_speed_setpoint-m_speedInMetrePerSecond;
+//			m_movavgspeed.Add(m_speedInMetrePerSecond);
+//			m_speed_error = m_speed_setpoint - m_movavgspeed.GetAverage();
+			m_speed_error = m_speed_setpoint-m_speedInMetrePerSecond;
 
 //			float speedKp = 31.0f;
 //			float speedKd = 0.0f;
@@ -874,7 +875,7 @@ void App::PitBalance(Pit*){
 //			float speedDt = 0.02f;
 
 			m_total_speed += m_speed_error;
-			m_total_speed = libutil::Clamp<float>(-2.0f,m_total_speed, 2.0f);
+			m_total_speed = libutil::Clamp<float>(-250.0f,m_total_speed, 250.0f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 //			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -893,11 +894,11 @@ void App::PitBalance(Pit*){
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 					if(fabs(m_speed_error) > 1.0f){
-						m_speed_output = 190.0f * m_speed_error + 120.0f * m_total_speed;
+						m_speed_output = 190.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.2f * m_total_speed;
 					}else{
-						m_speed_output = 190.0f * m_speed_error + 120.0f * m_total_speed;
+						m_speed_output = 190.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.2f * m_total_speed;
 					}
-					m_balcon[6] = -(2.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.5f * m_total_speed);
+					m_balcon[6] = -(1.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed);
 
 					if(m_turn_error > 8){
 //						m_balcon[6] -= 1.5f;
@@ -905,7 +906,7 @@ void App::PitBalance(Pit*){
 					}
 
 					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;
-					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6]-3.5f,11.0f);
+					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6]/*-3.5f*/,11.0f);
 
 
 		}else{
@@ -935,7 +936,7 @@ void App::PitBalance(Pit*){
 
 		switch(m_car.m_print_state){
 			case 0:
-				printf("%d\n", m_turn_pid);
+				printf("%f\n", m_total_speed);
 			break;
 			case 1:
 				printf("%f,%f,%f, %f, %d, %f\n",m_speed_setpoint,m_speedInMetrePerSecond,m_balcon[6], m_speed_error,  m_speed_output, 0.05f * m_total_speed);
@@ -1208,6 +1209,8 @@ App::App():
 	m_skp->SetReal(2.0f);
 	m_skd->SetReal(0.0f);
 	m_ski->SetReal(0.01f);
+
+
 
 	m_car.m_infrared_switch.Set();
 

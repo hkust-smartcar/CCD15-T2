@@ -172,7 +172,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 	}
 
 	if(color[midData[closestMid]] == CCD_WHITE){
-		if(/*m_total_white_1 >= 120 ||*/ m_total_white_2 >= 118 && ccdNumber == 1){
+		if(/*m_total_white_1 >= 120 ||*/ m_total_white_2 >= 120 && ccdNumber == 1){
 			m_prev_state = m_state;
 			m_state = CROSS;
 			return nowMid[ccdNumber];
@@ -448,7 +448,7 @@ void App::PitBalance(Pit*){
 		}
 //		m_avg = (m_avg + (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW))/2;
 		m_avg = (uint16_t)(m_sum / libsc::Tsl1401cl::kSensorW);
-//		m_avg = libutil::Clamp<uint16_t>(97, m_avg, 255);
+		m_avg = libutil::Clamp<uint16_t>(90, m_avg, 255);
 		m_found_middle_line = false;
 
 		m_car.m_led.SetEnable(false);
@@ -555,7 +555,7 @@ void App::PitBalance(Pit*){
 //				m_trust = 1.0f;
 //			}*/
 			m_turn_kp = m_original_turn_kp * 0.1f;
-			m_turn_kd = m_original_turn_kd * 0.1f;
+			m_turn_kd = 0.0f;
 		}else{
 			m_turn_kp = m_original_turn_kp;
 			m_turn_kd = m_original_turn_kd;
@@ -1095,7 +1095,7 @@ App::App():
 	m_hold_turn_kp(0.0f),
 	m_hold_turn_kd(0.0f),
 	m_original_turn_kp(7.9),
-	m_original_turn_kd(1.1f),
+	m_original_turn_kd(1.9f),
 	m_turn_kp(m_original_turn_kp),
 	m_turn_kd(m_original_turn_kd),
 	m_found_middle_line(false),

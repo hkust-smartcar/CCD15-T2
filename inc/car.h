@@ -141,7 +141,7 @@ private:
 
 	Gpo::Config GetInfraredSwitchConfig(){
 		Gpo::Config config;
-		config.pin = Pin::Name::kPtc1;
+		config.pin = Pin::Name::kPte17;
 //		config.config = Pin::Config::ConfigBit::kPassiveFilter;
 //		config.interrupt = Pin::Config::Interrupt::kRising;
 //		config.isr = std::bind(&Car::GetInfrared, this, std::placeholders::_1);

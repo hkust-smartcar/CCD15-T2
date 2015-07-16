@@ -174,8 +174,8 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 		if(/*m_total_white_1 >= 120 ||*/ m_total_white_2 >= 120 && ccdNumber == 1){
 			m_prev_state = m_state;
 			m_state = CROSS;
-			return nowMid[ccdNumber];
-//			return 63;
+//			return nowMid[ccdNumber];
+			return 63;
 		}
 
 		if(/*m_car.m_ultrasonic.GetDistance() < 500 || */closestMid-2 > 0 && color[midData[closestMid-2]] == CCD_WHITE && color[midData[closestMid-1]] == CCD_BLACK && color[midData[closestMid+1]] == CCD_BLACK && ((int)regionEdge[closestMid+1] - (int)regionEdge[closestMid]) > 25 && ((int)regionEdge[closestMid+1] - (int)regionEdge[closestMid]) < 60 && ((int)regionEdge[closestMid-1] - (int)regionEdge[closestMid-2]) < 25){
@@ -719,10 +719,10 @@ void App::PitBalance(Pit*){
 		}*/
 
 		if(m_state == OBSTACLE){
-			m_turn_kp = m_original_turn_kp * 1.8f;
+			m_turn_kp = m_original_turn_kp * 1.5f;
 			m_turn_kd = 0.0f;
 			m_hold_count = 15;
-			m_car.m_buzzer.SetBeep(true);
+//			m_car.m_buzzer.SetBeep(true);
 		}
 
 		if(m_hold_count > 0){
@@ -1013,8 +1013,8 @@ void App::PitBalance(Pit*){
 
 
 	m_voltage = m_car.m_infrared.GetResultF();
-	if(m_prev_voltage >= 2.3f && m_voltage <= 1.0f){
-		m_car.m_buzzer.SetBeep(true);
+	if(m_prev_voltage >= 1.9f && m_voltage < 1.9f){
+//		m_car.m_buzzer.SetBeep(true);
 		m_car.m_car_move_forward = true;
 //		m_hold_count = 100;
 	}

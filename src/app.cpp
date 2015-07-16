@@ -218,9 +218,9 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 
 	int jumpThreshold = 0;
 	if(ccdNumber == 1){
-		jumpThreshold = 40;
+		jumpThreshold = 15;
 	}else if(ccdNumber == 2){
-		jumpThreshold = 20;
+		jumpThreshold = 15;
 	}
 	if( abs((int)midData[closestMid] - (int)nowMid[ccdNumber]) > jumpThreshold){
 //		midData[closestMid] = (uint16_t)((int16_t)midData[closestMid] + (int16_t)(((int16_t)nowMid[ccdNumber] - (int16_t)midData[closestMid])*0.5f));
@@ -237,58 +237,58 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 
 }
 void App::Analysis(uint16_t* region, float* now_mid){
-	uint16_t state_count1 = 0;
-	uint16_t state_count2 = 0;
-	m_prev_state = m_state;
-	if (region[1] == 5){
-		if (abs(now_mid[1] - 64) < 10)
-			m_state = MIDDLELINE;
-		else if (abs(now_mid[1] - 64) >= 10)
-			m_state = OBSTACLE;
-		return;
-	}
-	else if (region[1] == 1 && region[2] == 1){
-		m_state = SLOPE;
-		return;
-	}
-	else if (region[1] == 1){
-		state_count1++;
-		if (abs(now_mid[2] - 64) < 5)
-			m_state = STRAIGHT;
-		else if (abs(now_mid[2] - 64) >= 5)
-			m_state = TURN2;
-		return;
-	}
-	else if (region[2] == 1){
-		state_count2++;
-		if (abs(now_mid[1] - 64) < 10)
-			m_state = STRAIGHT;
-		else if (abs(now_mid[1] - 64) >= 10)
-			m_state = TURN1;
-		return;
-	}
-	if (state_count2 > 15){
-		m_found_cross = true;
-	}
-	else if (state_count2 > 0){
-		m_found_blackline = true;
-	}
-	if (state_count1 > 15 && m_found_cross == true){
-		m_found_cross = false;
-		m_state = CROSS;
-		state_count1 = 0;
-		state_count2 = 0;
-		return;
-	}
-	else if (state_count1 > 0 && m_found_blackline == true){
-		m_found_blackline = false;
-		m_state = NINETYDEG;
-		state_count1 = 0;
-		state_count2 = 0;
-		return;
-	}
-	m_state = UNKNOWN;
-	return;
+//	uint16_t state_count1 = 0;
+//	uint16_t state_count2 = 0;
+//	m_prev_state = m_state;
+//	if (region[1] == 5){
+//		if (abs(now_mid[1] - 64) < 10)
+//			m_state = MIDDLELINE;
+//		else if (abs(now_mid[1] - 64) >= 10)
+//			m_state = OBSTACLE;
+//		return;
+//	}
+//	else if (region[1] == 1 && region[2] == 1){
+//		m_state = SLOPE;
+//		return;
+//	}
+//	else if (region[1] == 1){
+//		state_count1++;
+//		if (abs(now_mid[2] - 64) < 5)
+//			m_state = STRAIGHT;
+//		else if (abs(now_mid[2] - 64) >= 5)
+//			m_state = TURN2;
+//		return;
+//	}
+//	else if (region[2] == 1){
+//		state_count2++;
+//		if (abs(now_mid[1] - 64) < 10)
+//			m_state = STRAIGHT;
+//		else if (abs(now_mid[1] - 64) >= 10)
+//			m_state = TURN1;
+//		return;
+//	}
+//	if (state_count2 > 15){
+//		m_found_cross = true;
+//	}
+//	else if (state_count2 > 0){
+//		m_found_blackline = true;
+//	}
+//	if (state_count1 > 15 && m_found_cross == true){
+//		m_found_cross = false;
+//		m_state = CROSS;
+//		state_count1 = 0;
+//		state_count2 = 0;
+//		return;
+//	}
+//	else if (state_count1 > 0 && m_found_blackline == true){
+//		m_found_blackline = false;
+//		m_state = NINETYDEG;
+//		state_count1 = 0;
+//		state_count2 = 0;
+//		return;
+//	}
+//	m_state = UNKNOWN;
+//	return;
 }
 
 Pit::Config GetPitConfig(const uint8_t pit_channel,
@@ -447,7 +447,7 @@ void App::PitBalance(Pit*){
 		}
 //		m_avg = (m_avg + (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW))/2;
 		m_avg = (uint16_t)(m_sum / libsc::Tsl1401cl::kSensorW);
-		m_avg = libutil::Clamp<uint16_t>(90, m_avg, 255);
+		m_avg = libutil::Clamp<uint16_t>(120, m_avg, 255);
 		m_found_middle_line = false;
 
 		m_car.m_led.SetEnable(false);
@@ -489,7 +489,7 @@ void App::PitBalance(Pit*){
 		 * Change trust based on error
 		 */
 		m_nowMid[1] = m_route_mid_1;
-		m_route_mid_1 = Get_mid(m_ccd_data_1.data(), m_avg, 1, m_mid_data1, m_color.data(), m_regionTotalNumber, m_nowMid);
+		m_route_mid_1 = (uint16_t)(0.6f * Get_mid(m_ccd_data_1.data(), m_avg, 1, m_mid_data1, m_color.data(), m_regionTotalNumber, m_nowMid) + 0.4f * m_nowMid[1]);
 
 		if(m_state == EDGES){
 //			printf("Edges\n");
@@ -893,9 +893,9 @@ void App::PitBalance(Pit*){
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 					if(fabs(m_speed_error) > 1.0f){
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.1f * m_total_speed);
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.35f * m_total_speed);
 					}else{
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.1f * m_total_speed);
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.35f * m_total_speed);
 					}
 					m_balcon[6] = -(1.5f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed*/);
 
@@ -933,7 +933,7 @@ void App::PitBalance(Pit*){
 	}
 	if(m_pit_count%4==1){
 
-		switch(m_car.m_print_state){
+		/*switch(m_car.m_print_state){
 			case 0:
 			break;
 			case 1:
@@ -985,7 +985,7 @@ void App::PitBalance(Pit*){
 				break;
 			default:
 				break;
-		}
+		}*/
 	}
 
 

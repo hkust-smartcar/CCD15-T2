@@ -117,6 +117,10 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 			color[i] = CCD_BLACK;
 		}
 	}
+	if(total_white < 20){
+		return 63;
+	}
+
 	for(int i=0; i<libsc::Tsl1401cl::kSensorW-1; i++){
 		if(color[i] != color[i+1] && regionCount<10){
 			regionEdge[regionCount+1] = i+1;
@@ -166,16 +170,13 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 		m_total_white_2 = total_white;
 	}
 
-	if(total_white < 20){
-		return 63;
-	}
-
 	if(color[midData[closestMid]] == CCD_WHITE){
-		if(/*m_total_white_1 >= 120 ||*/ m_total_white_2 >= 120 && ccdNumber == 1){
+		if(/*m_total_white_1 >= 120 ||*/ total_white >= 118 && ccdNumber == 1){
 			m_prev_state = m_state;
 			m_state = CROSS;
-//			return nowMid[ccdNumber];
-			return 63;
+			nowMid[2] = nowMid[ccdNumber];
+			return nowMid[ccdNumber];
+//			return 63;
 		}
 
 		if(/*m_car.m_ultrasonic.GetDistance() < 500 || */closestMid-2 > 0 && color[midData[closestMid-2]] == CCD_WHITE && color[midData[closestMid-1]] == CCD_BLACK && color[midData[closestMid+1]] == CCD_BLACK && ((int)regionEdge[closestMid+1] - (int)regionEdge[closestMid]) > 25 && ((int)regionEdge[closestMid+1] - (int)regionEdge[closestMid]) < 60 && ((int)regionEdge[closestMid-1] - (int)regionEdge[closestMid-2]) < 25){
@@ -210,7 +211,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 //		}
 	}
 
-	if(color[midData[closestMid]] == CCD_BLACK && width < 15){
+	if(color[midData[closestMid]] == CCD_BLACK && width < 12){
 		m_trust = 1.0f;
 		m_prev_state = m_state;
 		m_state = MIDDLELINE;
@@ -220,7 +221,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 	if(ccdNumber == 1){
 		jumpThreshold = 15;
 	}else if(ccdNumber == 2){
-		jumpThreshold = 15;
+		jumpThreshold = 35;
 	}
 	if( abs((int)midData[closestMid] - (int)nowMid[ccdNumber]) > jumpThreshold){
 //		midData[closestMid] = (uint16_t)((int16_t)midData[closestMid] + (int16_t)(((int16_t)nowMid[ccdNumber] - (int16_t)midData[closestMid])*0.5f));
@@ -369,7 +370,7 @@ void App::PitBalance(Pit*){
 		}
 //		m_avg_2 = (m_avg_2 + (uint16_t) (m_sum_2 / libsc::Tsl1401cl::kSensorW))/2;
 		m_avg_2 = (uint16_t)(m_sum_2 / libsc::Tsl1401cl::kSensorW);
-		m_avg_2 = libutil::Clamp<uint16_t>(80, m_avg_2, 255);
+		m_avg_2 = libutil::Clamp<uint16_t>(110, m_avg_2, 255);
 
 		m_nowMid[2] = m_route_mid_2;
 		m_route_mid_2 = Get_mid(m_ccd_data_2.data(), m_avg_2, 2, m_mid_data2, m_color_2.data(), m_regionTotalNumber, m_nowMid);
@@ -404,7 +405,7 @@ void App::PitBalance(Pit*){
 					}
 				}
 				if(i==m_route_mid_2){
-					color = 0b0000011111100000;
+					color = 0b0000000000011111;
 				}
 				m_car.m_lcd.FillColor(color);
 				m_last_y2[i] = 80-m_ccd_data_2[i]/4;
@@ -447,7 +448,7 @@ void App::PitBalance(Pit*){
 		}
 //		m_avg = (m_avg + (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW))/2;
 		m_avg = (uint16_t)(m_sum / libsc::Tsl1401cl::kSensorW);
-		m_avg = libutil::Clamp<uint16_t>(120, m_avg, 255);
+		m_avg = libutil::Clamp<uint16_t>(90, m_avg, 180);
 		m_found_middle_line = false;
 
 		m_car.m_led.SetEnable(false);
@@ -560,7 +561,12 @@ void App::PitBalance(Pit*){
 			m_turn_kd = m_original_turn_kd;
 		}
 //		m_turn_error = (int)(m_trust * m_turn_error_1 + (1.0f-m_trust) * m_turn_error_2);
-		m_turn_error = ((int)m_mid - (int)m_route_mid_1);
+
+		m_turn_error = m_turn_error_1 * 0.6f + m_turn_error * 0.4f;
+		if(m_state == CROSS){
+			m_turn_error = m_turn_error_2 * 0.6f + m_turn_error * 0.4f;
+			m_car.m_buzzer.SetBeep(true);
+		}
 
 		/*
 		 * Obstacle detection
@@ -818,7 +824,7 @@ void App::PitBalance(Pit*){
 					}
 				}
 				if(i==m_route_mid_1){
-					color = 0b0000011111100000;
+					color = 0b0000000000011111;
 				}
 				m_car.m_lcd.FillColor(color);
 				m_last_y[i] = 159-m_ccd_data_1[i]/4;
@@ -893,9 +899,9 @@ void App::PitBalance(Pit*){
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 					if(fabs(m_speed_error) > 1.0f){
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.35f * m_total_speed);
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.45f * m_total_speed);
 					}else{
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.35f * m_total_speed);
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.45f * m_total_speed);
 					}
 					m_balcon[6] = -(1.5f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed*/);
 

@@ -18,7 +18,6 @@
 #include "kalman.h"
 #include "upstand.h"
 #include "medianFilter.h"
-#include "OLED.h"
 
 
 using namespace libsc::kl26;
@@ -330,10 +329,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(fabs(m_speed_error) < 0.7f){
-			m_balpid[0] = 50.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 120.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 50.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 120.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f;
 		}
 
@@ -875,7 +874,7 @@ void App::PitBalance(Pit*){
 //			float speedDt = 0.02f;
 
 			m_total_speed += m_speed_error;
-			m_total_speed = libutil::Clamp<float>(-250.0f,m_total_speed, 250.0f);
+			m_total_speed = libutil::Clamp<float>(-650.0f,m_total_speed, 650.0f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 //			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -894,19 +893,19 @@ void App::PitBalance(Pit*){
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
 					if(fabs(m_speed_error) > 1.0f){
-						m_speed_output = 190.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.2f * m_total_speed;
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.1f * m_total_speed);
 					}else{
-						m_speed_output = 190.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.2f * m_total_speed;
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.1f * m_total_speed);
 					}
-					m_balcon[6] = -(1.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed);
+					m_balcon[6] = -(1.5f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed*/);
 
 					if(m_turn_error > 8){
 //						m_balcon[6] -= 1.5f;
-						m_balcon[6] -= 0.14f * m_turn_error;
+//						m_balcon[6] -= 0.14f * m_turn_error;
 					}
 
 					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;
-					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6]/*-3.5f*/,11.0f);
+					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6],11.0f);
 
 
 		}else{
@@ -936,7 +935,6 @@ void App::PitBalance(Pit*){
 
 		switch(m_car.m_print_state){
 			case 0:
-				printf("%f\n", m_total_speed);
 			break;
 			case 1:
 				printf("%f,%f,%f, %f, %d, %f\n",m_speed_setpoint,m_speedInMetrePerSecond,m_balcon[6], m_speed_error,  m_speed_output, 0.05f * m_total_speed);
@@ -1072,7 +1070,7 @@ App::App():
 	m_acceleration(0),
 	m_speed_error(0),
 	m_total_speed(0),
-	m_speed_setpoint(1.8f),
+	m_speed_setpoint(1.5f),
 	m_speed_output(0),
 	m_turn_error(0),
 	m_turn_error_1(0),

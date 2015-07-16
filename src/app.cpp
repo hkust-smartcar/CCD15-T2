@@ -143,7 +143,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 
 	int acceptableWidth = 0;
 	if(ccdNumber == 1){
-		acceptableWidth = 20;
+		acceptableWidth = 35;
 	}else if(ccdNumber == 2){
 		acceptableWidth = 15;
 	}
@@ -152,7 +152,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 	for(int i=1; i<=regionCount; i++){
 		width = (int)regionEdge[i] - (int)regionEdge[i-1];
 		if((int16_t)(abs((int)midData[i-1] - (int)nowMid[ccdNumber])) < min && midData[i-1] > deadzone && midData[i-1] < 127-deadzone){
-			if( (color[midData[i-1]] == CCD_WHITE && width > acceptableWidth ) || (color[midData[i-1]] == CCD_BLACK && width > 1 && width < acceptableWidth)) {
+			if( (color[midData[i-1]] == CCD_WHITE && width > acceptableWidth ) || (color[midData[i-1]] == CCD_BLACK && width > 1 && width < acceptableWidth && m_state != CROSS)) {
 				min = (int16_t)(abs((int)midData[i-1] - (int)nowMid[ccdNumber]));
 				closestMid = i-1;
 			}
@@ -219,7 +219,7 @@ uint16_t App::Get_mid(uint16_t* m_ccd_data, uint16_t avg, int ccdNumber, uint16_
 
 	int jumpThreshold = 0;
 	if(ccdNumber == 1){
-		jumpThreshold = 15;
+		jumpThreshold = 25;
 	}else if(ccdNumber == 2){
 		jumpThreshold = 35;
 	}
@@ -330,10 +330,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(fabs(m_speed_error) < 0.7f){
-			m_balpid[0] = 120.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 180.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 120.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 180.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f;
 		}
 
@@ -547,25 +547,30 @@ void App::PitBalance(Pit*){
 			m_trust = 1.0f;
 		else if (m_state == TURN2)
 			m_trust = 0.0f;*/
-		if(m_state == CROSS){
+//		if(m_state == CROSS){
 //			/*if(m_total_white_1 >= 120){
 //				m_trust = 0.0f;
 //			}
 //			if(m_total_white_2 >= 120){
 //				m_trust = 1.0f;
 //			}*/
-			m_turn_kp = m_original_turn_kp * 0.1f;
-			m_turn_kd = 0.0f;
+//			m_turn_kp = m_original_turn_kp * 0.1f;
+//			m_turn_kd = 0.0f;
+//		}else{
+//			m_turn_kp = m_original_turn_kp;
+//			m_turn_kd = m_original_turn_kd;
+//		}
+//		m_turn_error = (int)(m_trust * m_turn_error_1 + (1.0f-m_trust) * m_turn_error_2);
+
+		m_turn_error = m_turn_error_1/* * 0.6f + m_turn_error * 0.4f*/;
+		if(m_state == CROSS || m_prev_state == CROSS){
+			m_turn_error = m_turn_error_1 * 0.6f + m_turn_error * 0.4f;
+			m_turn_kp = m_original_turn_kp * 0.01f;
+			m_turn_kd = m_original_turn_kd * 0.01f;
+			m_car.m_buzzer.SetBeep(true);
 		}else{
 			m_turn_kp = m_original_turn_kp;
 			m_turn_kd = m_original_turn_kd;
-		}
-//		m_turn_error = (int)(m_trust * m_turn_error_1 + (1.0f-m_trust) * m_turn_error_2);
-
-		m_turn_error = m_turn_error_1 * 0.6f + m_turn_error * 0.4f;
-		if(m_state == CROSS){
-			m_turn_error = m_turn_error_2 * 0.6f + m_turn_error * 0.4f;
-			m_car.m_buzzer.SetBeep(true);
 		}
 
 		/*
@@ -898,16 +903,16 @@ void App::PitBalance(Pit*){
 
 //					m_acceleration = m_acceleration + 0.001f * m_total_speed;
 
-					if(fabs(m_speed_error) > 1.0f){
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.45f * m_total_speed);
-					}else{
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.45f * m_total_speed);
-					}
-					m_balcon[6] = -(1.5f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed*/);
+//					if(fabs(m_speed_error) > 1.0f){
+//						m_speed_output = (int16_t)(100.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.8f * m_total_speed);
+//					}else{
+						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.55f * m_total_speed);
+//					}
+					m_balcon[6] = -(1.5f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f*/ + 0.0016f * m_total_speed);
 
 					if(m_turn_error > 8){
 //						m_balcon[6] -= 1.5f;
-//						m_balcon[6] -= 0.14f * m_turn_error;
+						m_balcon[6] -= 0.12f * m_turn_error;
 					}
 
 					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;

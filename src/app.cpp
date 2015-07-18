@@ -330,10 +330,10 @@ void App::PitBalance(Pit*){
 
 		m_balpid[1] = 0.0f/*m_bki->GetReal()*/;
 		if(fabs(m_speed_error) < 0.7f){
-			m_balpid[0] = 180.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 90.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f/*m_bkd->GetReal()*/;
 		}else{
-			m_balpid[0] = 180.0f/*m_bkp->GetReal()*/;
+			m_balpid[0] = 90.0f/*m_bkp->GetReal()*/;
 			m_balpid[2] = 5.0f;
 		}
 
@@ -370,7 +370,7 @@ void App::PitBalance(Pit*){
 		}
 //		m_avg_2 = (m_avg_2 + (uint16_t) (m_sum_2 / libsc::Tsl1401cl::kSensorW))/2;
 		m_avg_2 = (uint16_t)(m_sum_2 / libsc::Tsl1401cl::kSensorW);
-		m_avg_2 = libutil::Clamp<uint16_t>(110, m_avg_2, 255);
+//		m_avg_2 = libutil::Clamp<uint16_t>(110, m_avg_2, 255);
 
 		m_nowMid[2] = m_route_mid_2;
 		m_route_mid_2 = Get_mid(m_ccd_data_2.data(), m_avg_2, 2, m_mid_data2, m_color_2.data(), m_regionTotalNumber, m_nowMid);
@@ -448,7 +448,7 @@ void App::PitBalance(Pit*){
 		}
 //		m_avg = (m_avg + (uint16_t) (m_sum / libsc::Tsl1401cl::kSensorW))/2;
 		m_avg = (uint16_t)(m_sum / libsc::Tsl1401cl::kSensorW);
-		m_avg = libutil::Clamp<uint16_t>(90, m_avg, 180);
+//		m_avg = libutil::Clamp<uint16_t>(90, m_avg, 180);
 		m_found_middle_line = false;
 
 		m_car.m_led.SetEnable(false);
@@ -885,7 +885,7 @@ void App::PitBalance(Pit*){
 //			float speedDt = 0.02f;
 
 			m_total_speed += m_speed_error;
-			m_total_speed = libutil::Clamp<float>(-650.0f,m_total_speed, 650.0f);
+			m_total_speed = libutil::Clamp<float>(-450.0f,m_total_speed, 450.0f);
 
 //			m_speed_output = (int16_t)(speedKp * m_speed_error + speedKi * m_total_speed);
 //			float a = speedKp + speedKd / speedDt + speedKi * speedDt;
@@ -906,9 +906,9 @@ void App::PitBalance(Pit*){
 //					if(fabs(m_speed_error) > 1.0f){
 //						m_speed_output = (int16_t)(100.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.8f * m_total_speed);
 //					}else{
-						m_speed_output = (int16_t)(120.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.55f * m_total_speed);
+						m_speed_output = (int16_t)(330.0f * m_speed_error + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.7f * m_total_speed);
 //					}
-					m_balcon[6] = -(1.5f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f*/ + 0.0016f * m_total_speed);
+					m_balcon[6] = -(1.0f * m_speed_error/* + 0.0f * (m_speed_error-m_prev_speed)/0.02f + 0.0f * m_total_speed*/);
 
 					if(m_turn_error > 8){
 //						m_balcon[6] -= 1.5f;
@@ -916,7 +916,7 @@ void App::PitBalance(Pit*){
 					}
 
 					m_prev_speed = m_speed_setpoint-m_speedInMetrePerSecond;
-					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6],11.0f);
+					m_balcon[6] = libutil::Clamp<float>(-11.0f,m_balcon[6]-1.5f,11.0f);
 
 
 		}else{
@@ -950,9 +950,9 @@ void App::PitBalance(Pit*){
 			case 1:
 				printf("%f,%f,%f, %f, %d, %f\n",m_speed_setpoint,m_speedInMetrePerSecond,m_balcon[6], m_speed_error,  m_speed_output, 0.05f * m_total_speed);
 				break;
-			case 2:
-				printf("%f,%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle(), m_actual_bal_error);
-				break;
+			case 2:*/
+//				printf("%f,%f,%f,%f,%f\n",m_car.m_shift_balance_angle, m_real_angle,m_upstand->GetAccAngle(),m_upstand->GetGyroAngle(), m_actual_bal_error);
+				/*break;
 			case 3:
 				printf("%d,%d,%d,%d,%f,%f\n",m_power_l_pwm,m_power_r_pwm,m_car.m_encoder_countr, m_car.m_encoder_countl,m_balcon[6],m_speedInMetrePerSecond);
 				break;
@@ -1012,10 +1012,10 @@ void App::PitBalance(Pit*){
 	m_power_l = m_balance_pid_output - m_speed_output + m_turn_powerl;
 	m_power_r = m_balance_pid_output - m_speed_output + m_turn_powerr;
 
-	m_power_l_pwm = (int16_t)(1.0f * m_power_l);
+	m_power_l_pwm = (int16_t)(1.5f * m_power_l);
 	m_power_r_pwm = (int16_t)(1.0f * m_power_r);
 
-	if(m_stop->GetInt()!=0 || m_real_angle >= 82.0f || m_real_angle <= 30.0f){
+	if(m_stop->GetInt()!=0 /*|| m_real_angle >= 82.0f || m_real_angle <= 30.0f*/){
 		m_car.m_car_move_motor = false;
 	}else if(m_start->GetInt()!=0){
 		m_car.m_car_move_forward = true;
@@ -1103,8 +1103,8 @@ App::App():
 	m_entered_black_angle(0.0f),
 	m_hold_turn_kp(0.0f),
 	m_hold_turn_kd(0.0f),
-	m_original_turn_kp(7.9),
-	m_original_turn_kd(1.9f),
+	m_original_turn_kp(7.0f),
+	m_original_turn_kd(1.2f),
 	m_turn_kp(m_original_turn_kp),
 	m_turn_kd(m_original_turn_kd),
 	m_found_middle_line(false),

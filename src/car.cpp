@@ -164,6 +164,14 @@ void Car::SelectLeft(int){
 	}
 }
 
+void Car::SelectUp(int){
+
+}
+
+void Car::SelectBottom(int){
+
+}
+
 
 void Car::GetInfrared(Gpi *){
 //	static bool state = true;

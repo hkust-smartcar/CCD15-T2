@@ -49,6 +49,8 @@ public:
 	void SelectRight(int);
 	void SelectLeft(int);
 	void SelectDown(int);
+	void SelectUp(int);
+	void SelectBottom(int);
 	void GetInfrared(Gpi *gpi);
 
 	RemoteVarManager* m_varmanager;
@@ -120,6 +122,10 @@ private:
 		Joystick::Config joyconfig;
 		joyconfig.id = 0;
 		joyconfig.is_active_low = true;
+		joyconfig.listener_triggers[0] = Joystick::Config::Trigger::kDown;
+		joyconfig.listeners[0] = std::bind(&Car::SelectUp, this, std::placeholders::_1);
+		joyconfig.listener_triggers[1] = Joystick::Config::Trigger::kDown;
+		joyconfig.listeners[1] = std::bind(&Car::SelectBottom, this, std::placeholders::_1);
 		joyconfig.listener_triggers[2] = Joystick::Config::Trigger::kDown;
 		joyconfig.listeners[2] =  std::bind(&Car::SelectLeft, this, std::placeholders::_1);
 		joyconfig.listener_triggers[3] = Joystick::Config::Trigger::kDown;
